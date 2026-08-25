@@ -1,62 +1,61 @@
-![alt text](/.github/images/banner.webp)
+![banner](/.github/images/banner.webp)
 
-[![Publish Release](https://github.com/Kazte/path-of-levelling/actions/workflows/main.yml/badge.svg)](https://github.com/Kazte/path-of-levelling/actions/workflows/main.yml)
+# POE Leveling App
 
-<h2>Index</h2>
+Overlay-App, die beim Leveln in Path of Exile hilft: Builds von
+**[Exile Leveling](https://heartofphos.github.io/exile-leveling/)** importieren,
+Schritte im Spiel einblenden, Fortschritt automatisch anhand der Zonenwechsel
+in `Client.txt` weiterschalten.
 
-- [Introduction](#introduction)
-- [Features](#features)
-- [Installation](#installation)
-- [Keyboard](#keyboard)
-- [Screenshots](#screenshots)
-- [Contributors](#contributors)
-- [License](#license)
+Tauri (Rust) + React + TypeScript + Vite + Tailwind/shadcn.
 
-## Introduction
+## Herkunft
 
-Path of Levelling is an aplication to help leveling in Path of Exile game. You can create and upload builds from **[Exile Leveling](https://heartofphos.github.io/exile-leveling/)** page. Also you can see the steps inside the game. It will be automatically updated (when change the zone).
+Dieses Projekt basiert auf **[Kazte/path-of-levelling](https://github.com/Kazte/path-of-levelling)**
+von [Kazte](https://github.com/Kazte), lizenziert unter MIT.
 
-## Features
+Der Stand wurde inklusive vollständiger Git-History übernommen (172 Commits,
+letzter übernommener Upstream-Commit `51aef5e` vom 2024-09-03, Tags `v0.1.0`-`v0.2.0`).
+Es ist **kein GitHub-Fork**, sondern ein eigenständiges Repository: die
+Weiterentwicklung läuft unabhängig vom Original, Änderungen fließen weder
+automatisch zurueck noch herein.
 
-- In game steps.
-- Automatic update.
-- Save your current progress.
+Dank an Kazte und alle
+[Contributors des Originals](https://github.com/Kazte/path-of-levelling/graphs/contributors).
 
-## Installation
+Die ursprüngliche README liegt unverändert als [README.upstream.md](README.upstream.md).
 
-1. Download the latest version [Here](https://github.com/Kazte/path-of-levelling/releases).
-2. Select Client.txt file in Path of Exile folder. Default: `C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt`.
-3. Set the place for InGame Steps window.
+## Installation (Nutzung)
 
-![Guide_02](/.github/images/image-03.webp)
+1. Release herunterladen (Releases dieses Repos).
+2. `Client.txt` auswählen, Standardpfad:
+   `C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt`.
+3. Position des InGame-Steps-Fensters festlegen.
+4. Build auf [Exile Leveling](https://heartofphos.github.io/exile-leveling/) erstellen und kopieren.
+5. Menü, dann _Load from Clipboard_.
+6. Start klicken.
 
-4. Import your build from **[Exile Leveling](https://heartofphos.github.io/exile-leveling/)** page.
-   ![Guide_01](/.github/images/image.webp)
+## Entwicklung
 
-   ![Guide_02](/.github/images/image-1.webp)
+```bash
+yarn install
+yarn tauri dev      # App im Dev-Modus
+yarn tauri build    # Release-Build
+```
 
-5. Go to the menu and click _Load from Clipboard_.
+Voraussetzungen: Node.js, Yarn, Rust-Toolchain und die
+[Tauri-Prerequisites](https://tauri.app/start/prerequisites/).
 
-![Guide_03](/.github/images/image-2.webp)
+## Tastenkürzel
 
-7. Click Start.
-8. Done.
-
-## Keyboard
-
-- `Ctrl + Shift + Alt + F12` - Deactivate in game overlay.
-- `Ctrl + Shift + Alt + →` - Next step.
-- `Ctrl + Shift + Alt + ←` - Previous step.
+- `Ctrl + Shift + Alt + F12` - Overlay an/aus
+- `Ctrl + Shift + Alt + →` - nächster Schritt
+- `Ctrl + Shift + Alt + ←` - vorheriger Schritt
 
 ## Screenshots
 
-In Game View:
-![In game View](/.github/images/image-04.webp)
+![In Game View](/.github/images/image-04.webp)
 
-## Contributors
+## Lizenz
 
-[![Contributors](https://contrib.rocks/image?repo=kazte/path-of-levelling)](https://github.com/kazte/path-of-levelling/graphs/contributors)
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT. Copyright des Ursprungscodes bei Kazte, siehe [LICENSE](LICENSE).
