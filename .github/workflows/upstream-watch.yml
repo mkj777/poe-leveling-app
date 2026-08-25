@@ -1,0 +1,51 @@
+name: Upstream-Parser beobachten
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: HeartofPhos/exile-leveling
+          path: upstream
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Parser neu vendoren
+        run: node scripts/vendor-exile-leveling.mjs upstream
+
+      - name: Pull Request bei Aenderungen
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: upstream/parser-drift
+          title: 'chore: Route-Parser von exile-leveling nachziehen'
+          commit-message: 'chore: Route-Parser von exile-leveling nachziehen'
+          body: |
+            Der Parser im Upstream hat sich geaendert. Der vendored Stand unter
+            `src/lib/exile-leveling/` wurde neu erzeugt.
+
+            Vor dem Merge pruefen:
+
+            - `yarn test` laeuft durch, insbesondere der Golden-File-Test.
+            - Schlaegt der Golden-File-Test fehl, entscheiden ob es Datendrift
+              oder Parserdrift ist:
+              - Datendrift, der Normalfall: Fixture neu ziehen mit
+                `yarn fixture:route`, dazu den Snapshot unter
+                `src/lib/exile-leveling/__fixtures__/` erneuern.
+              - Parserdrift: der vendored Code passt nicht mehr zu unserem
+                Loader in `data.ts`, echter Fix noetig.
+            - `yarn tsc --noEmit` laeuft durch. Schlaegt es an nicht genutzten
+              Variablen fehl, ist Upstream-Stil auf unsere strikten Optionen
+              getroffen, siehe ATTRIBUTION.md.
