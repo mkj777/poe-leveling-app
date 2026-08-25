@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod data_sync;
+
 use tauri::Manager;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
 
@@ -39,7 +41,10 @@ async fn main() {
             check_poe_window,
             open_poe_window,
             open_layout_window,
-            close_layout_window
+            close_layout_window,
+            data_sync::check_upstream,
+            data_sync::fetch_upstream,
+            data_sync::read_cached
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
