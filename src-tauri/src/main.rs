@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod data_sync;
+mod game_paths;
 mod overlay;
 
 use tauri::Manager;
@@ -38,15 +39,12 @@ async fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             get_area_name,
-            check_client_txt,
-            check_poe_window,
             open_poe_window,
-            open_layout_window,
-            close_layout_window,
             data_sync::check_upstream,
             data_sync::fetch_upstream,
             data_sync::read_cached,
-            overlay::start_poe_tracking
+            overlay::start_poe_tracking,
+            game_paths::detect_client_txt
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -77,30 +75,6 @@ async fn get_area_name(file_location: &str) -> Result<String, String> {
     }
 
     Ok(area_name)
-}
-
-#[tauri::command]
-async fn check_client_txt(file_location: &str) -> Result<bool, String> {
-    let file = async_fs::read_to_string(file_location).await;
-
-    if file.is_err() {
-        return Ok(false);
-    }
-
-    Ok(true)
-}
-
-#[tauri::command]
-fn check_poe_window() -> Result<bool, String> {
-    if let Ok(windows) = windows::enumerate_windows() {
-        for window in windows {
-            if window.title.contains("Path of Exile") {
-                return Ok(true);
-            }
-        }
-    }
-
-    Ok(false)
 }
 
 #[tauri::command]
@@ -187,36 +161,3 @@ mod windows {
     }
 }
 
-#[tauri::command]
-async fn open_layout_window(handle: tauri::AppHandle) -> Result<bool, String> {
-    let layout_map_window = tauri::WindowBuilder::new(
-        &handle,
-        "layout-map", /* the unique window label */
-        tauri::WindowUrl::App("index.html/#/layoutmap".parse().unwrap()),
-    )
-    .build();
-
-    if layout_map_window.is_err() {
-        return Ok(false);
-    }
-
-    let layout_map_window = layout_map_window.unwrap();
-
-    // layout_map_window.set_resizable(false).unwrap();
-    // layout_map_window.set_decorations(false).unwrap();
-    // layout_map_window.set_always_on_top(true).unwrap();
-    // layout_map_window.set_skip_taskbar(true).unwrap();
-    // layout_map_window.set_ignore_cursor_events(true).unwrap();
-    layout_map_window.show().unwrap();
-    // layout_map_window.unminimize().unwrap();
-    // layout_map_window.open_devtools();
-
-    Ok(true)
-}
-
-#[tauri::command]
-fn close_layout_window(handle: tauri::AppHandle) {
-    let layout_map_window = handle.get_window("layout-map").unwrap();
-
-    layout_map_window.close().unwrap();
-}

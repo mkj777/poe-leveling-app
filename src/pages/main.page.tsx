@@ -51,9 +51,13 @@ export default function MainPage() {
   useEffect(() => {
     if (clientTxtPath !== '') return;
 
-    void invoke<string | null>('detect_client_txt').then((detected) => {
-      if (detected !== null) setClientTxtPath(detected);
-    });
+    void invoke<string | null>('detect_client_txt')
+      .then((detected) => {
+        if (detected !== null) setClientTxtPath(detected);
+      })
+      // Scheitert die Erkennung, bleibt die manuelle Auswahl. Kein Grund,
+      // eine unbehandelte Rejection zu werfen.
+      .catch(() => undefined);
   }, [clientTxtPath, setClientTxtPath]);
 
   useInterval(async () => {
