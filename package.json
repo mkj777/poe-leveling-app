@@ -11,7 +11,8 @@
     "predev": "yarn nvmrc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "vendor:exile-leveling": "node scripts/vendor-exile-leveling.mjs"
+    "vendor:exile-leveling": "node scripts/vendor-exile-leveling.mjs",
+    "fixture:route": "npx --yes tsx scripts/build-route-fixture.mts"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.1.2",
