@@ -1,45 +1,65 @@
+import type { RouteData } from '@/lib/exile-leveling';
+
 import { Button } from './ui/button';
-import { IGuide } from '@/interfaces/guide.interface';
 import { cn } from '@/lib/utils';
-import { useGuideStore } from '@/store/guide.store';
+import { renderStepText } from '@/utilities/fragment-text';
+import { useRouteStore } from '@/store/route.store';
 
 interface Props {
-  levellingGuide: IGuide;
+  route: RouteData.Route;
 }
 
-export default function LevellingGuideMain({ levellingGuide }: Props) {
-  const { currentStep, setCurrentStep } = useGuideStore((state) => state);
-
-  const handleSetCurrentStep = (step: number) => {
-    setCurrentStep(step);
-  };
+export default function LevellingGuideMain({ route }: Props) {
+  const currentEdge = useRouteStore((state) => state.currentEdge);
+  const setCurrentEdge = useRouteStore((state) => state.setCurrentEdge);
 
   return (
     <div>
-      {levellingGuide.map((step, i) => (
-        <div
-          key={i}
-          id={`step-${i}`}
-          className={cn(
-            i < levellingGuide.length - 1 ? 'border-b-[1px]' : '',
-            currentStep === i && 'bg-neutral-700',
-            'p-1 relative'
-          )}
-        >
-          <Button
-            className='absolute top-1 right-1 px-2 py-1 z-50'
-            onClick={() => handleSetCurrentStep(i)}
-            variant='link'
-          >
-            Change Step
-          </Button>
-          <p className='text-sm opacity-50 underline'>Step: {i + 1}</p>
-          {step.subSteps.map((subStep, j) => (
-            <div key={j}>
-              <p>{subStep.description}</p>
-            </div>
-          ))}
-        </div>
+      {route.sections.map((section) => (
+        <section key={section.name}>
+          <h3 className='sticky top-0 bg-background px-1 py-2 text-sm font-semibold underline'>
+            {section.name}
+          </h3>
+
+          {section.steps.map((step, index) => {
+            if (step.type !== 'fragment_step') return null;
+
+            const isCurrent = step.edgeIndex === currentEdge;
+
+            return (
+              <div
+                key={`${section.name}-${index}`}
+                id={
+                  step.edgeIndex === null
+                    ? undefined
+                    : `edge-${step.edgeIndex}`
+                }
+                className={cn(
+                  'relative border-b-[1px] p-1',
+                  isCurrent && 'bg-neutral-700'
+                )}
+              >
+                <p>{renderStepText(step)}</p>
+
+                {step.subSteps.map((subStep, subIndex) => (
+                  <p key={subIndex} className='pl-4 text-sm opacity-60'>
+                    {renderStepText(subStep)}
+                  </p>
+                ))}
+
+                {step.edgeIndex !== null && !isCurrent && (
+                  <Button
+                    className='absolute right-1 top-1 z-50 px-2 py-1'
+                    onClick={() => setCurrentEdge(step.edgeIndex as number)}
+                    variant='link'
+                  >
+                    Hierhin springen
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </section>
       ))}
     </div>
   );

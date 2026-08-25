@@ -9,15 +9,13 @@ import {
 } from './ui/alert-dialog';
 import { AppState, useAppStore } from '@/store/app.store';
 import {
-  Atom,
   Bug,
-  Clipboard,
   Info,
   Minus,
   PencilRuler,
   Play,
+  RotateCcw,
   Settings,
-  Trash,
   X
 } from 'lucide-react';
 import {
@@ -26,38 +24,29 @@ import {
   MenubarItem,
   MenubarMenu,
   MenubarSeparator,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
   MenubarTrigger
 } from './ui/menubar';
-import { clearGuide, setNewGuide } from '@/utilities/guide.utilities';
 import { useEffect, useState } from 'react';
 
 import { Button } from './ui/button';
 import { appWindow } from '@tauri-apps/api/window';
 import { cn } from '@/lib/utils';
 import { getVersion } from '@tauri-apps/api/app';
-import guideSpeed from './../data/guides/speed-leveling.guide.json';
-import guideStarter from './../data/guides/league-starter.guide.json';
 import { installUpdate } from '@tauri-apps/api/updater';
 import logo from '@/assets/icon.ico';
 import { open } from '@tauri-apps/api/shell';
-import { readText } from '@tauri-apps/api/clipboard';
 import { relaunch } from '@tauri-apps/api/process';
-import { useGuideStore } from '@/store/guide.store';
+import { useRouteStore } from '@/store/route.store';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from './ui/use-toast';
 
 export default function Navbar() {
   const navigator = useNavigate();
   const { setAppState, newUpdateAvailable } = useAppStore((state) => state);
-  const { guide } = useGuideStore((state) => state);
+  const route = useRouteStore((state) => state.route);
 
-  const [openClearDialog, setOpenClearDialog] = useState(false);
-  const [openOverrideDialog, setOpenOverrideDialog] = useState(false);
+  const [openResetDialog, setOpenResetDialog] = useState(false);
   const [appVersion, setAppVersion] = useState<string | null>();
-  const [auxGuide, setAuxGuide] = useState<string | undefined>();
 
   const { toast } = useToast();
 
@@ -89,84 +78,27 @@ export default function Navbar() {
     appWindow.close();
   };
 
-  const handleOnCopyFromClipboard = async () => {
-    const clipboardText = await readText();
-
-    if (!clipboardText) return;
-    if (!guide) {
-      setNewGuide(clipboardText);
-    } else {
-      setAuxGuide(clipboardText);
-      setOpenOverrideDialog(true);
-    }
-  };
-
-  const handleOnClearGuide = () => {
-    clearGuide();
-  };
-
-  const handleOnOverrideGuide = async () => {
-    clearGuide();
-
-    if (auxGuide) {
-      setNewGuide(auxGuide);
-      setAuxGuide(undefined);
-    }
+  const handleOnResetProgress = () => {
+    useRouteStore.getState().setCurrentEdge(0);
   };
 
   const handleOnStart = () => {
     setAppState(AppState.IN_GAME);
   };
 
-  const handleOnLeagueStarter = () => {
-    if (!guide) {
-      setNewGuide(JSON.stringify(guideStarter));
-    } else {
-      setAuxGuide(JSON.stringify(guideStarter));
-      setOpenOverrideDialog(true);
-    }
-  };
-
-  const handleOnSpeedLeveling = () => {
-    if (!guide) {
-      setNewGuide(JSON.stringify(guideSpeed));
-    } else {
-      setAuxGuide(JSON.stringify(guideSpeed));
-      setOpenOverrideDialog(true);
-    }
-  };
-
   return (
     <>
-      <AlertDialog open={openClearDialog} onOpenChange={setOpenClearDialog}>
+      <AlertDialog open={openResetDialog} onOpenChange={setOpenResetDialog}>
         <AlertDialogTrigger />
         <AlertDialogContent>
           <AlertDialogTitle>
-            Are you sure you want to clear the guide?
+            Fortschritt auf den Anfang zuruecksetzen?
           </AlertDialogTitle>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={handleOnClearGuide}>
-              Yes
+            <AlertDialogAction onClick={handleOnResetProgress}>
+              Ja
             </AlertDialogAction>
-            <AlertDialogCancel>No</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={openOverrideDialog}
-        onOpenChange={setOpenOverrideDialog}
-      >
-        <AlertDialogTrigger />
-        <AlertDialogContent>
-          <AlertDialogTitle>
-            Are you sure you want to override the current guide?
-          </AlertDialogTitle>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={handleOnOverrideGuide}>
-              Yes
-            </AlertDialogAction>
-            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogCancel>Nein</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -198,15 +130,12 @@ export default function Navbar() {
                 </a>
               </MenubarItem>
               <MenubarSeparator />
-              <MenubarItem onClick={handleOnCopyFromClipboard}>
-                <Clipboard size={16} className='mr-2' /> Load from Clipboard
-              </MenubarItem>
               <MenubarItem
-                onClick={() => setOpenClearDialog(true)}
-                disabled={guide === null}
-                className='data-[highlighted]:bg-destructive'
+                onClick={() => setOpenResetDialog(true)}
+                disabled={route === null}
               >
-                <Trash size={16} className='mr-2' /> Clear Guide
+                <RotateCcw size={16} className='mr-2' /> Fortschritt
+                zuruecksetzen
               </MenubarItem>
               <MenubarItem asChild>
                 <a
@@ -218,20 +147,6 @@ export default function Navbar() {
                   Open Exile Leveling
                 </a>
               </MenubarItem>
-              <MenubarSub>
-                <MenubarSubTrigger>
-                  <Atom size={16} className='mr-2' />
-                  Basic Guides
-                </MenubarSubTrigger>
-                <MenubarSubContent>
-                  <MenubarItem onClick={handleOnLeagueStarter}>
-                    League Starter
-                  </MenubarItem>
-                  <MenubarItem onClick={handleOnSpeedLeveling}>
-                    Speed Leveling
-                  </MenubarItem>
-                </MenubarSubContent>
-              </MenubarSub>
               <MenubarSeparator />
               <MenubarItem
                 onClick={() => {
@@ -288,7 +203,7 @@ export default function Navbar() {
               'bg-green-700 text-foreground hover:bg-opacity-70 hover:bg-green-700'
             )}
             size='icon'
-            disabled={guide === null}
+            disabled={route === null}
           >
             <Play size={20} className='mr-2' />
             Start

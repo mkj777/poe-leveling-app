@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod data_sync;
+mod overlay;
 
 use tauri::Manager;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
@@ -44,7 +45,8 @@ async fn main() {
             close_layout_window,
             data_sync::check_upstream,
             data_sync::fetch_upstream,
-            data_sync::read_cached
+            data_sync::read_cached,
+            overlay::start_poe_tracking
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

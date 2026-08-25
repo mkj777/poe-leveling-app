@@ -7,12 +7,15 @@ import { ToastAction } from './components/ui/toast';
 import { relaunch } from '@tauri-apps/api/process';
 import { useAppStore } from './store/app.store';
 import { useEffect } from 'react';
+import { useRouteSync } from './hooks/useRouteSync';
 import { useToast } from './components/ui/use-toast';
 
 function App() {
   const { setNewUpdateAvailable } = useAppStore((state) => state);
 
   const { toast } = useToast();
+
+  useRouteSync();
 
   const startInstall = () => {
     toast({

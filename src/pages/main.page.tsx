@@ -1,209 +1,176 @@
 import { AppScanningState, AppState, useAppStore } from '@/store/app.store';
 import {
-  LogicalPosition,
-  LogicalSize,
-  appWindow
-} from '@tauri-apps/api/window';
-import {
-  isRegistered,
-  register,
-  unregister
-} from '@tauri-apps/api/globalShortcut';
+  OVERLAY_ANCHOR,
+  OVERLAY_BOTTOM_MARGIN,
+  OVERLAY_MIN_HEIGHT
+} from '@/utilities/constants';
+import { isRegistered, register, unregister } from '@tauri-apps/api/globalShortcut';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { IN_GAME_WINDOW_SIZE } from '@/utilities/constants';
 import InGameScreen from '@/components/in-game-screen';
 import LevellingGuideMain from '@/components/levelling-guide-main';
 import MainScreen from '@/components/main-screen';
 import Navbar from '@/components/navbar';
 import { Switch } from 'ktools-r';
-import TestScreen from '@/components/test-screen';
-import { invoke } from '@tauri-apps/api';
+import { advanceEdge } from '@/utilities/route-progress';
+import { appWindow } from '@tauri-apps/api/window';
+import { invoke } from '@tauri-apps/api/tauri';
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/api/dialog';
-import { useGuideStore } from '@/store/guide.store';
 import { useInterval } from '@/hooks/useInterval';
+import { usePoeWindow } from '@/hooks/usePoeWindow';
+import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';
+
+const OVERLAY_HOTKEYS = [
+  'CmdOrCtrl+Shift+Alt+F12',
+  'CmdOrCtrl+Shift+Alt+ArrowRight',
+  'CmdOrCtrl+Shift+Alt+ArrowLeft',
+  'CmdOrCtrl+Shift+Alt+O'
+];
 
 export default function MainPage() {
   const [areaName, setAreaName] = useState<string>();
+  const [contentHeight, setContentHeight] = useState(OVERLAY_MIN_HEIGHT);
+  const [editMode, setEditMode] = useState(false);
 
-  const {
-    guide,
-    currentStep,
-    setCurrentStep,
-    setAddCurrentStep,
-    setSubtractCurrentStep,
-    setCurrentArea
-  } = useGuideStore((state) => state);
+  const route = useRouteStore((state) => state.route);
+  const currentEdge = useRouteStore((state) => state.currentEdge);
+
   const { setAppState, appScanningState } = useAppStore((state) => state);
   const appState = useAppStore((state) => state.appState);
-  const { clientTxtPath, setClientTxtPath, displayPosition, growDirection } =
-    useSettingsStore((state) => state);
 
-  const CLIENT_PATH = clientTxtPath;
+  const clientTxtPath = useSettingsStore((state) => state.clientTxtPath);
+  const setClientTxtPath = useSettingsStore((state) => state.setClientTxtPath);
+  const setOverlayOffset = useSettingsStore((state) => state.setOverlayOffset);
+
+  const { bounds } = usePoeWindow(appState === AppState.IN_GAME, contentHeight);
+
+  //#region Client.txt
+  useEffect(() => {
+    if (clientTxtPath !== '') return;
+
+    void invoke<string | null>('detect_client_txt').then((detected) => {
+      if (detected !== null) setClientTxtPath(detected);
+    });
+  }, [clientTxtPath, setClientTxtPath]);
 
   useInterval(async () => {
     if (appScanningState === AppScanningState.NOT_SCANNING) return;
 
     try {
-      const response: any = await invoke('get_area_name', {
-        fileLocation: CLIENT_PATH
+      const response = await invoke<string>('get_area_name', {
+        fileLocation: clientTxtPath
       });
       setAreaName(response);
-    } catch (e: any) {
+    } catch {
       setAreaName('');
     }
   }, 1000);
 
+  useEffect(() => {
+    if (route === null || areaName === undefined || areaName === '') return;
+
+    const store = useRouteStore.getState();
+    const next = advanceEdge(route.edges, store.currentEdge, areaName);
+    if (next !== store.currentEdge) store.setCurrentEdge(next);
+  }, [areaName, route]);
+  //#endregion
+
   //#region Shortcuts
   useEffect(() => {
-    registerShortcuts();
+    void registerShortcuts();
 
     return () => {
-      unregister('CmdOrCtrl+Shift+Alt+F12');
-      unregister('CmdOrCtrl+Shift+Alt+PageUp');
-      unregister('CmdOrCtrl+Shift+Alt+PageDown');
+      for (const hotkey of OVERLAY_HOTKEYS) void unregister(hotkey);
     };
   }, []);
 
   const registerShortcuts = async () => {
-    let ir: boolean = await isRegistered('CmdOrCtrl+Shift+Alt+F12');
-
-    console.log('CmdOrCtrl+Shift+Alt+F12', ir);
-    if (!ir) {
+    // Der Zustand wird bewusst ueber getState gelesen. Die Handler werden
+    // einmal registriert und wuerden sonst auf einem eingefrorenen Wert
+    // arbeiten.
+    if (!(await isRegistered('CmdOrCtrl+Shift+Alt+F12'))) {
       await register('CmdOrCtrl+Shift+Alt+F12', () => {
         setAppState(AppState.NORMAL);
       });
     }
 
-    ir = await isRegistered('CmdOrCtrl+Shift+Alt+ArrowRight');
-    console.log('CmdOrCtrl+Shift+Alt+ArrowRight', ir);
-    if (!ir) {
-      await register('CmdOrCtrl+Shift+Alt+ArrowRight  ', () => {
-        if (currentStep === null) return;
-        setAddCurrentStep();
+    if (!(await isRegistered('CmdOrCtrl+Shift+Alt+ArrowRight'))) {
+      await register('CmdOrCtrl+Shift+Alt+ArrowRight', () => {
+        const store = useRouteStore.getState();
+        if (store.route === null) return;
+        store.setCurrentEdge(
+          Math.min(store.currentEdge + 1, store.route.edges.length - 1)
+        );
       });
     }
 
-    ir = await isRegistered('CmdOrCtrl+Shift+Alt+ArrowLeft');
-    console.log('CmdOrCtrl+Shift+Alt+ArrowLeft', ir);
-    if (!ir) {
-      // TODO: Change to arrows
+    if (!(await isRegistered('CmdOrCtrl+Shift+Alt+ArrowLeft'))) {
       await register('CmdOrCtrl+Shift+Alt+ArrowLeft', () => {
-        if (currentStep === null) return;
-        setSubtractCurrentStep();
+        const store = useRouteStore.getState();
+        store.setCurrentEdge(Math.max(store.currentEdge - 1, 0));
       });
     }
 
-    ir = await isRegistered('CmdOrCtrl+Shift+Alt+ArrowUp');
-    console.log('CmdOrCtrl+Shift+Alt+ArrowUp', ir);
-    if (!ir) {
-      await register('CmdOrCtrl+Shift+Alt+ArrowUp', () => {
-        if (appState === AppState.IN_GAME) {
-          window.scrollBy({
-            top: -10,
-            behavior: 'smooth'
-          });
-        }
-      });
-    }
-
-    ir = await isRegistered('CmdOrCtrl+Shift+Alt+ArrowDown');
-    console.log('CmdOrCtrl+Shift+Alt+ArrowDown', ir);
-    if (!ir) {
-      await register('CmdOrCtrl+Shift+Alt+ArrowDown', () => {
-        if (appState === AppState.IN_GAME) {
-          window.scrollBy({
-            top: 10,
-            behavior: 'smooth'
-          });
-        }
+    if (!(await isRegistered('CmdOrCtrl+Shift+Alt+O'))) {
+      await register('CmdOrCtrl+Shift+Alt+O', () => {
+        setEditMode((value) => !value);
       });
     }
   };
   //#endregion
 
   useEffect(() => {
-    listen('showWindow', (event) => {
-      console.log('showWindow', event);
+    void listen('showWindow', () => {
       setAppState(AppState.NORMAL);
     });
   }, []);
 
+  //#region Overlay-Geometrie
   useEffect(() => {
-    if (guide === null || currentStep === null) return;
+    const element = document.getElementById(`edge-${currentEdge}`);
+    if (element === null) return;
 
-    setCurrentArea(areaName || '');
-
-    // if (appState === AppState.IN_GAME) {
-    if (areaName === guide[currentStep].changeAreaId) {
-      setCurrentStep(currentStep + 1);
+    if (appState === AppState.IN_GAME) {
+      setContentHeight(Math.ceil(element.getBoundingClientRect().height) + 24);
+    } else {
+      element.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
-    // }
-  }, [areaName]);
+  }, [appState, currentEdge, route]);
 
   useEffect(() => {
-    if (appState === AppState.NORMAL && currentStep !== null) {
-      // Scroll to current step
-      const element = document.getElementById(`step-${currentStep}`);
+    void appWindow.setIgnoreCursorEvents(
+      appState === AppState.IN_GAME && !editMode
+    );
+  }, [appState, editMode]);
 
-      if (element) {
-        element.scrollIntoView({
-          block: 'center',
-          behavior: 'smooth',
-          inline: 'center'
-        });
-      }
-    }
+  useEffect(() => {
+    if (!editMode) return;
 
-    const adjustWindow = async () => {
-      if (appState === AppState.IN_GAME) {
-        // adjust window size to fit the whole text height of the current step
-        const element = document.getElementById(`step-${currentStep}`);
+    // Beim Ziehen die neue Lage als Bruchteil des Spiel-Rects zuruecklegen,
+    // nicht als Pixel. Sonst stimmt sie nach Aufloesungswechsel nicht mehr.
+    const unlisten = appWindow.onMoved(async ({ payload }) => {
+      if (bounds === null || !bounds.found) return;
 
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const height = rect.top + rect.height + 30;
-          const currentPosition = displayPosition;
-          const gw = growDirection;
-          if (height >= IN_GAME_WINDOW_SIZE.height) {
-            await appWindow.setSize(new LogicalSize(480, height));
+      const size = await appWindow.innerSize();
+      const centerX = payload.x + size.width / 2;
+      const bottomY = payload.y + size.height;
 
-            // move position to always have the bottom in the same place
+      setOverlayOffset({
+        dx: (centerX - bounds.x) / bounds.w - OVERLAY_ANCHOR.x,
+        dy:
+          (bottomY - bounds.y) / bounds.h -
+          (OVERLAY_ANCHOR.y - OVERLAY_BOTTOM_MARGIN)
+      });
+    });
 
-            if (gw === 'up') {
-              await appWindow.setPosition(
-                new LogicalPosition(
-                  currentPosition.x,
-                  currentPosition.y - (height - IN_GAME_WINDOW_SIZE.height)
-                )
-              );
-            } else if (gw === 'down') {
-              await appWindow.setPosition(
-                new LogicalPosition(currentPosition.x, currentPosition.y)
-              );
-            }
-          } else {
-            await appWindow.setSize(
-              new LogicalSize(
-                IN_GAME_WINDOW_SIZE.width,
-                IN_GAME_WINDOW_SIZE.height
-              )
-            );
-            await appWindow.setPosition(
-              new LogicalPosition(currentPosition.x, currentPosition.y)
-            );
-          }
-        }
-      }
+    return () => {
+      void unlisten.then((off) => off());
     };
-
-    adjustWindow();
-  }, [currentStep]);
-
-  const [_clientTxtPathValue, setClientTxtPathValue] = useState(clientTxtPath);
+  }, [editMode, bounds, setOverlayOffset]);
+  //#endregion
 
   const handleSetClientTxt = async () => {
     const selection = await open({
@@ -211,10 +178,7 @@ export default function MainPage() {
       filters: [{ name: 'Text', extensions: ['txt'] }]
     });
 
-    if (selection) {
-      setClientTxtPath(selection as string);
-      setClientTxtPathValue(selection as string);
-    }
+    if (selection) setClientTxtPath(selection as string);
   };
 
   return (
@@ -222,31 +186,37 @@ export default function MainPage() {
       <Switch.Case condition={clientTxtPath === ''}>
         <Navbar />
 
-        <div className='flex-grow p-2 text-center flex flex-col justify-center items-center h-full gap-8'>
-          <h2 className='justify-self-stretch underline'>No client.txt path</h2>
-          <h3>Set client.txt path before starting</h3>
+        <div className='flex h-full flex-grow flex-col items-center justify-center gap-8 p-2 text-center'>
+          <h2 className='justify-self-stretch underline'>
+            Client.txt nicht gefunden
+          </h2>
+          <h3>
+            Starte Path of Exile, dann wird der Pfad automatisch erkannt.
+          </h3>
           <div className='flex flex-col'>
-            <em>Usually located in </em>
+            <em>Sonst liegt sie ueblicherweise unter</em>
             <em>
               C:/Program Files (x86)/Grinding Gear Games/Path of
               Exile/logs/Client.txt
             </em>
           </div>
-          <Button onClick={handleSetClientTxt}>Set Client Path</Button>
+          <Button onClick={handleSetClientTxt}>Pfad selbst waehlen</Button>
         </div>
       </Switch.Case>
-      <Switch.Case condition={appState === AppState.TEST}>
-        <TestScreen />
-      </Switch.Case>
+
       <Switch.Case condition={appState === AppState.IN_GAME}>
-        <InGameScreen />
+        <InGameScreen
+          editMode={editMode}
+          onCloseEdit={() => setEditMode(false)}
+        />
       </Switch.Case>
+
       <Switch.Default>
         <Navbar />
-        <main className='flex-grow p-2 overflow-y-auto'>
+        <main className='flex-grow overflow-y-auto p-2'>
           <Switch>
-            <Switch.Case condition={!!guide}>
-              <LevellingGuideMain levellingGuide={guide!} />
+            <Switch.Case condition={route !== null}>
+              <LevellingGuideMain route={route!} />
             </Switch.Case>
             <Switch.Default>
               <MainScreen />
