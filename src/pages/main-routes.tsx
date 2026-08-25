@@ -19,10 +19,6 @@ export default function MainRoutes() {
       case AppState.IN_GAME:
         transition('in-game');
         break;
-      case AppState.TEST:
-        transition('test');
-
-        break;
     }
   }, [appState]);
 

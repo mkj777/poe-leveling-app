@@ -2,8 +2,7 @@ import { create } from 'zustand';
 
 export enum AppState {
   NORMAL = 'NORMAL',
-  IN_GAME = 'IN_GAME',
-  TEST = 'TEST'
+  IN_GAME = 'IN_GAME'
 }
 
 export enum AppScanningState {

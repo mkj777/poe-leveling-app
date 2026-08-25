@@ -1,43 +1,52 @@
+import type { OverlayOffset } from '@/utilities/overlay-geometry';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface Position {
-  x: number;
-  y: number;
-}
-
-export type GrowDirection = 'up' | 'down';
-
 interface States {
   clientTxtPath: string;
-  displayPosition: Position;
   showLayout: boolean;
-  growDirection: GrowDirection;
+  overlayScale: number;
+  overlayOffset: OverlayOffset;
 }
 
 interface Actions {
   setClientTxtPath: (clientTxtPath: string) => void;
-  setDisplayPosition: (displayPosition: Position) => void;
   setShowLayout: (showLayout: boolean) => void;
-  setGrowDirection: (growDirection: GrowDirection) => void;
+  setOverlayScale: (overlayScale: number) => void;
+  setOverlayOffset: (overlayOffset: OverlayOffset) => void;
+  resetOverlayPlacement: () => void;
 }
 
 export const useSettingsStore = create<States & Actions>()(
   persist(
-    (set) => {
-      return {
-        clientTxtPath: '',
-        displayPosition: { x: 100, y: 100 },
-        showLayout: true,
-        growDirection: 'up',
-        setClientTxtPath: (clientTxtPath) => set({ clientTxtPath }),
-        setDisplayPosition: (displayPosition) => set({ displayPosition }),
-        setShowLayout: (showLayout) => set({ showLayout }),
-        setGrowDirection: (growDirection) => set({ growDirection })
-      };
-    },
+    (set) => ({
+      clientTxtPath: '',
+      showLayout: true,
+      overlayScale: 1,
+      overlayOffset: { dx: 0, dy: 0 },
+      setClientTxtPath: (clientTxtPath) => set({ clientTxtPath }),
+      setShowLayout: (showLayout) => set({ showLayout }),
+      setOverlayScale: (overlayScale) => set({ overlayScale }),
+      setOverlayOffset: (overlayOffset) => set({ overlayOffset }),
+      resetOverlayPlacement: () =>
+        set({ overlayScale: 1, overlayOffset: { dx: 0, dy: 0 } })
+    }),
     {
-      name: 'settings'
+      name: 'settings',
+      version: 2,
+      migrate: (persisted) => {
+        // Version 1 hielt displayPosition in absoluten Bildschirmpixeln und
+        // growDirection. Beides ist nach Fenster-, Aufloesungs- oder
+        // Monitorwechsel falsch und wird darum verworfen statt uebernommen.
+        // Anker plus relativer Offset ersetzen es (ADR-0006).
+        const old = persisted as Partial<States> | undefined;
+        return {
+          clientTxtPath: old?.clientTxtPath ?? '',
+          showLayout: old?.showLayout ?? true,
+          overlayScale: 1,
+          overlayOffset: { dx: 0, dy: 0 }
+        } as States & Actions;
+      }
     }
   )
 );

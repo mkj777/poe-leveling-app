@@ -1,25 +1,44 @@
-import { ISubstep } from '@/interfaces/guide.interface';
-import { useGuideStore } from '@/store/guide.store';
+import { flattenSteps, selectSegment } from '@/utilities/route-progress';
 
-export default function InGameScreen() {
-  const { guide, currentStep } = useGuideStore((state) => state);
+import OverlayEditControls from './overlay-edit-controls';
+import { renderStepText } from '@/utilities/fragment-text';
+import { useRouteStore } from '@/store/route.store';
+
+interface Props {
+  editMode: boolean;
+  onCloseEdit: () => void;
+}
+
+export default function InGameScreen({ editMode, onCloseEdit }: Props) {
+  const route = useRouteStore((state) => state.route);
+  const currentEdge = useRouteStore((state) => state.currentEdge);
+
+  const segment =
+    route === null ? [] : selectSegment(flattenSteps(route.sections), currentEdge);
 
   return (
-    <section className='w-full h-full text-center flex flex-row gap-2 justify-around items-center select-none overflow-hidden'>
-      {guide !== null && currentStep !== null && (
-        <div className='flex flex-col gap-1' id={`step-${currentStep}`}>
-          <p className='text-sm opacity-50 underline absolute top-1 left-1'>
-            Step: {currentStep + 1}
-          </p>
-          {guide[currentStep].subSteps.map(
-            (subStep: ISubstep, index: number) => (
-              <div key={index}>
-                <p>{subStep.description}</p>
-              </div>
-            )
-          )}
-        </div>
-      )}
+    <section className='relative flex h-full w-full select-none flex-col items-center justify-center gap-1 overflow-hidden px-2 py-3 text-center'>
+      <p className='absolute left-1 top-1 text-xs opacity-50'>
+        {currentEdge + 1}
+        {route !== null && ` / ${route.edges.length}`}
+      </p>
+
+      <div id={`edge-${currentEdge}`} className='flex flex-col gap-1'>
+        {segment.map((step, index) => (
+          <div key={index}>
+            <p className={index === 0 ? 'font-medium' : 'text-sm opacity-80'}>
+              {renderStepText(step)}
+            </p>
+            {step.subSteps.map((subStep, subIndex) => (
+              <p key={subIndex} className='text-xs opacity-60'>
+                {renderStepText(subStep)}
+              </p>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {editMode && <OverlayEditControls onClose={onCloseEdit} />}
     </section>
   );
 }

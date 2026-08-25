@@ -17,10 +17,3 @@ export const OVERLAY_SCALE_MAX = 2.0;
 export const OVERLAY_SCALE_STEP = 0.1;
 
 export const OVERLAY_BASE_FONT_SIZE = 16;
-
-// Uebergangsweise, solange main.page.tsx noch selbst positioniert.
-// Faellt mit Task 10 weg.
-export const IN_GAME_WINDOW_SIZE = {
-  width: 480,
-  height: 120
-};

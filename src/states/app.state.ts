@@ -8,7 +8,7 @@ import {
 } from '@tauri-apps/api/window';
 
 import { IState } from '@/hooks/useMachine';
-import { invoke } from '@tauri-apps/api';
+import { invoke } from '@tauri-apps/api/tauri';
 import { useSettingsStore } from '@/store/settings.store';
 
 const appStates: IState[] = [
@@ -20,6 +20,7 @@ const appStates: IState[] = [
 
         appWindow.setAlwaysOnTop(false);
         appWindow.setIgnoreCursorEvents(false);
+        document.documentElement.style.fontSize = '';
 
         useAppStore.setState({
           appScanningState: AppScanningState.NOT_SCANNING
@@ -32,14 +33,9 @@ const appStates: IState[] = [
     name: 'in-game',
     on: {
       enter: async () => {
-        const { displayPosition } = useSettingsStore.getState();
-        const monitors = await availableMonitors();
-        const monitorSize = monitors[0].size;
-
-        await appWindow.setPosition(
-          new LogicalPosition(displayPosition.x, displayPosition.y)
-        );
-        await appWindow.setSize(new LogicalSize(480, 120));
+        // Position und Groesse setzt usePoeWindow anhand des Spielfensters
+        // (ADR-0005, ADR-0006). Hier bleibt nur, was den Fenstercharakter
+        // ausmacht.
         await appWindow.setAlwaysOnTop(true);
         await appWindow.setIgnoreCursorEvents(true);
         await appWindow.setSkipTaskbar(true);
@@ -52,6 +48,9 @@ const appStates: IState[] = [
         invoke('open_poe_window');
 
         if (useSettingsStore.getState().showLayout) {
+          const monitors = await availableMonitors();
+          const monitorSize = monitors[0].size;
+
           const layoutmapWindow = new WebviewWindow('layoutmap', {
             url: 'index.html/#/layoutmap',
             alwaysOnTop: true,
@@ -74,23 +73,10 @@ const appStates: IState[] = [
             console.log('error creating layoutmap window', e);
           });
         }
-
-        // const isCreatedLayoutWindow = await invoke('open_layout_window');
-
-        // if (isCreatedLayoutWindow) {
-        //   const layoutWindow = WebviewWindow.getByLabel('layout-map');
-
-        //   layoutWindow?.setSize(new LogicalSize(424 / 3, 230 / 3));
-        //   layoutWindow?.setPosition(
-        //     new LogicalPosition(0, monitorSize.height / 2)
-        //   );
-        // }
       },
       leave: async () => {
         document.body.classList.remove('bg-background/70');
         await appWindow.setSkipTaskbar(false);
-
-        // await invoke('close_layout_window');
 
         const layoutmapWindow = WebviewWindow.getByLabel('layoutmap');
 
@@ -109,49 +95,6 @@ const appStates: IState[] = [
         );
 
         await appWindow.setFocus();
-      }
-    }
-  },
-  {
-    name: 'test',
-    on: {
-      enter: async () => {
-        const { displayPosition } = useSettingsStore.getState();
-
-        await appWindow.setPosition(
-          new LogicalPosition(displayPosition.x, displayPosition.y)
-        );
-
-        await appWindow.setSize(new LogicalSize(480, 120));
-        await appWindow.setAlwaysOnTop(true);
-        await appWindow.setIgnoreCursorEvents(false);
-        await appWindow.setSkipTaskbar(true);
-        document.body.classList.add('bg-background/70');
-        document.body.classList.add('border-2');
-        document.body.classList.add('border-primary');
-        document.body.classList.add('border-dashed');
-
-        invoke('open_poe_window').then((response) => {
-          console.log(response);
-        });
-      },
-      leave: async () => {
-        document.body.classList.remove('bg-background/70');
-        document.body.classList.remove('border-2');
-        document.body.classList.remove('border-primary');
-        document.body.classList.remove('border-dashed');
-        await appWindow.setSkipTaskbar(false);
-        await appWindow.setFocus();
-
-        const monitors = await availableMonitors();
-        const monitorSize = monitors[0].size;
-
-        appWindow.setPosition(
-          new LogicalPosition(
-            monitorSize.width / 2 - 400,
-            monitorSize.height / 2 - 300
-          )
-        );
       }
     }
   }
