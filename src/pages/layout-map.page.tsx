@@ -10,12 +10,18 @@ export default function LayoutMapPage() {
 
   const [areaImages, setAreaImages] = useState<string[] | undefined>(undefined);
 
+  // Eigenes Webview-Fenster, also kein gemeinsamer React-Zustand. Der Weg
+  // fuehrt ueber den persistierten Store, den das Hauptfenster schreibt.
   useInterval(async () => {
-    const guide = JSON.parse(localStorage.getItem('guide') || '{}');
-    const areaId = guide.state.currentArea;
+    let areaId: unknown;
+    try {
+      const persisted = JSON.parse(localStorage.getItem('route') ?? '{}');
+      areaId = persisted?.state?.currentAreaId;
+    } catch {
+      return;
+    }
 
-    if (!areaId) return;
-
+    if (typeof areaId !== 'string' || areaId === '') return;
     if (currentArea === areaId) return;
 
     setCurrentArea(areaId);

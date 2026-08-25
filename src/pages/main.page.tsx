@@ -4,7 +4,7 @@ import {
   OVERLAY_BOTTOM_MARGIN,
   OVERLAY_MIN_HEIGHT
 } from '@/utilities/constants';
-import { isRegistered, register, unregister } from '@tauri-apps/api/globalShortcut';
+import { register, unregisterAll } from '@tauri-apps/api/globalShortcut';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -23,12 +23,11 @@ import { usePoeWindow } from '@/hooks/usePoeWindow';
 import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';
 
-const OVERLAY_HOTKEYS = [
-  'CmdOrCtrl+Shift+Alt+F12',
-  'CmdOrCtrl+Shift+Alt+ArrowRight',
-  'CmdOrCtrl+Shift+Alt+ArrowLeft',
-  'CmdOrCtrl+Shift+Alt+O'
-];
+// Modulweit, nicht pro Komponente. Globale Hotkeys gehoeren dem Prozess, nicht
+// einem Mount: unter StrictMode laeuft der Effekt doppelt und lief sich mit
+// seinem eigenen Cleanup ins "hotkey already registered". Schlimmer noch, das
+// Cleanup meldete sie beim Wechsel in die Einstellungen ab und sie blieben tot.
+let shortcutsBound = false;
 
 export default function MainPage() {
   const [areaName, setAreaName] = useState<string>();
@@ -84,24 +83,20 @@ export default function MainPage() {
 
   //#region Shortcuts
   useEffect(() => {
-    void registerShortcuts();
+    if (shortcutsBound) return;
+    shortcutsBound = true;
 
-    return () => {
-      for (const hotkey of OVERLAY_HOTKEYS) void unregister(hotkey);
-    };
-  }, []);
+    void (async () => {
+      // Erst alles abraeumen, was ein vorheriger Lauf oder ein Hot-Reload
+      // stehen gelassen hat, dann der Reihe nach neu binden.
+      await unregisterAll();
 
-  const registerShortcuts = async () => {
-    // Der Zustand wird bewusst ueber getState gelesen. Die Handler werden
-    // einmal registriert und wuerden sonst auf einem eingefrorenen Wert
-    // arbeiten.
-    if (!(await isRegistered('CmdOrCtrl+Shift+Alt+F12'))) {
+      // Der Zustand wird bewusst ueber getState gelesen. Die Handler werden
+      // einmal registriert und arbeiteten sonst auf einem eingefrorenen Wert.
       await register('CmdOrCtrl+Shift+Alt+F12', () => {
         setAppState(AppState.NORMAL);
       });
-    }
 
-    if (!(await isRegistered('CmdOrCtrl+Shift+Alt+ArrowRight'))) {
       await register('CmdOrCtrl+Shift+Alt+ArrowRight', () => {
         const store = useRouteStore.getState();
         if (store.route === null) return;
@@ -109,21 +104,17 @@ export default function MainPage() {
           Math.min(store.currentEdge + 1, store.route.edges.length - 1)
         );
       });
-    }
 
-    if (!(await isRegistered('CmdOrCtrl+Shift+Alt+ArrowLeft'))) {
       await register('CmdOrCtrl+Shift+Alt+ArrowLeft', () => {
         const store = useRouteStore.getState();
         store.setCurrentEdge(Math.max(store.currentEdge - 1, 0));
       });
-    }
 
-    if (!(await isRegistered('CmdOrCtrl+Shift+Alt+O'))) {
       await register('CmdOrCtrl+Shift+Alt+O', () => {
         setEditMode((value) => !value);
       });
-    }
-  };
+    })();
+  }, []);
   //#endregion
 
   useEffect(() => {
@@ -192,19 +183,19 @@ export default function MainPage() {
 
         <div className='flex h-full flex-grow flex-col items-center justify-center gap-8 p-2 text-center'>
           <h2 className='justify-self-stretch underline'>
-            Client.txt nicht gefunden
+            Client.txt not found
           </h2>
           <h3>
-            Starte Path of Exile, dann wird der Pfad automatisch erkannt.
+            Start Path of Exile and the path is picked up on its own.
           </h3>
           <div className='flex flex-col'>
-            <em>Sonst liegt sie ueblicherweise unter</em>
+            <em>Otherwise it usually sits at</em>
             <em>
               C:/Program Files (x86)/Grinding Gear Games/Path of
               Exile/logs/Client.txt
             </em>
           </div>
-          <Button onClick={handleSetClientTxt}>Pfad selbst waehlen</Button>
+          <Button onClick={handleSetClientTxt}>Choose it yourself</Button>
         </div>
       </Switch.Case>
 

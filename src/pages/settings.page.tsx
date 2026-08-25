@@ -54,39 +54,36 @@ export default function SettingsPage() {
       <main className='flex-grow overflow-y-auto p-2'>
         <section className='flex flex-col gap-4'>
           <div className='flex flex-col gap-1'>
-            <Label>Client.txt Pfad</Label>
+            <Label>Client.txt path</Label>
             <p className='text-xs opacity-60'>
-              Wird automatisch aus dem laufenden Spiel erkannt. Nur setzen,
-              wenn das fehlschlaegt.
+              Picked up from the running game. Only set this if that fails.
             </p>
             <div className='flex w-full max-w-sm items-center space-x-2'>
               <Input
                 type='text'
-                placeholder='Client.txt Pfad'
+                placeholder='Client.txt path'
                 value={clientTxtPathValue}
                 onChange={(e) => setClientTxtPathValue(e.target.value)}
                 onBlur={() => settingStore.setClientTxtPath(clientTxtPathValue)}
               />
               <Button type='button' onClick={handleSetClientTxt}>
-                <File /> Datei suchen
+                <File /> Find file
               </Button>
             </div>
           </div>
 
           <div className='flex flex-col gap-1'>
-            <Label>Overlay-Position</Label>
+            <Label>Overlay position</Label>
             <p className='max-w-md text-xs opacity-60'>
-              Das Overlay setzt sich selbst mittig unten in das Spielfenster
-              und folgt ihm. Zum Verschieben und Skalieren im Overlay
-              Strg+Shift+Alt+O druecken.
+              The overlay places itself at the bottom centre of the game window and follows it. Press Ctrl+Shift+Alt+O inside the overlay to move or resize it.
             </p>
           </div>
 
           <div className='flex flex-col gap-1'>
-            <Label>Zonen-Layout anzeigen</Label>
+            <Label>Show zone layout</Label>
             <div className='flex w-full max-w-sm items-center space-x-2'>
               <Switch
-                title='Zonen-Layout anzeigen'
+                title='Show zone layout'
                 defaultChecked={settingStore.showLayout}
                 onCheckedChange={(set) => {
                   settingStore.setShowLayout(set);
@@ -96,10 +93,10 @@ export default function SettingsPage() {
           </div>
 
           <div className='flex flex-col gap-1'>
-            <Label>Datenstand</Label>
+            <Label>Data version</Label>
             <p className='text-xs opacity-60'>
               {sha === null
-                ? 'noch nicht geladen'
+                ? 'not loaded yet'
                 : `exile-leveling ${sha.slice(0, 7)}`}
             </p>
           </div>

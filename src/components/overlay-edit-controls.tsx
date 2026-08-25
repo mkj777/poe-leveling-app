@@ -36,13 +36,13 @@ export default function OverlayEditControls({ onClose }: Props) {
       data-tauri-drag-region
     >
       <p className='select-none text-sm' data-tauri-drag-region>
-        Ziehen zum Verschieben
+        Drag to move
       </p>
       <div className='flex flex-row items-center gap-2'>
         <Button
           size='icon'
           className='size-7'
-          title='Kleiner'
+          title='Smaller'
           onClick={() => step(-1)}
         >
           <Minus size={16} />
@@ -53,7 +53,7 @@ export default function OverlayEditControls({ onClose }: Props) {
         <Button
           size='icon'
           className='size-7'
-          title='Groesser'
+          title='Bigger'
           onClick={() => step(1)}
         >
           <Plus size={16} />
@@ -61,7 +61,7 @@ export default function OverlayEditControls({ onClose }: Props) {
         <Button
           size='icon'
           className='size-7'
-          title='Zuruecksetzen'
+          title='Reset'
           onClick={resetOverlayPlacement}
         >
           <RotateCcw size={16} />
@@ -69,7 +69,7 @@ export default function OverlayEditControls({ onClose }: Props) {
         <Button
           size='icon'
           className='size-7'
-          title='Fertig'
+          title='Done'
           onClick={onClose}
         >
           <X size={16} />
