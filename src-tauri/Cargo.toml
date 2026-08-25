@@ -18,7 +18,18 @@ tauri = { version = "1.5", features = [ "window-create", "window-set-resizable",
 serde = { version = "1.0", features = ["derive"] }
 async-fs = "2.1.0"
 serde_json = "1.0"
-winapi = "0.3.9"
+# winapi 0.3 ist feature-gated. Die Module hier explizit nennen, statt sich
+# darauf zu verlassen, dass eine andere Kiste sie zufaellig einschaltet.
+winapi = { version = "0.3.9", features = [
+    "handleapi",
+    "minwindef",
+    "ntdef",
+    "processthreadsapi",
+    "winbase",
+    "windef",
+    "winnt",
+    "winuser",
+] }
 # default-features = false haelt openssl draussen, siehe ADR-0003.
 reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "json"] }
 
