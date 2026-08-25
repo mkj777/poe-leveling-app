@@ -12,22 +12,20 @@ export default function MainScreen() {
       {syncState === 'error' ? (
         <>
           <AlertTriangle size={32} className='text-destructive' />
-          <h2 className='underline'>Guide konnte nicht geladen werden</h2>
+          <h2 className='underline'>Could not load the guide</h2>
           <p className='max-w-md text-sm opacity-70'>
-            {syncError ?? 'Unbekannter Fehler'}
+            {syncError ?? 'Unknown error'}
           </p>
           <p className='max-w-md text-sm opacity-70'>
-            Beim naechsten Start wird es erneut versucht. Bis dahin hilft eine
-            Internetverbindung.
+            It will try again on the next start. An internet connection is what it needs.
           </p>
         </>
       ) : (
         <>
           <Loader2 size={32} className='animate-spin' />
-          <h2 className='underline'>Guide wird geladen</h2>
+          <h2 className='underline'>Loading the guide</h2>
           <p className='max-w-md text-sm opacity-70'>
-            Der Walkthrough kommt direkt aus dem Exile-Leveling-Projekt und
-            aktualisiert sich selbst.
+            The walkthrough comes straight from the Exile Leveling project and keeps itself current.
           </p>
         </>
       )}
@@ -39,7 +37,7 @@ export default function MainScreen() {
           rel='noreferrer'
         >
           <PencilRuler size={16} className='mr-2' />
-          Exile Leveling oeffnen
+          Open Exile Leveling
         </a>
       </Button>
     </div>

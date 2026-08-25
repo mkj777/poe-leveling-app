@@ -53,7 +53,7 @@ export default function LevellingGuideMain({ route }: Props) {
                     onClick={() => setCurrentEdge(step.edgeIndex as number)}
                     variant='link'
                   >
-                    Hierhin springen
+                    Jump here
                   </Button>
                 )}
               </div>

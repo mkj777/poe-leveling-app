@@ -38,16 +38,26 @@ async fn main() {
             _ => {}
         })
         .invoke_handler(tauri::generate_handler![
+            log_frontend,
             get_area_name,
             open_poe_window,
             data_sync::check_upstream,
             data_sync::fetch_upstream,
             data_sync::read_cached,
             overlay::start_poe_tracking,
+            overlay::poe_bounds,
             game_paths::detect_client_txt
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// Nimmt Fehler aus dem Webview entgegen und schreibt sie ins Terminal.
+/// Ohne das sind Renderfehler nur in den Devtools sichtbar, an die von aussen
+/// niemand herankommt.
+#[tauri::command]
+fn log_frontend(level: &str, message: &str) {
+    eprintln!("[frontend {}] {}", level, message);
 }
 
 #[tauri::command]

@@ -34,6 +34,18 @@ das Win32-Tracking wäre identisch, und vergrößert den Umbau erheblich.
 
 * Sofortige Reaktion auf Verschieben, Resize, Fokuswechsel, ohne Timer.
 * Windows-only. Das Projekt zielt ohnehin nur auf Windows.
+* Zwei eng gefasste Hooks statt eines Bereichs. Der Bereich von
+  `EVENT_SYSTEM_FOREGROUND` (0x0003) bis `EVENT_OBJECT_LOCATIONCHANGE` (0x800B)
+  laege ueber Dutzenden Ereignissen, die uns nichts angehen.
+* `EVENT_OBJECT_LOCATIONCHANGE` feuert systemweit, auch fuer den Mauszeiger.
+  Ohne den Filter auf `OBJID_WINDOW` und auf das gemerkte Fenster liefe der
+  Emit-Pfad bei jeder Mausbewegung.
+* Start und Ende des Spiels brauchen keinen eigenen Mechanismus: beim Start holt
+  sich PoE den Vordergrund, beim Beenden geht der Fokus woanders hin. Beides ist
+  ein `EVENT_SYSTEM_FOREGROUND`, bei dem das Fenster neu gesucht wird.
+* Der Hook liefert nur an den Thread, der ihn gesetzt hat, und braucht dort eine
+  Nachrichtenschleife. Das Tracking laeuft darum in einem eigenen Thread mit
+  thread-lokalem Zustand.
 * Zwei bekannte Grenzen werden erkannt und gemeldet statt still zu scheitern:
   Exklusiv-Fullscreen (`docs/download.md:31` im Nachbar-Repo listet nur Windowed und
   Windowed Fullscreen als unterstützt) und ein mit Adminrechten gestartetes Spiel.

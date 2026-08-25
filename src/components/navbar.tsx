@@ -92,13 +92,13 @@ export default function Navbar() {
         <AlertDialogTrigger />
         <AlertDialogContent>
           <AlertDialogTitle>
-            Fortschritt auf den Anfang zuruecksetzen?
+            Reset progress to the start?
           </AlertDialogTitle>
           <AlertDialogFooter>
             <AlertDialogAction onClick={handleOnResetProgress}>
-              Ja
+              Yes
             </AlertDialogAction>
-            <AlertDialogCancel>Nein</AlertDialogCancel>
+            <AlertDialogCancel>No</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -134,8 +134,7 @@ export default function Navbar() {
                 onClick={() => setOpenResetDialog(true)}
                 disabled={route === null}
               >
-                <RotateCcw size={16} className='mr-2' /> Fortschritt
-                zuruecksetzen
+                <RotateCcw size={16} className='mr-2' /> Reset progress
               </MenubarItem>
               <MenubarItem asChild>
                 <a

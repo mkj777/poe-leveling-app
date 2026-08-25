@@ -38,7 +38,9 @@ const appStates: IState[] = [
         // ausmacht.
         await appWindow.setAlwaysOnTop(true);
         await appWindow.setIgnoreCursorEvents(true);
-        await appWindow.setSkipTaskbar(true);
+        // Der Taskleisteneintrag bleibt. Ohne ihn ist das Overlay im
+        // Klickdurchlass-Zustand ueber nichts mehr erreichbar.
+        await appWindow.setSkipTaskbar(false);
         document.body.classList.add('bg-background/70');
 
         useAppStore.setState({

@@ -21,10 +21,9 @@ export function useRouteSync() {
       const store = useRouteStore.getState();
       store.setSyncState('syncing');
 
-      const previousArea =
-        store.route !== null
-          ? (store.route.edges[store.currentEdge] ?? null)
-          : null;
+      // Die Route wird nicht gespeichert, wohl aber die zuletzt betretene Zone.
+      // Sie traegt den Fortschritt ueber Neustarts und Datenwechsel hinweg.
+      const previousArea = store.currentAreaId;
 
       const result = await syncRoute(tauriDeps);
 
@@ -35,9 +34,7 @@ export function useRouteSync() {
 
       store.setRoute(result.route, result.sha);
 
-      // Nach einem Refresh mitten im Durchlauf nicht auf Schritt 0 zurueck,
-      // sondern an der zuletzt bekannten Zone wieder anknuepfen (ADR-0004).
-      if (previousArea !== null && result.status === 'updated') {
+      if (previousArea !== null) {
         store.setCurrentEdge(
           reanchorEdge(result.route.edges, previousArea, store.currentEdge)
         );
