@@ -10,7 +10,8 @@
     "nvmrc": "node -v > .nvmrc",
     "predev": "yarn nvmrc",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "vendor:exile-leveling": "node scripts/vendor-exile-leveling.mjs"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.1.2",
