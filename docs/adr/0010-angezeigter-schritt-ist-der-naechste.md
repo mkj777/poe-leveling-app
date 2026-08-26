@@ -40,6 +40,12 @@ Die Akt-Überschrift bekommt `z-20`. Sie war zwar `sticky`, aber die Blöcke sin
 positioniert und die Sprung-Schaltflächen trugen `z-50`, beide malten also über sie. Beim
 Scrollen lief der Text mitten durch die Überschrift.
 
+Der Scroll-Container `<main>` trägt außerdem **keine** Polsterung mehr. Sie gehört zum
+scrollbaren Bereich, der Text zog dort oben durch, und über der klebenden Überschrift stand
+ein Streifen der vorigen Zeile. Der Abstand sitzt jetzt im Inhalt (`px-3` an Überschrift und
+Blöcken), der visuelle Einzug bleibt damit gleich. Nachgestellt mit dem gebauten
+Stylesheet, alte und neue Fassung nebeneinander gescrollt.
+
 ## Alternativen
 
 **`advanceEdge` um eins vorlaufen lassen.** Verschiebt den Fehler nur: die Aufgaben der

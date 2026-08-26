@@ -3,7 +3,26 @@ import { Data } from '@/lib/exile-leveling';
 
 // dirIndex ist Grad geteilt durch 45, laeuft also 0 bis 7 im Uhrzeigersinn ab
 // Norden. Siehe common/src/route-processing/fragment/index.ts.
-const DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+//
+// Ausgeschrieben statt abgekuerzt: "Go SW follow the exits keeping W" liest
+// sich als Buchstabensalat, wenn man die Kuerzel nicht im Kopf hat.
+// Kleingeschrieben, weil die Richtung in der Route immer mitten im Satz steht,
+// nie am Anfang: "Go west", "Usually northeast", "Follow the road southwest".
+//
+// Bewusst nur hier und nicht im Freitext. In der Route steht genau eine Stelle
+// mit einem einzelnen Richtungsbuchstaben, "S shape or L shape leads to exit",
+// und dort meint das S die Form des Weges. Eine Suche ueber den Fliesstext
+// haette daraus "south shape" gemacht.
+const DIRECTIONS = [
+  'north',
+  'northeast',
+  'east',
+  'southeast',
+  'south',
+  'southwest',
+  'west',
+  'northwest'
+];
 
 const LAB_NAMES: Record<Fragments.AscendFragment['version'], string> = {
   normal: 'Normal',

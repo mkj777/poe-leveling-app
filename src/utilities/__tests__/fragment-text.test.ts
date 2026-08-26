@@ -74,9 +74,9 @@ const cases: Array<[string, Fragments.AnyFragment, string]> = [
     { type: 'crafting', crafting_recipes: ['Movement Speed - Rank 1'] },
     'Crafting: Movement Speed - Rank 1'
   ],
-  ['dir 0', { type: 'dir', dirIndex: 0 }, 'N'],
-  ['dir 6', { type: 'dir', dirIndex: 6 }, 'W'],
-  ['dir 7', { type: 'dir', dirIndex: 7 }, 'NW'],
+  ['dir 0', { type: 'dir', dirIndex: 0 }, 'north'],
+  ['dir 6', { type: 'dir', dirIndex: 6 }, 'west'],
+  ['dir 7', { type: 'dir', dirIndex: 7 }, 'northwest'],
   ['copy', { type: 'copy', text: '"Fireball"', side: 'tail' }, '"Fireball"']
 ];
 

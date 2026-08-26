@@ -149,7 +149,7 @@ export default function MainPage() {
 
       <Switch.Default>
         <Navbar />
-        <main className='flex-grow overflow-y-auto p-2'>
+        <main className='flex-grow overflow-y-auto'>
           <Switch>
             <Switch.Case condition={route !== null}>
               <LevellingGuideMain route={route!} />

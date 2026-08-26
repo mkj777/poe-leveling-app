@@ -33,13 +33,16 @@ export default function LevellingGuideMain({ route }: Props) {
   );
 
   return (
-    <div>
+    // Der Abstand sitzt hier und nicht am Scroll-Container: dessen
+    // Polsterung gehoert zum scrollbaren Bereich, der Text zoege oben durch
+    // und stuende als Streifen ueber der klebenden Ueberschrift.
+    <div className='pb-2'>
       {sections.map((section) => (
         <section key={section.name}>
           {/* z-20 haelt die Ueberschrift ueber den Bloecken. Die sind relativ
               positioniert und lagen sonst darueber, die Ueberschrift war
               waehrend des Scrollens nicht zu lesen. */}
-          <h3 className='bg-background sticky top-0 z-20 border-b px-1 py-2 text-sm font-semibold underline'>
+          <h3 className='bg-background sticky top-0 z-20 border-b px-3 py-2 text-lg font-semibold'>
             {section.name}
           </h3>
 
@@ -52,7 +55,7 @@ export default function LevellingGuideMain({ route }: Props) {
                 key={`${section.name}-${index}`}
                 id={edgeIndex === null ? undefined : `edge-${edgeIndex}`}
                 className={cn(
-                  'relative border-b-[1px] px-1 py-2',
+                  'relative border-b-[1px] px-3 py-2',
                   isCurrent && 'bg-neutral-700'
                 )}
               >
