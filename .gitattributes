@@ -1,0 +1,20 @@
+# Ohne diese Datei macht Git auf Windows aus jedem LF im Objektspeicher ein
+# CRLF im Arbeitsverzeichnis. Der Release-Workflow laeuft auf windows-latest,
+# bekam also andere Dateien als die Entwicklungsmaschine. Konkret ist Vite
+# darueber gestolpert: ein Zeilenkommentar direkt vor einem `import` liess mit
+# CRLF die Import-Analyse ungueltigen Code erzeugen, und der Testlauf brach mit
+# "SyntaxError: Invalid or unexpected token" ab.
+#
+# Der Objektspeicher enthaelt ohnehin ueberall LF, das hier haelt nur die
+# Arbeitskopie gleich.
+* text=auto eol=lf
+
+# Nichts von dem hier soll Git als Text anfassen.
+*.png binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.nupkg binary
+*.exe binary
