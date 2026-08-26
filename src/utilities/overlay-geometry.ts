@@ -102,6 +102,13 @@ export function offsetFromWindow(
   window: { x: number; y: number; width: number; height: number },
   anchor: OverlayAnchor
 ): OverlayOffset {
+  // Ohne Spielfenster gibt es keinen Bezug, aus dem sich ein relativer Offset
+  // ableiten liesse. Die Division wuerde Infinity liefern, und der Wert wird
+  // gespeichert: das Overlay waere danach dauerhaft verschoben.
+  if (bounds.w === 0 || bounds.h === 0) {
+    return { dx: 0, dy: 0 };
+  }
+
   const { point, pin } = ANCHORS[anchor];
 
   const pinX = window.x + window.width * pin.x;

@@ -1,8 +1,10 @@
-import { LogicalSize, appWindow } from '@tauri-apps/api/window';
+import { LogicalSize } from '@tauri-apps/api/dpi';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useEffect, useState } from 'react';
 
 import { getImagesWithPattern } from '@/utilities/tauri.utilities';
 import { useInterval } from '@/hooks/useInterval';
+const appWindow = getCurrentWebviewWindow()
 
 export default function LayoutMapPage() {
   const [currentArea, setCurrentArea] = useState<string>('');

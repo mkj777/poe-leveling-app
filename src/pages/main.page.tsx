@@ -1,5 +1,5 @@
 import { AppScanningState, AppState, useAppStore } from '@/store/app.store';
-import { register, unregisterAll } from '@tauri-apps/api/globalShortcut';
+import { register, unregisterAll } from '@tauri-apps/plugin-global-shortcut';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,9 @@ import MainScreen from '@/components/main-screen';
 import Navbar from '@/components/navbar';
 import { Switch } from 'ktools-r';
 import { advanceEdge } from '@/utilities/route-progress';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@tauri-apps/api/event';
-import { open } from '@tauri-apps/api/dialog';
+import { open } from '@tauri-apps/plugin-dialog';
 import { useInterval } from '@/hooks/useInterval';
 import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';

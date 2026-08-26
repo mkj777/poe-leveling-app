@@ -112,7 +112,7 @@ pub fn find_poe_window() -> Option<winapi::shared::windef::HWND> {
 mod tracking {
     use super::{win, PoeBounds};
     use std::cell::RefCell;
-    use tauri::Manager;
+    use tauri::Emitter;
     use winapi::shared::minwindef::DWORD;
     use winapi::shared::ntdef::LONG;
     use winapi::shared::windef::{HWINEVENTHOOK, HWND};
@@ -146,7 +146,7 @@ mod tracking {
 
             HANDLE.with(|handle| {
                 if let Some(handle) = handle.borrow().as_ref() {
-                    let _ = handle.emit_all("poe-bounds", bounds);
+                    let _ = handle.emit("poe-bounds", bounds);
                 }
             });
         });
@@ -270,9 +270,9 @@ pub fn poe_bounds() -> PoeBounds {
 #[cfg(not(target_os = "windows"))]
 #[tauri::command]
 pub fn start_poe_tracking(handle: tauri::AppHandle) {
-    use tauri::Manager;
+    use tauri::Emitter;
     if TRACKING.swap(true, Ordering::SeqCst) {
         return;
     }
-    let _ = handle.emit_all("poe-bounds", PoeBounds::not_found());
+    let _ = handle.emit("poe-bounds", PoeBounds::not_found());
 }

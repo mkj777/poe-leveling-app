@@ -4,6 +4,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use tauri::Manager;
 
 const REPO: &str = "HeartofPhos/exile-leveling";
 const USER_AGENT: &str = "poe-leveling-app";
@@ -47,9 +48,9 @@ pub struct CachedData {
 
 fn root(handle: &tauri::AppHandle) -> Result<PathBuf, String> {
     let dir = handle
-        .path_resolver()
+        .path()
         .app_data_dir()
-        .ok_or_else(|| "app_data_dir nicht verfuegbar".to_string())?
+        .map_err(|e| format!("app_data_dir nicht verfuegbar: {}", e))?
         .join("exile-leveling");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir)

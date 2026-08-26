@@ -19,8 +19,8 @@ import {
   OVERLAY_SCALE_STEP
 } from '@/utilities/constants';
 import { emit } from '@tauri-apps/api/event';
-import { open as openDialog } from '@tauri-apps/api/dialog';
-import { open as openExternal } from '@tauri-apps/api/shell';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { useNavigate } from 'react-router-dom';
 import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';

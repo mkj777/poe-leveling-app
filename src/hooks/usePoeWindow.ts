@@ -1,8 +1,5 @@
-import {
-  PhysicalPosition,
-  PhysicalSize,
-  appWindow
-} from '@tauri-apps/api/window';
+import { PhysicalPosition, PhysicalSize } from '@tauri-apps/api/dpi';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import {
   OVERLAY_BASE_FONT_SIZE,
   OVERLAY_MIN_HEIGHT
@@ -11,9 +8,10 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { PoeBounds } from '@/utilities/overlay-geometry';
 import { computeOverlayRect, offsetFromWindow } from '@/utilities/overlay-geometry';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useSettingsStore } from '@/store/settings.store';
+const appWindow = getCurrentWebviewWindow()
 
 // Koppelt das Overlay an das Spielfenster. Das Backend meldet Bounds nur bei
 // Aenderung, die Geometrie rechnet computeOverlayRect (ADR-0005, ADR-0006).

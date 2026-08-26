@@ -18,7 +18,9 @@ export function setGameData(next: GameDataBundle) {
 }
 
 function required(): GameDataBundle {
-  if (bundle === null) {
+  // Auch undefined abfangen: der Aufrufer kommt aus JSON und aus einem
+  // Ereignis, beides kann undefined liefern, ohne dass TypeScript es sieht.
+  if (bundle === null || bundle === undefined) {
     throw new Error('Spieldaten nicht geladen, setGameData zuerst aufrufen');
   }
   return bundle;

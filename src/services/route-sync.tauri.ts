@@ -1,7 +1,7 @@
 import type { CachedData, SyncDeps, UpstreamStatus } from './route-sync';
 import type { RouteData } from '@/lib/exile-leveling';
 
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import { parseCached } from './route-sync';
 
 // Bewusst eine eigene Datei: route-sync.ts bleibt damit frei von

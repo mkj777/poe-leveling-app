@@ -1,11 +1,10 @@
 import { HashRouter, Route, Routes } from 'react-router-dom';
-import { checkUpdate, installUpdate } from '@tauri-apps/api/updater';
 
 import LayoutMapPage from './pages/layout-map.page';
 import MainRoutes from './pages/main-routes';
 import OverlayPage from './pages/overlay.page';
 import { ToastAction } from './components/ui/toast';
-import { relaunch } from '@tauri-apps/api/process';
+import { checkForUpdate, installPendingUpdate } from './services/updater';
 import { useAppStore } from './store/app.store';
 import { useEffect } from 'react';
 import { useToast } from './components/ui/use-toast';
@@ -21,31 +20,28 @@ function App() {
       description:
         'Please wait...\nThis program will restart automatically after the update is installed.'
     });
-    installUpdate().then(relaunch);
+    void installPendingUpdate();
   };
 
   useEffect(() => {
-    checkUpdate().then(({ shouldUpdate, manifest }) => {
-      if (shouldUpdate) {
-        if (!manifest) return;
-
-        const { version } = manifest;
-
-        setNewUpdateAvailable(true);
+    void checkForUpdate()
+      .then((version) => {
+        setNewUpdateAvailable(version !== null);
+        if (version === null) return;
 
         toast({
           title: 'New update available',
-          description: `Update ${version} \nThis program will restart automatically after the update is installed.`,
+          description: `Version ${version}. The app restarts on its own once it is in.`,
           action: (
             <ToastAction altText='Install' onClick={startInstall}>
               Install
             </ToastAction>
           )
         });
-      } else {
-        setNewUpdateAvailable(false);
-      }
-    });
+      })
+      // Die Endpunkte zeigen noch auf das Upstream-Projekt, ein Fehlschlag
+      // darf die App nicht stoeren.
+      .catch(() => setNewUpdateAvailable(false));
   }, []);
 
   return (

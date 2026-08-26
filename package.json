@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "vendor:exile-leveling": "node scripts/vendor-exile-leveling.mjs",
-    "fixture:route": "npx --yes tsx scripts/build-route-fixture.mts"
+    "fixture:route": "npx --yes tsx scripts/build-route-fixture.mts",
+    "test:coverage": "vitest run --coverage",
+    "test:perf": "vitest run src/__perf__"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.1.2",
@@ -25,7 +27,13 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-switch": "^1.0.3",
     "@radix-ui/react-toast": "^1.1.5",
-    "@tauri-apps/api": "^1.5.2",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2",
+    "@tauri-apps/plugin-fs": "^2",
+    "@tauri-apps/plugin-global-shortcut": "^2",
+    "@tauri-apps/plugin-process": "^2",
+    "@tauri-apps/plugin-shell": "^2",
+    "@tauri-apps/plugin-updater": "^2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "ktools-r": "^0.0.22",
@@ -38,11 +46,12 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.5.8",
+    "@tauri-apps/cli": "^2",
     "@types/node": "^20.11.16",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/coverage-v8": "^2.1.8",
     "autoprefixer": "^10.4.17",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",

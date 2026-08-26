@@ -2,86 +2,43 @@
   "build": {
     "beforeDevCommand": "yarn dev",
     "beforeBuildCommand": "yarn build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": true
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420"
   },
-  "package": {
-    "productName": "PoE Leveling Guide",
-    "version": "0.2.0"
+  "bundle": {
+    "active": true,
+    "targets": [
+      "msi"
+    ],
+    "resources": [
+      "resources/zones/*"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.ico"
+    ],
+    "createUpdaterArtifacts": "v1Compatible"
   },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "open": true
-      },
-      "fs": {
-        "all": false,
-        "exists": true,
-        "readFile": true,
-        "readDir": true,
-        "scope": ["**/*", "$RESOURCE/**", "$RESOURCE/*", "**"]
-      },
-      "app": {
-        "all": true
-      },
-      "clipboard": {
-        "all": false,
-        "readText": true
-      },
-      "globalShortcut": {
-        "all": true
-      },
-      "path": {
-        "all": true
-      },
-      "window": {
-        "all": false,
-        "close": true,
-        "setIgnoreCursorEvents": true,
-        "setPosition": true,
-        "setSize": true,
-        "setAlwaysOnTop": true,
-        "startDragging": true,
-        "minimize": true,
-        "hide": true,
-        "show": true,
-        "setSkipTaskbar": true,
-        "maximize": true,
-        "setResizable": true,
-        "setFocus": true,
-        "create": true
-      },
-      "dialog": {
-        "all": false,
-        "ask": false,
-        "confirm": false,
-        "message": false,
-        "open": true,
-        "save": false
-      },
-      "protocol": {
-        "asset": true,
-        "assetScope": ["**", "$RESOURCE/**", "$RESOURCE/*"]
+  "productName": "PoE Leveling Guide",
+  "mainBinaryName": "PoE Leveling Guide",
+  "version": "0.2.0",
+  "identifier": "com.poe-leveling-guide.dev",
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYwMUQ0MTU2MDgxNzk4RUUKUldUdW1CY0lWa0VkOExtVVFHSXJhdjJaT3pPNERVUUx2UXdaUitsZFRPRllwem9QMWY2d0tjM3YK",
+      "endpoints": [
+        "https://github.com/kazte/path-of-levelling/releases/latest/download/latest.json",
+        "https://path-of-levelling.vercel.app/api/version?version={{current_version}}&arch={{arch}}&target={{target}}",
+        "https://gist.githubusercontent.com/Kazte/d906faf13f5528e054888a5dac8ae399/raw"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
-    },
-    "bundle": {
-      "active": true,
-      "targets": ["msi", "updater"],
-      "identifier": "com.poe-leveling-guide.dev",
-      "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico"],
-      "resources": ["resources/*"]
-    },
-    "security": {
-      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost"
-    },
-    "systemTray": {
-      "iconPath": "icons/icon.ico",
-      "iconAsTemplate": true,
-      "title": "PoE Leveling Guide"
-    },
+    }
+  },
+  "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "PoE Leveling Guide",
@@ -90,21 +47,25 @@
         "width": 800,
         "height": 600,
         "decorations": false,
-        "transparent": true
+        "transparent": true,
+        "useHttpsScheme": true
       }
     ],
-    "updater": {
-      "active": true,
-      "endpoints": [
-        "https://github.com/kazte/path-of-levelling/releases/latest/download/latest.json",
-        "https://path-of-levelling.vercel.app/api/version?version={{current_version}}&arch={{arch}}&target={{target}}",
-        "https://gist.githubusercontent.com/Kazte/d906faf13f5528e054888a5dac8ae399/raw"
-      ],
-      "dialog": false,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYwMUQ0MTU2MDgxNzk4RUUKUldUdW1CY0lWa0VkOExtVVFHSXJhdjJaT3pPNERVUUx2UXdaUitsZFRPRllwem9QMWY2d0tjM3YK",
-      "windows": {
-        "installMode": "passive"
-      }
+    "security": {
+      "assetProtocol": {
+        "scope": [
+          "**",
+          "$RESOURCE/**",
+          "$RESOURCE/*"
+        ],
+        "enable": true
+      },
+      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost; connect-src ipc: http://ipc.localhost"
+    },
+    "trayIcon": {
+      "iconPath": "icons/icon.ico",
+      "iconAsTemplate": true,
+      "title": "PoE Leveling Guide"
     }
   }
 }
