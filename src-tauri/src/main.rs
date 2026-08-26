@@ -5,37 +5,45 @@ mod data_sync;
 mod game_paths;
 mod overlay;
 
-use tauri::Manager;
-use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::tray::TrayIconBuilder;
+use tauri::{Emitter, Manager};
 
 #[tokio::main]
 async fn main() {
-    // create the system tray
-    let open_app = CustomMenuItem::new("open_app".to_string(), "Open App");
-    let quit_app = CustomMenuItem::new("quit_app".to_string(), "Quit App");
-    let tray_menu = SystemTrayMenu::new()
-        .add_item(open_app)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(quit_app);
-
-    let system_tray = SystemTray::new().with_menu(tray_menu);
-
     tauri::Builder::default()
-        .system_tray(system_tray)
-        .on_system_tray_event(|app, event| match event {
-            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-                "open_app" => {
-                    app.get_window("main").unwrap().show().unwrap();
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_process::init())
+        .setup(|app| {
+            // Tray-Aufbau in Tauri 2: Menue und Icon werden gebaut und der
+            // Klick-Handler haengt am Icon, nicht mehr am Builder.
+            let open_app = MenuItem::with_id(app, "open_app", "Open App", true, None::<&str>)?;
+            let quit_app = MenuItem::with_id(app, "quit_app", "Quit App", true, None::<&str>)?;
+            let separator = PredefinedMenuItem::separator(app)?;
+            let menu = Menu::with_items(app, &[&open_app, &separator, &quit_app])?;
 
-                    // send event to the frontend
-                    app.emit_all::<()>("showWindow", {}).unwrap();
-                }
-                "quit_app" => {
-                    app.exit(0);
-                }
-                _ => {}
-            },
-            _ => {}
+            TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .show_menu_on_left_click(true)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "open_app" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                        let _ = app.emit("showWindow", ());
+                    }
+                    "quit_app" => app.exit(0),
+                    _ => {}
+                })
+                .build(app)?;
+
+            Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             log_frontend,
@@ -170,4 +178,3 @@ mod windows {
         Ok(())
     }
 }
-

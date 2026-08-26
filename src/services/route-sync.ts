@@ -44,6 +44,15 @@ export function parseCached(cached: CachedData): RouteData.Route {
   return buildDefaultRoute(cached.routes, bundle);
 }
 
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Liefert immer ein Ergebnis und wirft nie. Das ist der ganze Zweck: der
+ * Aufrufer setzt daraus den Zustand, und eine durchgereichte Ausnahme wuerde
+ * ihn auf "wird geladen" stehen lassen.
+ */
 export async function syncRoute(deps: SyncDeps): Promise<SyncResult> {
   let status: SyncStatus = 'unchanged';
 
@@ -59,7 +68,18 @@ export async function syncRoute(deps: SyncDeps): Promise<SyncResult> {
     status = 'offline';
   }
 
-  const cached = await deps.readCached();
+  let cached: CachedData | null;
+  try {
+    cached = await deps.readCached();
+  } catch (error) {
+    return {
+      status: 'error',
+      route: null,
+      sha: null,
+      error: describeError(error)
+    };
+  }
+
   if (cached === null) {
     return {
       status: 'error',
@@ -81,7 +101,7 @@ export async function syncRoute(deps: SyncDeps): Promise<SyncResult> {
       status: 'error',
       route: null,
       sha: cached.sha,
-      error: error instanceof Error ? error.message : String(error)
+      error: describeError(error)
     };
   }
 }

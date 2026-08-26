@@ -5,7 +5,7 @@ import './styles.css';
 import ErrorBoundary from './components/error-boundary';
 import { ThemeProvider } from './components/providers/theme-provider';
 import { Toaster } from './components/ui/toaster';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 
 // Alles, was der Fehlergrenze entgeht, landet trotzdem im Terminal. Ohne das
 // verschwinden Fehler aus Effekten und Promises spurlos in einer Konsole, an

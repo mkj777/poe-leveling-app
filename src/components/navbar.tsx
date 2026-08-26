@@ -12,15 +12,15 @@ import { Minus, Play, RotateCcw, Settings, Square, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from './ui/button';
-import { appWindow } from '@tauri-apps/api/window';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { cn } from '@/lib/utils';
 import { getVersion } from '@tauri-apps/api/app';
-import { installUpdate } from '@tauri-apps/api/updater';
+import { installPendingUpdate } from '@/services/updater';
 import logo from '@/assets/icon.ico';
-import { relaunch } from '@tauri-apps/api/process';
 import { useNavigate } from 'react-router-dom';
 import { useRouteStore } from '@/store/route.store';
 import { useToast } from './ui/use-toast';
+const appWindow = getCurrentWebviewWindow()
 
 export default function Navbar() {
   const navigator = useNavigate();
@@ -39,7 +39,7 @@ export default function Navbar() {
       title: 'Installing update',
       description: 'The app restarts on its own once the update is in.'
     });
-    installUpdate().then(relaunch);
+    void installPendingUpdate();
   };
 
   useEffect(() => {

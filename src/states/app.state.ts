@@ -1,20 +1,19 @@
 import { AppScanningState, useAppStore } from '@/store/app.store';
-import {
-  LogicalPosition,
-  LogicalSize,
-  WebviewWindow,
-  availableMonitors
-} from '@tauri-apps/api/window';
+import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { availableMonitors } from '@tauri-apps/api/window';
 
 import { IState } from '@/hooks/useMachine';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import { useSettingsStore } from '@/store/settings.store';
 
 const OVERLAY_LABEL = 'overlay';
 const LAYOUTMAP_LABEL = 'layoutmap';
 
-function close(label: string) {
-  WebviewWindow.getByLabel(label)?.close();
+// getByLabel ist in Tauri 2 asynchron, in v1 war es ein direkter Zugriff.
+async function close(label: string) {
+  const window = await WebviewWindow.getByLabel(label);
+  await window?.close();
 }
 
 /**
@@ -27,8 +26,8 @@ const appStates: IState[] = [
     name: 'normal',
     on: {
       enter: async () => {
-        close(OVERLAY_LABEL);
-        close(LAYOUTMAP_LABEL);
+        await close(OVERLAY_LABEL);
+        await close(LAYOUTMAP_LABEL);
 
         useAppStore.setState({
           appScanningState: AppScanningState.NOT_SCANNING
@@ -60,8 +59,13 @@ const appStates: IState[] = [
           height: 120
         });
 
-        overlay.once('tauri://error', (e) => {
-          console.error('overlay window failed', e);
+        // Ins Terminal statt in eine Konsole, die von aussen niemand sieht.
+        // Genau hier blieb der fehlende Webview-Berechtigung unbemerkt.
+        overlay.once('tauri://error', (event) => {
+          void invoke('log_frontend', {
+            level: 'overlay-window',
+            message: String(event.payload)
+          });
         });
 
         invoke('open_poe_window');
@@ -88,14 +92,17 @@ const appStates: IState[] = [
             );
           });
 
-          layoutmapWindow.once('tauri://error', function (e) {
-            console.log('error creating layoutmap window', e);
+          layoutmapWindow.once('tauri://error', (event) => {
+            void invoke('log_frontend', {
+              level: 'layoutmap-window',
+              message: String(event.payload)
+            });
           });
         }
       },
       leave: async () => {
-        close(OVERLAY_LABEL);
-        close(LAYOUTMAP_LABEL);
+        await close(OVERLAY_LABEL);
+        await close(LAYOUTMAP_LABEL);
       }
     }
   }

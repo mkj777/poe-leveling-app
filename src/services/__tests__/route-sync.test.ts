@@ -95,6 +95,21 @@ describe('syncRoute', () => {
     expect(result.route).toBeNull();
   });
 
+  it('nennt auch einen Fehlschlag, der kein Error-Objekt ist', async () => {
+    // parseCached ruft fremden Code auf. Wirft der einen String, darf daraus
+    // nicht "undefined" in der Meldung werden.
+    const result = await syncRoute({
+      checkUpstream: async () => ({ changed: false, sha: 'b7b2dd0' }),
+      fetchUpstream: async () => undefined,
+      readCached: async () => {
+        throw 'kaputt ohne Error';
+      }
+    });
+
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('kaputt ohne Error');
+  });
+
   it('meldet Fehler, wenn der Cache beschaedigt ist', async () => {
     const broken = cached();
     broken.json['areas'] = '{ das ist kein json';
