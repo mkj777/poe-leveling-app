@@ -2,10 +2,10 @@
 
 # POE Leveling App
 
-Overlay-App, die beim Leveln in Path of Exile hilft: Builds von
-**[Exile Leveling](https://heartofphos.github.io/exile-leveling/)** importieren,
-Schritte im Spiel einblenden, Fortschritt automatisch anhand der Zonenwechsel
-in `Client.txt` weiterschalten.
+Overlay-App, die beim Leveln in Path of Exile hilft: Der Walkthrough von
+**[Exile Leveling](https://heartofphos.github.io/exile-leveling/)** liegt im
+Spielfenster, der Fortschritt schaltet anhand der Zonenwechsel in `Client.txt`
+selbst weiter.
 
 Tauri (Rust) + React + TypeScript + Vite + Tailwind/shadcn.
 
@@ -25,18 +25,31 @@ Dank an Kazte und alle
 
 Die ursprüngliche README liegt unverändert als [README.upstream.md](README.upstream.md).
 
-## Installation (Nutzung)
+## Installation und erster Start
 
 1. `PoELevelingGuide-win-Setup.exe` aus den [Releases](https://github.com/mkj777/poe-leveling-app/releases)
    herunterladen und starten. Installiert pro Benutzer nach `%LocalAppData%`, ohne
-   Rechteabfrage. Neue Versionen holt sich die App danach selbst, siehe
-   [ADR-0008](docs/adr/0008-autoupdate-ueber-velopack.md).
-2. `Client.txt` auswählen, Standardpfad:
+   Rechteabfrage.
+2. Path of Exile starten, danach die App. Sie liest den Pfad zu `Client.txt` aus
+   dem laufenden Spiel. Läuft das Spiel nicht, bleibt "Client.txt not found"
+   stehen und die Datei lässt sich selbst auswählen, üblicherweise unter
    `C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt`.
-3. Position des InGame-Steps-Fensters festlegen.
-4. Build auf [Exile Leveling](https://heartofphos.github.io/exile-leveling/) erstellen und kopieren.
-5. Menü, dann _Load from Clipboard_.
-6. Start klicken.
+3. Warten, bis der Walkthrough geladen ist. Er kommt aus dem
+   Exile-Leveling-Projekt, dafür braucht die App beim ersten Start Internet.
+   Danach liegt er lokal und hält sich selbst aktuell. Ein Build muss nicht
+   importiert werden.
+4. **Start** klicken. Das Overlay legt sich ins Spielfenster und folgt ihm.
+
+Position, Größe und Deckkraft des Overlays stehen in den Einstellungen. Neue
+Versionen meldet die App beim Start selbst, ein Klick auf _Install_ zieht sie
+und startet die App neu, siehe [ADR-0008](docs/adr/0008-autoupdate-ueber-velopack.md).
+
+## Tastenkürzel
+
+- `Ctrl + Shift + Alt + F12` - Overlay schließen, zurück ins Hauptfenster
+- `Ctrl + Shift + Alt + →` - nächster Schritt
+- `Ctrl + Shift + Alt + ←` - vorheriger Schritt
+- `Ctrl + Shift + Alt + O` - Overlay verschieben, an/aus
 
 ## Entwicklung
 
@@ -61,12 +74,6 @@ yarn release:publish         # zusaetzlich zu GitHub, braucht GITHUB_TOKEN
 
 Im Normalfall macht das `.github/workflows/main.yml` beim Push eines Tags `vX.Y.Z`. Der
 Tag muss zur `version` in `src-tauri/tauri.conf.json` passen, sonst bricht der Lauf ab.
-
-## Tastenkürzel
-
-- `Ctrl + Shift + Alt + F12` - Overlay an/aus
-- `Ctrl + Shift + Alt + →` - nächster Schritt
-- `Ctrl + Shift + Alt + ←` - vorheriger Schritt
 
 ## Screenshots
 
