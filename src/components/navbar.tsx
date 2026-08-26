@@ -14,11 +14,10 @@ import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { cn } from '@/lib/utils';
-import { currentVersion, installPendingUpdate } from '@/services/updater';
+import { currentVersion } from '@/services/updater';
 import logo from '@/assets/icon.ico';
 import { useNavigate } from 'react-router-dom';
 import { useRouteStore } from '@/store/route.store';
-import { useToast } from './ui/use-toast';
 const appWindow = getCurrentWebviewWindow()
 
 export default function Navbar() {
@@ -30,16 +29,6 @@ export default function Navbar() {
 
   const [openResetDialog, setOpenResetDialog] = useState(false);
   const [appVersion, setAppVersion] = useState<string | null>();
-
-  const { toast } = useToast();
-
-  const startInstall = () => {
-    toast({
-      title: 'Installing update',
-      description: 'The app restarts on its own once the update is in.'
-    });
-    void installPendingUpdate();
-  };
 
   // Velopack kennt die tatsaechlich installierte Paketversion, und genau die
   // vergleicht es spaeter gegen das Release-Feed. Ohne Installation faellt der
@@ -86,15 +75,15 @@ export default function Navbar() {
           <span className='text-muted-foreground text-xs' data-tauri-drag-region>
             {appVersion}
           </span>
+          {/* Kein Knopf: es gibt nichts anzustossen. Das Update ist geladen
+              und wird beim naechsten Start eingespielt. */}
           {newUpdateAvailable && (
-            <Button
-              variant='ghost'
-              size='sm'
-              className='h-6 text-xs text-emerald-400 hover:text-emerald-300'
-              onClick={startInstall}
+            <span
+              className='text-xs text-emerald-400'
+              data-tauri-drag-region
             >
-              Update available
-            </Button>
+              update on next start
+            </span>
           )}
         </div>
 

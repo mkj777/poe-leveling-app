@@ -9,7 +9,7 @@ import {
   advanceEdge,
   flattenSteps,
   reanchorEdge,
-  selectSegment
+  selectPending
 } from '@/utilities/route-progress';
 import { bench, report } from './bench';
 import { buildDefaultRoute } from '@/lib/exile-leveling/build-route';
@@ -88,9 +88,9 @@ describe('Anzeige eines Schritts', () => {
     expect(result.median).toBeLessThan(1);
   });
 
-  it('findet das Segment einer Kante schnell genug', () => {
-    const result = bench(() => selectSegment(steps, 120));
-    report('selectSegment, mittlere Kante', result, 0.5);
+  it('findet die offenen Schritte einer Kante schnell genug', () => {
+    const result = bench(() => selectPending(steps, 120));
+    report('selectPending, mittlere Kante', result, 0.5);
 
     expect(result.median).toBeLessThan(0.5);
   });
@@ -103,7 +103,7 @@ describe('Anzeige eines Schritts', () => {
   });
 
   it('rendert ein ganzes Segment schnell genug', () => {
-    const segment = selectSegment(steps, 120);
+    const segment = selectPending(steps, 120);
 
     const result = bench(() => {
       for (const step of segment) renderStepText(step);
@@ -129,12 +129,12 @@ describe('ganze Route auf einmal', () => {
   });
 
   it('laeuft die Route Kante fuer Kante durch, ohne quadratisch zu werden', () => {
-    // Der wichtigste Schutz hier: selectSegment und actProgress suchen linear.
+    // Der wichtigste Schutz hier: selectPending und actProgress suchen linear.
     // Wer sie versehentlich verschachtelt, faellt sofort auf.
     const result = bench(
       () => {
         for (let edge = 0; edge < route.edges.length; edge++) {
-          selectSegment(steps, edge);
+          selectPending(steps, edge);
           actProgress(route.sections, edge);
         }
       },

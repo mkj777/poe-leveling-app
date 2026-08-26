@@ -1,84 +1,116 @@
-//! Autoupdate ueber Velopack.
+//! Autoupdate ueber Velopack, ohne Zutun des Nutzers.
+//!
+//! Der Ablauf ist bewusst auf zwei Zeitpunkte verteilt:
+//!
+//! * Beim Start wird im Hintergrund geprueft und gegebenenfalls das Paket
+//!   heruntergeladen. Angewendet wird es dabei nicht, sonst muesste die App
+//!   mitten im Betrieb neu starten.
+//! * Beim Beenden wird ein bereitliegendes Paket uebernommen. Der Velopack-
+//!   Updater wartet dafuer auf das Ende dieses Prozesses, und zwar hoechstens
+//!   60 Sekunden. Deshalb gehoert der Aufruf ans Ende und nicht an den Anfang:
+//!   beim Start aufgerufen gaebe der Updater laengst auf, bevor jemand die App
+//!   wieder schliesst.
+//!
+//! Beim naechsten Start laeuft damit die neue Version, ohne Dialog, ohne Klick
+//! und ohne dass zwischendurch ein Fenster verschwindet.
 //!
 //! Velopack liefert eine synchrone API. Jeder Aufruf landet deshalb in
 //! `spawn_blocking`, sonst blockiert die Pruefung den Tokio-Worker und damit
 //! die Oberflaeche.
 //!
 //! `UpdateManager::new` verlangt eine installierte Anwendung. Im Entwicklungs-
-//! lauf und im portablen Betrieb gibt es kein Velopack-Manifest, dort meldet
-//! die Pruefung schlicht "kein Update" statt einen Fehler nach oben zu geben.
+//! lauf und im portablen Betrieb gibt es kein Velopack-Manifest, dort passiert
+//! schlicht nichts.
 
-use std::sync::Mutex;
-
+use tauri::Emitter;
 use velopack::sources::GithubSource;
-use velopack::{Error, UpdateCheck, UpdateInfo, UpdateManager};
+use velopack::{Error, UpdateCheck, UpdateManager};
 
 /// Von hier zieht die App ihre Releases. Muss zum `--repoUrl` in
 /// `scripts/release-velopack.mjs` passen.
 pub const REPO_URL: &str = "https://github.com/mkj777/poe-leveling-app";
 
-/// Zwischen Pruefung und Installation muss der gefundene Stand gehalten
-/// werden, sonst laedt die Installation ein zweites Mal aus dem Netz.
-#[derive(Default)]
-pub struct PendingUpdate(Mutex<Option<UpdateInfo>>);
+/// Wird gemeldet, sobald ein Update geladen ist und beim naechsten Start
+/// greift. Nutzlast ist die Versionsnummer.
+pub const UPDATE_READY_EVENT: &str = "update-ready";
 
 fn manager() -> Result<UpdateManager, Error> {
     UpdateManager::new(GithubSource::new(REPO_URL, None, false), None, None)
 }
 
-fn to_message(error: Error) -> String {
-    error.to_string()
+/// Liefert den Manager, oder nichts, wenn die App nicht installiert ist.
+/// Entwicklungslauf und portabler Betrieb sind kein Fehlerfall.
+fn manager_if_installed() -> Option<UpdateManager> {
+    match manager() {
+        Ok(manager) => Some(manager),
+        Err(Error::NotInstalled(reason)) => {
+            println!("[updater] keine Velopack-Installation: {}", reason);
+            None
+        }
+        Err(error) => {
+            eprintln!("[updater] Manager nicht verfuegbar: {}", error);
+            None
+        }
+    }
 }
 
-/// Liefert die Version eines verfuegbaren Updates, sonst `None`.
-#[tauri::command]
-pub async fn update_check(state: tauri::State<'_, PendingUpdate>) -> Result<Option<String>, String> {
-    let found = tauri::async_runtime::spawn_blocking(|| {
-        let manager = match manager() {
-            Ok(manager) => manager,
-            // Nicht installiert heisst: Entwicklungslauf oder portabel. Kein
-            // Grund, dem Nutzer einen Fehler zu zeigen.
-            Err(Error::NotInstalled(reason)) => {
-                println!("[updater] keine Velopack-Installation: {}", reason);
-                return Ok(None);
-            }
-            Err(error) => return Err(to_message(error)),
+/// Prueft im Hintergrund und laedt ein gefundenes Update herunter. Laeuft ins
+/// Leere, wenn kein Netz da ist oder GitHub bremst: ein Update ist nichts,
+/// wofuer der Start stolpern darf.
+pub fn check_and_download(app: tauri::AppHandle) {
+    tauri::async_runtime::spawn_blocking(move || {
+        let Some(manager) = manager_if_installed() else {
+            return;
         };
 
-        match manager.check_for_updates().map_err(to_message)? {
-            UpdateCheck::UpdateAvailable(info) => Ok(Some(*info)),
-            UpdateCheck::NoUpdateAvailable | UpdateCheck::RemoteIsEmpty => Ok(None),
+        let info = match manager.check_for_updates() {
+            Ok(UpdateCheck::UpdateAvailable(info)) => *info,
+            Ok(UpdateCheck::NoUpdateAvailable) | Ok(UpdateCheck::RemoteIsEmpty) => return,
+            Err(error) => {
+                eprintln!("[updater] Pruefung fehlgeschlagen: {}", error);
+                return;
+            }
+        };
+
+        let version = info.TargetFullRelease.Version.clone();
+
+        // Laedt das Delta, wenn eines passt, sonst das volle Paket. Velopack
+        // entscheidet das selbst anhand der Liste in `info`.
+        if let Err(error) = manager.download_updates(&info, None) {
+            eprintln!("[updater] Download fehlgeschlagen: {}", error);
+            return;
         }
-    })
-    .await
-    .map_err(|error| error.to_string())??;
 
-    let version = found
-        .as_ref()
-        .map(|info| info.TargetFullRelease.Version.clone());
+        println!(
+            "[updater] {} liegt bereit und wird beim naechsten Start aktiv",
+            version
+        );
 
-    *state.0.lock().unwrap() = found;
-
-    Ok(version)
+        let _ = app.emit(UPDATE_READY_EVENT, version);
+    });
 }
 
-/// Laedt das vorgemerkte Update und startet die App darauf neu. Kehrt im
-/// Erfolgsfall nicht zurueck, weil Velopack den Prozess ersetzt.
-#[tauri::command]
-pub async fn update_install(state: tauri::State<'_, PendingUpdate>) -> Result<(), String> {
-    let pending = state.0.lock().unwrap().clone();
-
-    let Some(info) = pending else {
-        return Err("Kein Update vorgemerkt, erst pruefen".to_string());
+/// Uebergibt ein bereitliegendes Paket an den Velopack-Updater, der es
+/// einspielt, sobald dieser Prozess beendet ist.
+///
+/// Gefragt wird der Ordner, nicht der Speicher: so wird auch ein Paket
+/// eingespielt, das eine fruehere Sitzung geladen hat und das damals liegen
+/// blieb, etwa weil die App abgestuerzt ist.
+pub fn apply_on_exit() {
+    let Some(manager) = manager_if_installed() else {
+        return;
     };
 
-    tauri::async_runtime::spawn_blocking(move || {
-        let manager = manager().map_err(to_message)?;
-        manager.download_updates(&info, None).map_err(to_message)?;
-        manager.apply_updates_and_restart(&info).map_err(to_message)
-    })
-    .await
-    .map_err(|error| error.to_string())?
+    let Some(asset) = manager.get_update_pending_restart() else {
+        return;
+    };
+
+    // silent: es soll kein Fortschrittsfenster aufgehen. Kein Neustart: wer
+    // gerade beendet hat, will die App nicht wiedersehen.
+    match manager.wait_exit_then_apply_updates(&asset, true, false, Vec::<String>::new()) {
+        Ok(()) => println!("[updater] {} wird nach dem Beenden eingespielt", asset.Version),
+        Err(error) => eprintln!("[updater] Uebernahme fehlgeschlagen: {}", error),
+    }
 }
 
 /// Die laufende Version, wie Velopack sie sieht. Ohne Installation faellt sie

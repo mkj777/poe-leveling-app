@@ -3,11 +3,8 @@
  * Baut die Anwendung und schnuert daraus ein Velopack-Release.
  *
  * Tauri bundelt nicht mehr selbst (`bundle.active: false`), liefert also nur
- * das nackte Programm unter `target/release`. Die Ressourcen, die frueher der
- * MSI-Bundler eingepackt hat, muessen deshalb hier von Hand neben die
- * ausfuehrbare Datei gelegt werden: zur Laufzeit sucht
- * `src/utilities/tauri.utilities.ts` sie unter `<resourceDir>/resources/zones`,
- * und `resourceDir` ist auf Windows das Verzeichnis der ausfuehrbaren Datei.
+ * das nackte Programm unter `target/release`. Das Frontend steckt im Kompilat,
+ * eigene Ressourcen daneben gibt es seit ADR-0009 keine mehr.
  *
  * Aufruf:
  *   node scripts/release-velopack.mjs              nur bauen und packen
@@ -85,14 +82,6 @@ function stage(exeName) {
     throw new Error(`Kompilat fehlt: ${exe}`);
   }
   fs.copyFileSync(exe, path.join(STAGE_DIR, exeName));
-
-  // Alles, was Tauri unter `bundle.resources` gefuehrt hat, wandert
-  // strukturgleich mit.
-  fs.cpSync(
-    path.join(TAURI_DIR, 'resources'),
-    path.join(STAGE_DIR, 'resources'),
-    { recursive: true }
-  );
 
   // Tauri linkt den WebView2-Loader statisch, andere Laufzeit-DLLs koennen
   // aber je nach Toolchain danebenliegen. Was da ist, kommt mit.

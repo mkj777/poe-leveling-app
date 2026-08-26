@@ -1,20 +1,21 @@
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 
 /**
- * Autoupdate laeuft ueber Velopack im Rust-Backend. Die Pruefung merkt den
- * gefundenen Stand dort vor, damit die Installation ihn nicht ein zweites Mal
- * aus dem Netz holt.
+ * Autoupdate laeuft vollstaendig im Rust-Backend, siehe `src-tauri/src/updater.rs`.
+ * Geprueft und geladen wird beim Start, eingespielt beim Beenden. Das Frontend
+ * hat daran keinen Anteil, es erfaehrt nur, dass es passiert ist.
  */
-export async function checkForUpdate(): Promise<string | null> {
-  return invoke<string | null>('update_check');
-}
+export const UPDATE_READY_EVENT = 'update-ready';
 
 /**
- * Kehrt im Erfolgsfall nicht zurueck: Velopack ersetzt den laufenden Prozess
- * durch die neue Version.
+ * Meldet die Version, die beim naechsten Start aktiv wird. Kommt genau einmal
+ * je Sitzung und nur, wenn wirklich etwas geladen wurde.
  */
-export async function installPendingUpdate(): Promise<void> {
-  await invoke('update_install');
+export function onUpdateReady(
+  handler: (version: string) => void
+): Promise<() => void> {
+  return listen<string>(UPDATE_READY_EVENT, (event) => handler(event.payload));
 }
 
 export async function currentVersion(): Promise<string> {

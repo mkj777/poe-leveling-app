@@ -7,8 +7,9 @@ import {
   actProgress,
   advanceEdge,
   flattenSteps,
+  groupSteps,
   reanchorEdge,
-  selectSegment
+  selectPending
 } from '../route-progress';
 
 const EDGES = ['1_1_1', '1_1_town', '1_1_2', '1_1_town', '1_1_3'];
@@ -64,53 +65,6 @@ describe('flattenSteps', () => {
   });
 });
 
-describe('selectSegment', () => {
-  const steps = [
-    step(0, 'betrete A'),
-    step(null, 'toete X'),
-    step(null, 'gib Quest ab'),
-    step(1, 'betrete B'),
-    step(null, 'hole Waypoint')
-  ];
-
-  it('nimmt den Kantenschritt und alles ohne eigenen Zonenwechsel', () => {
-    expect(selectSegment(steps, 0).map((s) => s.parts[0])).toEqual([
-      'betrete A',
-      'toete X',
-      'gib Quest ab'
-    ]);
-  });
-
-  it('endet am Ende der Liste', () => {
-    expect(selectSegment(steps, 1).map((s) => s.parts[0])).toEqual([
-      'betrete B',
-      'hole Waypoint'
-    ]);
-  });
-
-  it('gibt nichts zurueck, wenn die Kante nicht vorkommt', () => {
-    expect(selectSegment(steps, 99)).toEqual([]);
-  });
-
-  it('deckt jede Kante der echten Route ab', () => {
-    const route = JSON.parse(
-      fs.readFileSync(
-        path.resolve(
-          __dirname,
-          '../../lib/exile-leveling/__fixtures__/route-b7b2dd0.json'
-        ),
-        'utf8'
-      )
-    ) as RouteData.Route;
-
-    const all = flattenSteps(route.sections);
-
-    for (let edge = 0; edge < route.edges.length; edge++) {
-      expect(selectSegment(all, edge).length).toBeGreaterThan(0);
-    }
-  });
-});
-
 describe('actProgress', () => {
   const sections: RouteData.Section[] = [
     {
@@ -162,5 +116,114 @@ describe('actProgress', () => {
       expect(progress!.act).toMatch(/^Act \d+$/);
       expect(progress!.stepsLeft).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+describe('selectPending', () => {
+  const steps = [
+    step(0, 'betrete A'),
+    step(null, 'toete X'),
+    step(null, 'gib Quest ab'),
+    step(1, 'betrete B'),
+    step(null, 'hole Waypoint')
+  ];
+
+  it('laesst den erledigten Uebergang weg und endet am naechsten', () => {
+    expect(selectPending(steps, 0).map((s) => s.parts[0])).toEqual([
+      'toete X',
+      'gib Quest ab',
+      'betrete B'
+    ]);
+  });
+
+  it('zeigt nur noch den Rest der Zone, wenn kein Uebergang mehr folgt', () => {
+    expect(selectPending(steps, 1).map((s) => s.parts[0])).toEqual([
+      'hole Waypoint'
+    ]);
+  });
+
+  it('haelt den letzten Schritt der Route fest, statt leer zu werden', () => {
+    expect(selectPending([step(0, 'betrete A')], 0).map((s) => s.parts[0])).toEqual([
+      'betrete A'
+    ]);
+  });
+
+  it('gibt nichts zurueck, wenn die Kante nicht vorkommt', () => {
+    expect(selectPending(steps, 99)).toEqual([]);
+  });
+
+  it('zeigt auf der echten Route nie den gerade erledigten Uebergang zuerst', () => {
+    const route = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          __dirname,
+          '../../lib/exile-leveling/__fixtures__/route-b7b2dd0.json'
+        ),
+        'utf8'
+      )
+    ) as RouteData.Route;
+
+    const all = flattenSteps(route.sections);
+
+    for (let edge = 0; edge < route.edges.length - 1; edge++) {
+      const pending = selectPending(all, edge);
+      expect(pending.length).toBeGreaterThan(0);
+      expect(pending[0]).not.toBe(all[all.findIndex((s) => s.edgeIndex === edge)]);
+    }
+  });
+});
+
+describe('groupSteps', () => {
+  it('beginnt einen Block bei jedem Schritt mit eigener Kante', () => {
+    const steps = [
+      step(0, 'betrete A'),
+      step(null, 'toete X'),
+      step(1, 'betrete B'),
+      step(null, 'hole Waypoint')
+    ];
+
+    expect(groupSteps(steps).map((group) => group.map((s) => s.parts[0]))).toEqual([
+      ['betrete A', 'toete X'],
+      ['betrete B', 'hole Waypoint']
+    ]);
+  });
+
+  it('gibt einen Block je Kante, wenn keine Kante Zwischenschritte hat', () => {
+    expect(groupSteps([step(0, 'a'), step(1, 'b')])).toHaveLength(2);
+  });
+
+  it('sammelt fuehrende Schritte ohne Kante in einem eigenen Block', () => {
+    const groups = groupSteps([step(null, 'a'), step(null, 'b'), step(0, 'c')]);
+
+    expect(groups.map((group) => group.map((s) => s.parts[0]))).toEqual([
+      ['a', 'b'],
+      ['c']
+    ]);
+  });
+
+  it('kommt mit einer leeren Liste zurecht', () => {
+    expect(groupSteps([])).toEqual([]);
+  });
+
+  it('teilt die echte Route lueckenlos in Bloecke', () => {
+    const route = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          __dirname,
+          '../../lib/exile-leveling/__fixtures__/route-b7b2dd0.json'
+        ),
+        'utf8'
+      )
+    ) as RouteData.Route;
+
+    const all = flattenSteps(route.sections);
+    const groups = groupSteps(all);
+
+    // Kein Schritt geht verloren, keiner taucht doppelt auf.
+    expect(groups.flat()).toEqual(all);
+    // Genau ein Block je Kante, also genau ein Sprungziel je Block.
+    expect(groups.filter((group) => group[0].edgeIndex !== null)).toHaveLength(
+      route.edges.length
+    );
   });
 });

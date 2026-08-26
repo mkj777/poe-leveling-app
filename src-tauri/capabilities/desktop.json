@@ -7,8 +7,7 @@
   ],
   "windows": [
     "main",
-    "overlay",
-    "layoutmap"
+    "overlay"
   ],
   "permissions": [
     "global-shortcut:default"

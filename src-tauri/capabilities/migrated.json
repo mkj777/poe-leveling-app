@@ -4,23 +4,10 @@
   "local": true,
   "windows": [
     "main",
-    "overlay",
-    "layoutmap"
+    "overlay"
   ],
   "permissions": [
     "core:default",
-    "fs:allow-read-file",
-    "fs:allow-read-dir",
-    "fs:allow-exists",
-    {
-      "identifier": "fs:scope",
-      "allow": [
-        "**/*",
-        "$RESOURCE/**",
-        "$RESOURCE/*",
-        "**"
-      ]
-    },
     "core:window:allow-create",
     "core:window:allow-set-resizable",
     "core:window:allow-maximize",
