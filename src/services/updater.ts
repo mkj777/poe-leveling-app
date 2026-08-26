@@ -1,23 +1,22 @@
-import { type Update, check } from '@tauri-apps/plugin-updater';
-
-import { relaunch } from '@tauri-apps/plugin-process';
+import { invoke } from '@tauri-apps/api/core';
 
 /**
- * In Tauri 2 liefert check() das Update-Objekt selbst, und installiert wird
- * darauf. Das v1-Paar aus checkUpdate und installUpdate gibt es nicht mehr,
- * also muss der gefundene Stand zwischen Pruefung und Installation gehalten
- * werden.
+ * Autoupdate laeuft ueber Velopack im Rust-Backend. Die Pruefung merkt den
+ * gefundenen Stand dort vor, damit die Installation ihn nicht ein zweites Mal
+ * aus dem Netz holt.
  */
-let pending: Update | null = null;
-
 export async function checkForUpdate(): Promise<string | null> {
-  pending = await check();
-  return pending?.version ?? null;
+  return invoke<string | null>('update_check');
 }
 
+/**
+ * Kehrt im Erfolgsfall nicht zurueck: Velopack ersetzt den laufenden Prozess
+ * durch die neue Version.
+ */
 export async function installPendingUpdate(): Promise<void> {
-  if (pending === null) return;
+  await invoke('update_install');
+}
 
-  await pending.downloadAndInstall();
-  await relaunch();
+export async function currentVersion(): Promise<string> {
+  return invoke<string>('update_current_version');
 }

@@ -5,6 +5,7 @@ mod data_sync;
 mod dev_control;
 mod game_paths;
 mod overlay;
+mod updater;
 
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
@@ -12,13 +13,18 @@ use tauri::{Emitter, Manager};
 
 #[tokio::main]
 async fn main() {
+    // Muss vor allem anderen laufen. Velopack ruft die eigene Anwendung
+    // waehrend Installation, Update und Deinstallation mit Sonderargumenten
+    // auf und beendet den Prozess in diesen Faellen selbst. Kaeme davor ein
+    // Fenster hoch, blitzte es bei jeder Installation kurz auf.
+    velopack::VelopackApp::build().run();
+
     tauri::Builder::default()
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_process::init())
+        .manage(updater::PendingUpdate::default())
         .setup(|app| {
             // Tray-Aufbau in Tauri 2: Menue und Icon werden gebaut und der
             // Klick-Handler haengt am Icon, nicht mehr am Builder.
@@ -59,7 +65,10 @@ async fn main() {
             data_sync::read_cached,
             overlay::start_poe_tracking,
             overlay::poe_bounds,
-            game_paths::detect_client_txt
+            game_paths::detect_client_txt,
+            updater::update_check,
+            updater::update_install,
+            updater::update_current_version
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

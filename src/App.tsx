@@ -39,8 +39,8 @@ function App() {
           )
         });
       })
-      // Die Endpunkte zeigen noch auf das Upstream-Projekt, ein Fehlschlag
-      // darf die App nicht stoeren.
+      // Kein Netz, GitHub-Rate-Limit oder ein portabler Lauf ohne
+      // Velopack-Installation: nichts davon darf den Start stoeren.
       .catch(() => setNewUpdateAvailable(false));
   }, []);
 

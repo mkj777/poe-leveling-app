@@ -6,10 +6,8 @@
     "devUrl": "http://localhost:1420"
   },
   "bundle": {
-    "active": true,
-    "targets": [
-      "msi"
-    ],
+    "active": false,
+    "targets": [],
     "resources": [
       "resources/zones/*"
     ],
@@ -17,26 +15,13 @@
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/icon.ico"
-    ],
-    "createUpdaterArtifacts": "v1Compatible"
+    ]
   },
   "productName": "PoE Leveling Guide",
   "mainBinaryName": "PoE Leveling Guide",
   "version": "0.2.0",
   "identifier": "com.poe-leveling-guide.dev",
-  "plugins": {
-    "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYwMUQ0MTU2MDgxNzk4RUUKUldUdW1CY0lWa0VkOExtVVFHSXJhdjJaT3pPNERVUUx2UXdaUitsZFRPRllwem9QMWY2d0tjM3YK",
-      "endpoints": [
-        "https://github.com/kazte/path-of-levelling/releases/latest/download/latest.json",
-        "https://path-of-levelling.vercel.app/api/version?version={{current_version}}&arch={{arch}}&target={{target}}",
-        "https://gist.githubusercontent.com/Kazte/d906faf13f5528e054888a5dac8ae399/raw"
-      ],
-      "windows": {
-        "installMode": "passive"
-      }
-    }
-  },
+  "plugins": {},
   "app": {
     "withGlobalTauri": true,
     "windows": [

@@ -14,8 +14,7 @@ import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { cn } from '@/lib/utils';
-import { getVersion } from '@tauri-apps/api/app';
-import { installPendingUpdate } from '@/services/updater';
+import { currentVersion, installPendingUpdate } from '@/services/updater';
 import logo from '@/assets/icon.ico';
 import { useNavigate } from 'react-router-dom';
 import { useRouteStore } from '@/store/route.store';
@@ -42,12 +41,13 @@ export default function Navbar() {
     void installPendingUpdate();
   };
 
+  // Velopack kennt die tatsaechlich installierte Paketversion, und genau die
+  // vergleicht es spaeter gegen das Release-Feed. Ohne Installation faellt der
+  // Befehl auf die Version aus tauri.conf.json zurueck.
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      setAppVersion('dev');
-      return;
-    }
-    getVersion().then(setAppVersion);
+    void currentVersion()
+      .then(setAppVersion)
+      .catch(() => setAppVersion(null));
   }, []);
 
   // Start und Stop steuern das Overlay-Fenster. Das Hauptfenster bleibt in
