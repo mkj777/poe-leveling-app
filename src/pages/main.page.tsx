@@ -1,25 +1,17 @@
 import { AppScanningState, AppState, useAppStore } from '@/store/app.store';
-import {
-  OVERLAY_ANCHOR,
-  OVERLAY_BOTTOM_MARGIN,
-  OVERLAY_MIN_HEIGHT
-} from '@/utilities/constants';
 import { register, unregisterAll } from '@tauri-apps/api/globalShortcut';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import InGameScreen from '@/components/in-game-screen';
 import LevellingGuideMain from '@/components/levelling-guide-main';
 import MainScreen from '@/components/main-screen';
 import Navbar from '@/components/navbar';
 import { Switch } from 'ktools-r';
 import { advanceEdge } from '@/utilities/route-progress';
-import { appWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/tauri';
-import { listen } from '@tauri-apps/api/event';
+import { emit, listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/api/dialog';
 import { useInterval } from '@/hooks/useInterval';
-import { usePoeWindow } from '@/hooks/usePoeWindow';
 import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';
 
@@ -31,20 +23,14 @@ let shortcutsBound = false;
 
 export default function MainPage() {
   const [areaName, setAreaName] = useState<string>();
-  const [contentHeight, setContentHeight] = useState(OVERLAY_MIN_HEIGHT);
-  const [editMode, setEditMode] = useState(false);
 
   const route = useRouteStore((state) => state.route);
   const currentEdge = useRouteStore((state) => state.currentEdge);
 
   const { setAppState, appScanningState } = useAppStore((state) => state);
-  const appState = useAppStore((state) => state.appState);
 
   const clientTxtPath = useSettingsStore((state) => state.clientTxtPath);
   const setClientTxtPath = useSettingsStore((state) => state.setClientTxtPath);
-  const setOverlayOffset = useSettingsStore((state) => state.setOverlayOffset);
-
-  const { bounds } = usePoeWindow(appState === AppState.IN_GAME, contentHeight);
 
   //#region Client.txt
   useEffect(() => {
@@ -111,7 +97,7 @@ export default function MainPage() {
       });
 
       await register('CmdOrCtrl+Shift+Alt+O', () => {
-        setEditMode((value) => !value);
+        void emit('overlay-edit-toggle');
       });
     })();
   }, []);
@@ -123,49 +109,11 @@ export default function MainPage() {
     });
   }, []);
 
-  //#region Overlay-Geometrie
+  // Das Overlay ist ein eigenes Fenster und haelt seinen eigenen Zustand.
+  // Der Fortschritt kommt von hier, weil hier Client.txt gelesen wird.
   useEffect(() => {
-    const element = document.getElementById(`edge-${currentEdge}`);
-    if (element === null) return;
-
-    if (appState === AppState.IN_GAME) {
-      setContentHeight(Math.ceil(element.getBoundingClientRect().height) + 24);
-    } else {
-      element.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
-  }, [appState, currentEdge, route]);
-
-  useEffect(() => {
-    void appWindow.setIgnoreCursorEvents(
-      appState === AppState.IN_GAME && !editMode
-    );
-  }, [appState, editMode]);
-
-  useEffect(() => {
-    if (!editMode) return;
-
-    // Beim Ziehen die neue Lage als Bruchteil des Spiel-Rects zuruecklegen,
-    // nicht als Pixel. Sonst stimmt sie nach Aufloesungswechsel nicht mehr.
-    const unlisten = appWindow.onMoved(async ({ payload }) => {
-      if (bounds === null || !bounds.found) return;
-
-      const size = await appWindow.innerSize();
-      const centerX = payload.x + size.width / 2;
-      const bottomY = payload.y + size.height;
-
-      setOverlayOffset({
-        dx: (centerX - bounds.x) / bounds.w - OVERLAY_ANCHOR.x,
-        dy:
-          (bottomY - bounds.y) / bounds.h -
-          (OVERLAY_ANCHOR.y - OVERLAY_BOTTOM_MARGIN)
-      });
-    });
-
-    return () => {
-      void unlisten.then((off) => off());
-    };
-  }, [editMode, bounds, setOverlayOffset]);
-  //#endregion
+    void emit('edge-changed', currentEdge);
+  }, [currentEdge]);
 
   const handleSetClientTxt = async () => {
     const selection = await open({
@@ -197,13 +145,6 @@ export default function MainPage() {
           </div>
           <Button onClick={handleSetClientTxt}>Choose it yourself</Button>
         </div>
-      </Switch.Case>
-
-      <Switch.Case condition={appState === AppState.IN_GAME}>
-        <InGameScreen
-          editMode={editMode}
-          onCloseEdit={() => setEditMode(false)}
-        />
       </Switch.Case>
 
       <Switch.Default>

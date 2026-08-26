@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import type { RouteData } from '@/lib/exile-leveling';
 import {
+  actProgress,
   advanceEdge,
   flattenSteps,
   reanchorEdge,
@@ -106,6 +107,60 @@ describe('selectSegment', () => {
 
     for (let edge = 0; edge < route.edges.length; edge++) {
       expect(selectSegment(all, edge).length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('actProgress', () => {
+  const sections: RouteData.Section[] = [
+    {
+      name: 'Act 1',
+      steps: [step(0, 'a'), step(null, 'hinweis'), step(1, 'b'), step(2, 'c')]
+    },
+    { name: 'Act 2', steps: [step(3, 'd'), step(4, 'e')] }
+  ];
+
+  it('nennt den Akt und was darin noch aussteht', () => {
+    expect(actProgress(sections, 0)).toEqual({
+      act: 'Act 1',
+      stepsLeft: 2,
+      stepsTotal: 3
+    });
+  });
+
+  it('zaehlt Schritte ohne Zonenwechsel nicht mit', () => {
+    expect(actProgress(sections, 2)?.stepsTotal).toBe(3);
+    expect(actProgress(sections, 2)?.stepsLeft).toBe(0);
+  });
+
+  it('wechselt mit der Kante den Akt', () => {
+    expect(actProgress(sections, 3)).toEqual({
+      act: 'Act 2',
+      stepsLeft: 1,
+      stepsTotal: 2
+    });
+  });
+
+  it('gibt null, wenn die Kante nirgends vorkommt', () => {
+    expect(actProgress(sections, 99)).toBeNull();
+  });
+
+  it('deckt jede Kante der echten Route ab', () => {
+    const route = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          __dirname,
+          '../../lib/exile-leveling/__fixtures__/route-b7b2dd0.json'
+        ),
+        'utf8'
+      )
+    ) as RouteData.Route;
+
+    for (let edge = 0; edge < route.edges.length; edge++) {
+      const progress = actProgress(route.sections, edge);
+      expect(progress).not.toBeNull();
+      expect(progress!.act).toMatch(/^Act \d+$/);
+      expect(progress!.stepsLeft).toBeGreaterThanOrEqual(0);
     }
   });
 });

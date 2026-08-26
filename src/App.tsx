@@ -3,19 +3,17 @@ import { checkUpdate, installUpdate } from '@tauri-apps/api/updater';
 
 import LayoutMapPage from './pages/layout-map.page';
 import MainRoutes from './pages/main-routes';
+import OverlayPage from './pages/overlay.page';
 import { ToastAction } from './components/ui/toast';
 import { relaunch } from '@tauri-apps/api/process';
 import { useAppStore } from './store/app.store';
 import { useEffect } from 'react';
-import { useRouteSync } from './hooks/useRouteSync';
 import { useToast } from './components/ui/use-toast';
 
 function App() {
   const { setNewUpdateAvailable } = useAppStore((state) => state);
 
   const { toast } = useToast();
-
-  useRouteSync();
 
   const startInstall = () => {
     toast({
@@ -55,6 +53,7 @@ function App() {
       <Routes>
         <Route path='/*' element={<MainRoutes />} />
 
+        <Route path='/overlay' element={<OverlayPage />} />
         <Route path='/layoutmap' element={<LayoutMapPage />} />
         <Route path='*' element={<h1>404 Not Found</h1>} />
       </Routes>

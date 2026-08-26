@@ -3,7 +3,6 @@ import {
   LogicalPosition,
   LogicalSize,
   WebviewWindow,
-  appWindow,
   availableMonitors
 } from '@tauri-apps/api/window';
 
@@ -11,16 +10,25 @@ import { IState } from '@/hooks/useMachine';
 import { invoke } from '@tauri-apps/api/tauri';
 import { useSettingsStore } from '@/store/settings.store';
 
+const OVERLAY_LABEL = 'overlay';
+const LAYOUTMAP_LABEL = 'layoutmap';
+
+function close(label: string) {
+  WebviewWindow.getByLabel(label)?.close();
+}
+
+/**
+ * Das Overlay ist ein eigenes Fenster. Das Hauptfenster bleibt dabei
+ * unangetastet, damit Guide-Liste und Einstellungen erreichbar bleiben,
+ * waehrend das Overlay laeuft.
+ */
 const appStates: IState[] = [
   {
     name: 'normal',
     on: {
       enter: async () => {
-        appWindow.setSize(new LogicalSize(800, 600));
-
-        appWindow.setAlwaysOnTop(false);
-        appWindow.setIgnoreCursorEvents(false);
-        document.documentElement.style.fontSize = '';
+        close(OVERLAY_LABEL);
+        close(LAYOUTMAP_LABEL);
 
         useAppStore.setState({
           appScanningState: AppScanningState.NOT_SCANNING
@@ -33,18 +41,27 @@ const appStates: IState[] = [
     name: 'in-game',
     on: {
       enter: async () => {
-        // Position und Groesse setzt usePoeWindow anhand des Spielfensters
-        // (ADR-0005, ADR-0006). Hier bleibt nur, was den Fenstercharakter
-        // ausmacht.
-        await appWindow.setAlwaysOnTop(true);
-        await appWindow.setIgnoreCursorEvents(true);
-        // Der Taskleisteneintrag bleibt. Ohne ihn ist das Overlay im
-        // Klickdurchlass-Zustand ueber nichts mehr erreichbar.
-        await appWindow.setSkipTaskbar(false);
-        document.body.classList.add('bg-background/70');
-
         useAppStore.setState({
           appScanningState: AppScanningState.SCANNING
+        });
+
+        // Groesse und Position setzt das Overlay selbst anhand des
+        // Spielfensters, siehe usePoeWindow und ADR-0006.
+        const overlay = new WebviewWindow(OVERLAY_LABEL, {
+          url: 'index.html/#/overlay',
+          title: 'PoE Leveling Guide Overlay',
+          alwaysOnTop: true,
+          decorations: false,
+          transparent: true,
+          resizable: false,
+          skipTaskbar: true,
+          focus: false,
+          width: 480,
+          height: 120
+        });
+
+        overlay.once('tauri://error', (e) => {
+          console.error('overlay window failed', e);
         });
 
         invoke('open_poe_window');
@@ -53,7 +70,7 @@ const appStates: IState[] = [
           const monitors = await availableMonitors();
           const monitorSize = monitors[0].size;
 
-          const layoutmapWindow = new WebviewWindow('layoutmap', {
+          const layoutmapWindow = new WebviewWindow(LAYOUTMAP_LABEL, {
             url: 'index.html/#/layoutmap',
             alwaysOnTop: true,
             resizable: false,
@@ -77,26 +94,8 @@ const appStates: IState[] = [
         }
       },
       leave: async () => {
-        document.body.classList.remove('bg-background/70');
-        await appWindow.setSkipTaskbar(false);
-
-        const layoutmapWindow = WebviewWindow.getByLabel('layoutmap');
-
-        if (layoutmapWindow) {
-          layoutmapWindow.close();
-        }
-
-        const monitors = await availableMonitors();
-        const monitorSize = monitors[0].size;
-
-        appWindow.setPosition(
-          new LogicalPosition(
-            monitorSize.width / 2 - 400,
-            monitorSize.height / 2 - 300
-          )
-        );
-
-        await appWindow.setFocus();
+        close(OVERLAY_LABEL);
+        close(LAYOUTMAP_LABEL);
       }
     }
   }

@@ -119,4 +119,40 @@
   body {
     @apply bg-background text-foreground border-[2px];
   }
+
+  /* Das Overlay-Fenster ist transparent. Hintergrund und Rahmen des Rumpfes
+     wuerden als graue Kachel ueber dem Spiel stehen. */
+  body.overlay-window {
+    @apply border-0 bg-transparent;
+  }
+
+  /* Die Standard-Scrollbar ist hell und steht quer zum Rest der Oberflaeche. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full border-[3px] border-solid border-transparent;
+    background-color: hsl(var(--border));
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground));
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
