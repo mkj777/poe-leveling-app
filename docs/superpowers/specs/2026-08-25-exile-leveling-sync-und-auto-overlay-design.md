@@ -149,7 +149,7 @@ GitHub API
 raw.githubusercontent.com/<sha>/common/data/{routes,json}
    |  Rust, reqwest
    v
-$APPDATA/com.path-of-levelling.dev/exile-leveling/<sha>/
+$APPDATA/com.poe-leveling-guide.dev/exile-leveling/<sha>/
    |
    v
 vendored parseRoute(routeFiles, { LEAGUE_START, LIBRARY, BANDIT_ALIRA })
@@ -187,7 +187,7 @@ abgebrochener Download kann den letzten guten Stand nicht beschädigen.
 Cache-Layout:
 
 ```
-$APPDATA/com.path-of-levelling.dev/exile-leveling/
+$APPDATA/com.poe-leveling-guide.dev/exile-leveling/
   manifest.json      { sha, etag, fetchedAt }
   <sha>/routes/act-1.txt ... act-10.txt
   <sha>/json/areas.json ...

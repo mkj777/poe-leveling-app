@@ -2610,7 +2610,7 @@ Import. Beim zweiten Start meldet GitHub 304 und es wird nichts geladen. Prüfba
 Cache-Verzeichnis:
 
 ```bash
-ls "$APPDATA/com.path-of-levelling.dev/exile-leveling"
+ls "$APPDATA/com.poe-leveling-guide.dev/exile-leveling"
 ```
 
 Expected: `manifest.json` und ein Verzeichnis mit dem sha-Namen.

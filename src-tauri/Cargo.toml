@@ -1,10 +1,10 @@
 [package]
-name = "poe-tauri"
+name = "poe-leveling-guide"
 version = "0.0.0"
-description = "A Tauri App"
+description = "PoE Leveling Guide"
 authors = ["you"]
 license = ""
-repository = ""
+repository = "https://github.com/mkj777/poe-leveling-app"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
