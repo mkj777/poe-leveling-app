@@ -83,8 +83,42 @@ describe('Richtungen ausserhalb der Tabelle', () => {
       renderFragment({ type: 'dir', dirIndex: i })
     );
 
-    expect(namen).toEqual(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']);
+    expect(namen).toEqual([
+      'north',
+      'northeast',
+      'east',
+      'southeast',
+      'south',
+      'southwest',
+      'west',
+      'northwest'
+    ]);
     expect(new Set(namen).size).toBe(8);
+  });
+
+  it('schreibt klein, weil die Richtung immer mitten im Satz steht', () => {
+    const namen = Array.from({ length: 8 }, (_v, i) =>
+      renderFragment({ type: 'dir', dirIndex: i })
+    );
+
+    for (const name of namen) expect(name).toBe(name.toLowerCase());
+  });
+});
+
+describe('Kuerzel nur im Richtungsfragment', () => {
+  it('laesst einzelne Buchstaben im Freitext in Ruhe', () => {
+    // In der echten Route steht genau ein solcher Fall, und dort meint das S
+    // die Form des Weges, nicht Sueden. Freitext wird darum nicht angefasst.
+    expect(renderFragment('S shape or L shape leads to exit')).toBe(
+      'S shape or L shape leads to exit'
+    );
+
+    expect(
+      renderFragment({
+        type: 'quest_text',
+        value: 'Look for the NE corner'
+      })
+    ).toBe('Look for the NE corner');
   });
 });
 

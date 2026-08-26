@@ -16,12 +16,16 @@ function Fragment({ fragment }: { fragment: Fragments.AnyFragment }) {
 
   return (
     <span className={colour}>
+      {/* Nur die Hoehe festlegen, die Breite folgt dem Bild. Die Icons sind
+          nicht quadratisch: das Quest-Ausrufezeichen misst 30x64, Trial und
+          Waypoint sind breiter als hoch. Beide Masse zu setzen zog das eine in
+          die Breite und stauchte die anderen. */}
       {icon !== null && (
         <img
           src={icon}
           alt=''
           aria-hidden
-          className='mr-0.5 inline-block h-[1em] w-[1em] align-[-0.15em]'
+          className='mr-0.5 inline-block h-[1em] w-auto align-[-0.15em]'
         />
       )}
       {text}
