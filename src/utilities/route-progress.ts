@@ -14,15 +14,41 @@ export function advanceEdge(
   return edges[next] === areaId ? next : currentEdge;
 }
 
-// Knuepft den Fortschritt nach einem Daten-Refresh wieder an, ohne auf 0
-// zurueckzufallen.
+/**
+ * Knuepft den Fortschritt nach einem Daten-Refresh wieder an, ohne auf 0
+ * zurueckzufallen.
+ *
+ * Frueher stand hier `edges.lastIndexOf(areaId)`, also das letzte Vorkommen
+ * der Zone. Das ist fast immer die falsche Kante: 46 der 149 Zonen der Route
+ * werden mehrfach betreten, The Forest Encampment etwa auf den Kanten 135,
+ * 137, 145, 150 und 156. Wer bei 135 aufhoerte, stand nach dem Neustart auf
+ * 156, also 21 Kanten weiter. Das Overlay blieb dabei richtig, weil es nicht
+ * durch useRouteSync laeuft und den gespeicherten Index behaelt.
+ *
+ * Der gespeicherte Index ist die genauere Angabe, die Zone nur der Notnagel
+ * fuer den Fall, dass sich die Route unter ihm veraendert hat.
+ */
 export function reanchorEdge(
   edges: string[],
   areaId: string,
   fallback: number
 ): number {
-  const index = edges.lastIndexOf(areaId);
-  return index === -1 ? fallback : index;
+  // Zeigt der gespeicherte Index noch auf dieselbe Zone, gibt es nichts
+  // anzuknuepfen. Das ist der Normalfall bei jedem Start.
+  if (edges[fallback] === areaId) return fallback;
+
+  // Sonst das naechstgelegene Vorkommen. Bei gleichem Abstand gewinnt das
+  // fruehere: zu weit vorne zu stehen kostet einen Blick, zu weit hinten
+  // laesst Schritte aus.
+  let best = -1;
+  for (let index = 0; index < edges.length; index++) {
+    if (edges[index] !== areaId) continue;
+    if (best === -1 || Math.abs(index - fallback) < Math.abs(best - fallback)) {
+      best = index;
+    }
+  }
+
+  return best === -1 ? fallback : best;
 }
 
 // Die Sektionen sind Akte, fuer Anzeige und Fortschritt zaehlt aber die

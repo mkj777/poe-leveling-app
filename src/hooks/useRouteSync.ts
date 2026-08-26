@@ -35,8 +35,13 @@ export function useRouteSync() {
       store.setRoute(result.route, result.sha);
 
       if (previousArea !== null) {
+        // Frisch gelesen, nicht aus dem Schnappschuss von oben: zwischen dem
+        // Start des Abgleichs und hier liegt ein Netzzugriff, in dem der
+        // Client.txt-Takt den Fortschritt weitergestellt haben kann.
+        const currentEdge = useRouteStore.getState().currentEdge;
+
         store.setCurrentEdge(
-          reanchorEdge(result.route.edges, previousArea, store.currentEdge)
+          reanchorEdge(result.route.edges, previousArea, currentEdge)
         );
       }
 

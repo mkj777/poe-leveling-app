@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import FragmentText from './fragment-text';
 import { groupSteps } from '@/utilities/route-progress';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useRouteStore } from '@/store/route.store';
 
 interface Props {
@@ -18,6 +18,8 @@ export default function LevellingGuideMain({ route }: Props) {
   // Ein Block je Kante statt einer Zeile je Schritt. Nur so faellt der Trenner
   // dorthin, wo wirklich ein Schritt endet, und "Jump here" hat ein sichtbares
   // Ziel.
+  const currentBlock = useRef<HTMLDivElement>(null);
+
   const sections = useMemo(
     () =>
       route.sections.map((section) => ({
@@ -31,6 +33,13 @@ export default function LevellingGuideMain({ route }: Props) {
       })),
     [route]
   );
+
+  // Beim Start und bei jedem Zonenwechsel zurueck zum aktuellen Block. Wer
+  // dazwischen selbst scrollt, wird nicht gestoert: das laeuft nur, wenn sich
+  // die Kante oder die Route aendert.
+  useEffect(() => {
+    currentBlock.current?.scrollIntoView({ block: 'center' });
+  }, [currentEdge, sections]);
 
   return (
     // Der Abstand sitzt hier und nicht am Scroll-Container: dessen
@@ -53,6 +62,7 @@ export default function LevellingGuideMain({ route }: Props) {
             return (
               <div
                 key={`${section.name}-${index}`}
+                ref={isCurrent ? currentBlock : undefined}
                 id={edgeIndex === null ? undefined : `edge-${edgeIndex}`}
                 className={cn(
                   'relative border-b-[1px] px-3 py-2',
