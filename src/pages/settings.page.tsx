@@ -11,7 +11,6 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
 import { AppState, useAppStore } from '@/store/app.store';
 import {
   OVERLAY_SCALE_MAX,
@@ -202,17 +201,6 @@ export default function SettingsPage() {
                 ? 'Drag it where you want it, then confirm. Same as Ctrl+Shift+Alt+O.'
                 : 'Start the overlay first to move it.'}
             </p>
-
-            <div className='mt-1 flex items-center gap-3'>
-              <Switch
-                id='show-layout'
-                defaultChecked={settingStore.showLayout}
-                onCheckedChange={settingStore.setShowLayout}
-              />
-              <Label htmlFor='show-layout' className='text-sm font-normal'>
-                Show zone layout images
-              </Label>
-            </div>
           </Section>
 
           <Section

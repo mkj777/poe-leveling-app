@@ -20,11 +20,10 @@ async function loadWith(persisted: unknown, version: number) {
 describe('Migration der Einstellungen', () => {
   beforeEach(() => localStorage.clear());
 
-  it('rettet Pfad und Layout-Schalter aus Version 1', async () => {
+  it('rettet den Pfad aus Version 1', async () => {
     const state = await loadWith(
       {
         clientTxtPath: 'C:/poe/Client.txt',
-        showLayout: false,
         displayPosition: { x: 400, y: 900 },
         growDirection: 'up'
       },
@@ -32,7 +31,6 @@ describe('Migration der Einstellungen', () => {
     );
 
     expect(state.clientTxtPath).toBe('C:/poe/Client.txt');
-    expect(state.showLayout).toBe(false);
   });
 
   it('verwirft die absolute Position aus Version 1', async () => {
@@ -70,7 +68,6 @@ describe('Migration der Einstellungen', () => {
     const state = await loadWith(undefined, 1);
 
     expect(state.clientTxtPath).toBe('');
-    expect(state.showLayout).toBe(true);
     expect(state.overlayScale).toBe(1);
     expect(state.overlayOpacity).toBe(0.35);
     expect(state.overlayAnchor).toBe('bottom');
@@ -80,7 +77,6 @@ describe('Migration der Einstellungen', () => {
     const state = await loadWith(
       {
         clientTxtPath: 'C:/poe/Client.txt',
-        showLayout: true,
         overlayScale: 1.5,
         overlayOpacity: 0.9,
         overlayOffset: { dx: 0.05, dy: 0.05 },

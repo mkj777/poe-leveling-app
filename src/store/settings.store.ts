@@ -7,7 +7,6 @@ import { persist } from 'zustand/middleware';
 
 interface States {
   clientTxtPath: string;
-  showLayout: boolean;
   overlayScale: number;
   overlayOffset: OverlayOffset;
   /** Deckkraft der Overlay-Flaeche, 0 ist voellig durchsichtig. */
@@ -17,7 +16,6 @@ interface States {
 
 interface Actions {
   setClientTxtPath: (clientTxtPath: string) => void;
-  setShowLayout: (showLayout: boolean) => void;
   setOverlayScale: (overlayScale: number) => void;
   setOverlayOffset: (overlayOffset: OverlayOffset) => void;
   setOverlayOpacity: (overlayOpacity: number) => void;
@@ -29,13 +27,11 @@ export const useSettingsStore = create<States & Actions>()(
   persist(
     (set) => ({
       clientTxtPath: '',
-      showLayout: true,
       overlayScale: 1,
       overlayOffset: { dx: 0, dy: 0 },
       overlayOpacity: 0.35,
       overlayAnchor: 'bottom',
       setClientTxtPath: (clientTxtPath) => set({ clientTxtPath }),
-      setShowLayout: (showLayout) => set({ showLayout }),
       setOverlayScale: (overlayScale) => set({ overlayScale }),
       setOverlayOffset: (overlayOffset) => set({ overlayOffset }),
       setOverlayOpacity: (overlayOpacity) => set({ overlayOpacity }),
@@ -58,11 +54,17 @@ export const useSettingsStore = create<States & Actions>()(
         //
         // Version 3 hatte den Anker unter der Minimap als Standard. Dort steht
         // das Overlay oft im Weg, Standard ist jetzt unten knapp ueber der
-        // XP-Leiste. Pfad und Layout-Schalter bleiben erhalten.
+        // XP-Leiste. Der Pfad bleibt erhalten.
+        //
+        // Der Schalter showLayout ist mit dem Layout-Fenster entfallen. Die
+        // Version bleibt trotzdem 4: ein Hochzaehlen wuerde die Migration
+        // erneut ausloesen und dabei Groesse, Deckkraft und Verschiebung des
+        // Overlays auf die Standardwerte zuruecksetzen. Ein uebrig
+        // gebliebener Eintrag im Speicher stoert niemanden, es liest ihn
+        // keiner mehr.
         const old = persisted as Partial<States> | undefined;
         return {
           clientTxtPath: old?.clientTxtPath ?? '',
-          showLayout: old?.showLayout ?? true,
           overlayScale: 1,
           overlayOffset: { dx: 0, dy: 0 },
           overlayOpacity: 0.35,

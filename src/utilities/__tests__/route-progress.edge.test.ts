@@ -5,8 +5,8 @@ import {
   actProgress,
   advanceEdge,
   flattenSteps,
-  reanchorEdge,
-  selectSegment
+  groupSteps,
+  reanchorEdge
 } from '../route-progress';
 
 function step(edgeIndex: number | null, text: string): RouteData.FragmentStep {
@@ -37,12 +37,12 @@ describe('leere und entartete Routen', () => {
     expect(flattenSteps(sections)).toHaveLength(1);
   });
 
-  it('selectSegment auf leerer Liste', () => {
-    expect(selectSegment([], 0)).toEqual([]);
+  it('groupSteps auf leerer Liste', () => {
+    expect(groupSteps([])).toEqual([]);
   });
 
-  it('selectSegment, wenn keine Kante gesetzt ist', () => {
-    expect(selectSegment([step(null, 'a'), step(null, 'b')], 0)).toEqual([]);
+  it('groupSteps, wenn keine Kante gesetzt ist', () => {
+    expect(groupSteps([step(null, 'a'), step(null, 'b')])).toHaveLength(1);
   });
 
   it('actProgress auf keiner Sektion', () => {
@@ -81,10 +81,6 @@ describe('Grenzen des Kantenindex', () => {
     expect(reanchorEdge(edges, '1_1_1', 99)).toBe(0);
   });
 
-  it('selectSegment auf einem Index jenseits der Route', () => {
-    expect(selectSegment([step(0, 'a')], 5)).toEqual([]);
-  });
-
   it('actProgress auf einem Index jenseits der Route', () => {
     const sections: RouteData.Section[] = [
       { name: 'Act 1', steps: [step(0, 'a')] }
@@ -94,24 +90,29 @@ describe('Grenzen des Kantenindex', () => {
   });
 });
 
-describe('Segmentgrenzen', () => {
-  it('nimmt nur bis zur naechsten Kante, nicht darueber hinaus', () => {
+describe('Blockgrenzen', () => {
+  it('schneidet an der naechsten Kante ab, nicht darueber hinaus', () => {
     const steps = [step(0, 'a'), step(null, 'b'), step(1, 'c'), step(null, 'd')];
 
-    expect(selectSegment(steps, 0).map((s) => s.parts[0])).toEqual(['a', 'b']);
+    expect(groupSteps(steps)[0].map((s) => s.parts[0])).toEqual(['a', 'b']);
   });
 
-  it('gibt genau einen Schritt, wenn direkt die naechste Kante folgt', () => {
-    const steps = [step(0, 'a'), step(1, 'b')];
-
-    expect(selectSegment(steps, 0)).toHaveLength(1);
+  it('gibt einen Block je Kante, wenn direkt die naechste folgt', () => {
+    expect(groupSteps([step(0, 'a'), step(1, 'b')])).toEqual([
+      [step(0, 'a')],
+      [step(1, 'b')]
+    ]);
   });
 
-  it('nimmt den ersten Treffer, wenn eine Kante doppelt vorkommt', () => {
-    // Sollte in echten Routen nicht vorkommen, waere aber ein stiller
-    // Fehlgriff statt eines Absturzes.
+  it('legt jede Kante in einen eigenen Block, auch bei doppeltem Index', () => {
+    // Sollte in echten Routen nicht vorkommen. Frueher griff die Suche hier
+    // still den ersten Treffer, jetzt bleiben beide sichtbar.
     const steps = [step(0, 'erste'), step(1, 'x'), step(0, 'zweite')];
 
-    expect(selectSegment(steps, 0)[0].parts[0]).toBe('erste');
+    expect(groupSteps(steps).map((g) => g[0].parts[0])).toEqual([
+      'erste',
+      'x',
+      'zweite'
+    ]);
   });
 });

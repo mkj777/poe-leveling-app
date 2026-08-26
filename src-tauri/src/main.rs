@@ -21,10 +21,8 @@ async fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
-        .manage(updater::PendingUpdate::default())
         .setup(|app| {
             // Tray-Aufbau in Tauri 2: Menue und Icon werden gebaut und der
             // Klick-Handler haengt am Icon, nicht mehr am Builder.
@@ -50,6 +48,10 @@ async fn main() {
                 })
                 .build(app)?;
 
+            // Prueft und laedt im Hintergrund. Eingespielt wird beim
+            // Beenden, siehe den RunEvent::Exit weiter unten.
+            updater::check_and_download(app.handle().clone());
+
             // Nur in Debug-Bauten, nur auf der Loopback-Adresse. Erlaubt es,
             // das Overlay ohne Klick im Fenster zu schalten.
             dev_control::serve(app.handle().clone());
@@ -66,12 +68,18 @@ async fn main() {
             overlay::start_poe_tracking,
             overlay::poe_bounds,
             game_paths::detect_client_txt,
-            updater::update_check,
-            updater::update_install,
             updater::update_current_version
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        // Nicht `.run(context)`, weil erst `build` den Zugriff auf die
+        // Laufzeitereignisse gibt. Genau eines davon wird gebraucht: der
+        // letzte Moment vor dem Ende des Prozesses.
+        .run(|_app, event| {
+            if let tauri::RunEvent::Exit = event {
+                updater::apply_on_exit();
+            }
+        });
 }
 
 /// Nimmt Fehler aus dem Webview entgegen und schreibt sie ins Terminal.

@@ -100,17 +100,12 @@ describe('route.store', () => {
 describe('settings.store', () => {
   beforeEach(() => {
     useSettingsStore.getState().resetOverlayPlacement();
-    useSettingsStore.setState({ clientTxtPath: '', showLayout: true });
+    useSettingsStore.setState({ clientTxtPath: '' });
   });
 
   it('haelt den Client.txt-Pfad', () => {
     useSettingsStore.getState().setClientTxtPath('C:/poe/Client.txt');
     expect(useSettingsStore.getState().clientTxtPath).toBe('C:/poe/Client.txt');
-  });
-
-  it('schaltet die Zonenbilder um', () => {
-    useSettingsStore.getState().setShowLayout(false);
-    expect(useSettingsStore.getState().showLayout).toBe(false);
   });
 
   it('nimmt Groesse, Deckkraft, Verschiebung und Anker auf', () => {

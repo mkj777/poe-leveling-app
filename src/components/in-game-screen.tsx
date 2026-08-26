@@ -1,4 +1,4 @@
-import { actProgress, flattenSteps, selectSegment } from '@/utilities/route-progress';
+import { actProgress, flattenSteps, selectPending } from '@/utilities/route-progress';
 
 import FragmentText from './fragment-text';
 import OverlayEditControls from './overlay-edit-controls';
@@ -16,7 +16,7 @@ export default function InGameScreen({ editMode, onCloseEdit }: Props) {
   const opacity = useSettingsStore((state) => state.overlayOpacity);
 
   const steps = route === null ? [] : flattenSteps(route.sections);
-  const segment = selectSegment(steps, currentEdge);
+  const pending = selectPending(steps, currentEdge);
   const act = route === null ? null : actProgress(route.sections, currentEdge);
 
   return (
@@ -41,7 +41,7 @@ export default function InGameScreen({ editMode, onCloseEdit }: Props) {
       )}
 
       <div id={`edge-${currentEdge}`} className='flex flex-col gap-0.5'>
-        {segment.map((step, index) => (
+        {pending.map((step, index) => (
           <div key={index}>
             <p
               className={
