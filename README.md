@@ -27,7 +27,10 @@ Die ursprüngliche README liegt unverändert als [README.upstream.md](README.ups
 
 ## Installation (Nutzung)
 
-1. Release herunterladen (Releases dieses Repos).
+1. `PoELevelingGuide-win-Setup.exe` aus den [Releases](https://github.com/mkj777/poe-leveling-app/releases)
+   herunterladen und starten. Installiert pro Benutzer nach `%LocalAppData%`, ohne
+   Rechteabfrage. Neue Versionen holt sich die App danach selbst, siehe
+   [ADR-0008](docs/adr/0008-autoupdate-ueber-velopack.md).
 2. `Client.txt` auswählen, Standardpfad:
    `C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt`.
 3. Position des InGame-Steps-Fensters festlegen.
@@ -40,11 +43,24 @@ Die ursprüngliche README liegt unverändert als [README.upstream.md](README.ups
 ```bash
 yarn install
 yarn tauri dev      # App im Dev-Modus
-yarn tauri build    # Release-Build
+yarn test           # Unit-, Edge- und Performance-Tests
 ```
 
 Voraussetzungen: Node.js, Yarn, Rust-Toolchain und die
 [Tauri-Prerequisites](https://tauri.app/start/prerequisites/).
+
+## Release
+
+Tauri bundelt nicht selbst, gepackt wird mit [Velopack](https://velopack.io).
+
+```bash
+dotnet tool install -g vpk   # einmalig
+yarn release:pack            # bauen und packen, Ergebnis unter src-tauri/target/velopack-releases
+yarn release:publish         # zusaetzlich zu GitHub, braucht GITHUB_TOKEN
+```
+
+Im Normalfall macht das `.github/workflows/main.yml` beim Push eines Tags `vX.Y.Z`. Der
+Tag muss zur `version` in `src-tauri/tauri.conf.json` passen, sonst bricht der Lauf ab.
 
 ## Tastenkürzel
 

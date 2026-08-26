@@ -1,55 +1,55 @@
-name: Publish Release
+name: Release veroeffentlichen
+
 on:
   push:
     tags:
       - v*
+  workflow_dispatch:
 
 jobs:
-  publish-tauri:
+  release:
+    runs-on: windows-latest
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        settings:
-          - platform: windows-latest
-            args: "--verbose"
-            target: "windows"
-    runs-on: ${{ matrix.settings.platform }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Add Rust targets(macOS)
-        if: matrix.settings.target == 'macos-arm'
-        run: rustup target add aarch64-apple-darwin
+      - uses: actions/checkout@v4
 
-      - name: Rust setup
-        uses: dtolnay/rust-toolchain@stable
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: './src-tauri -> target'
 
-      - name: setup node
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-      - name: remove lockfile
-        run: rm yarn.lock
-      - name: install frontend dependencies
-        run: yarn install
+          node-version-file: .nvmrc
 
-      - name: Build app
-        uses: tauri-apps/tauri-action@dev
+      - name: Frontend-Abhaengigkeiten
+        run: yarn install --frozen-lockfile
+
+      - name: Tests
+        run: yarn test
+
+      # vpk ist ein dotnet-Werkzeug. Auf windows-latest liegt das SDK bereit.
+      - name: Velopack-CLI
+        run: dotnet tool install -g vpk
+
+      # Der Tag ist die Quelle der Wahrheit fuer die Version. Weicht
+      # tauri.conf.json davon ab, bricht der Lauf hier ab, statt ein Release
+      # mit falscher Nummer zu erzeugen.
+      - name: Version aus dem Tag pruefen
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          conf=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [ "$tag" != "$conf" ]; then
+            echo "Tag $tag passt nicht zu tauri.conf.json $conf" >&2
+            exit 1
+          fi
+
+      - name: Bauen, packen und hochladen
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-        with:
-          args: ${{ matrix.settings.args }}
-          tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
-          releaseName: v__VERSION__-beta
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
-          prerelease: false
+        run: node scripts/release-velopack.mjs --upload
