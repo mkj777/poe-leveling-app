@@ -40,9 +40,10 @@ Die ursprüngliche README liegt unverändert als [README.upstream.md](README.ups
    importiert werden.
 4. **Start** klicken. Das Overlay legt sich ins Spielfenster und folgt ihm.
 
-Position, Größe und Deckkraft des Overlays stehen in den Einstellungen. Neue
-Versionen meldet die App beim Start selbst, ein Klick auf _Install_ zieht sie
-und startet die App neu, siehe [ADR-0008](docs/adr/0008-autoupdate-ueber-velopack.md).
+Position, Größe und Deckkraft des Overlays stehen in den Einstellungen. Um
+Updates ist nichts zu tun: die App holt eine neue Version im Hintergrund und
+installiert sie beim nächsten Start, siehe
+[ADR-0008](docs/adr/0008-autoupdate-ueber-velopack.md).
 
 ## Tastenkürzel
 
