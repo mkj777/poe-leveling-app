@@ -24,9 +24,22 @@ const m = /Generating level \d+ area "(.*?)"/.exec(logLine);
 if (m && m[1] === route.edges[currentEdge + 1]) currentEdge++;
 ```
 
-Nach einem Daten-Refresh mitten im Durchlauf wird nicht auf 0 zurückgesetzt. Es wird der
-höchste Index gesucht, dessen `areaId` der zuletzt bekannten Zone entspricht. Findet sich
-keiner, bleibt der bisherige Index bestehen und der Nutzer wird einmal informiert.
+Nach einem Daten-Refresh mitten im Durchlauf wird nicht auf 0 zurückgesetzt. Findet sich
+keine passende Kante, bleibt der bisherige Index bestehen und der Nutzer wird einmal
+informiert.
+
+**Korrektur vom 2026-08-26.** Ursprünglich stand hier „der höchste Index, dessen `areaId`
+der zuletzt bekannten Zone entspricht". Das war falsch. 46 der 149 Zonen der Route werden
+mehrfach betreten, The Forest Encampment etwa auf den Kanten 135, 137, 145, 150 und 156.
+`lastIndexOf` lieferte immer 156, und weil `useRouteSync` bei **jedem** Start wieder
+anknüpfte, sprang das Hauptfenster nach einem Neustart um bis zu 21 Kanten nach vorn. Das
+Overlay blieb richtig, weil es nicht durch `useRouteSync` läuft.
+
+Der gespeicherte Index ist die genauere Angabe, die Zone nur der Notnagel. Zeigt der Index
+noch auf dieselbe Zone, bleibt er unangetastet. Erst wenn das nicht mehr stimmt, sich also
+die Route unter ihm verändert hat, wird gesucht, und dann nach dem **nächstgelegenen**
+Vorkommen. Bei gleichem Abstand gewinnt das frühere: zu weit vorne zu stehen kostet einen
+Blick, zu weit hinten lässt Schritte aus.
 
 ## Alternativen
 

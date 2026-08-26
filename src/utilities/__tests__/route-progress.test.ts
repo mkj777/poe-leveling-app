@@ -41,12 +41,64 @@ describe('advanceEdge', () => {
 });
 
 describe('reanchorEdge', () => {
-  it('findet den hoechsten passenden Index', () => {
-    expect(reanchorEdge(EDGES, '1_1_town', 0)).toBe(3);
+  it('laesst den gespeicherten Index stehen, wenn er noch passt', () => {
+    // Der Normalfall beim Neustart: die Daten sind unveraendert, der Index
+    // zeigt weiterhin auf dieselbe Zone. Frueher sprang er hier trotzdem auf
+    // das letzte Vorkommen der Zone, also mitten in den Akt hinein.
+    expect(reanchorEdge(EDGES, '1_1_town', 1)).toBe(1);
+    expect(reanchorEdge(EDGES, '1_1_town', 3)).toBe(3);
+  });
+
+  it('nimmt das naechstgelegene Vorkommen, nicht das letzte', () => {
+    // Nur wenn der gespeicherte Index nicht mehr passt, wird gesucht. Dann
+    // ist das naheliegende Vorkommen gemeint, nicht das am Ende des Aktes.
+    expect(reanchorEdge(EDGES, '1_1_town', 0)).toBe(1);
+    expect(reanchorEdge(EDGES, '1_1_town', 4)).toBe(3);
+  });
+
+  it('bevorzugt bei gleichem Abstand das fruehere Vorkommen', () => {
+    // Zu weit vorne zu stehen kostet einen Blick, zu weit hinten laesst
+    // Schritte aus.
+    expect(reanchorEdge(EDGES, '1_1_town', 2)).toBe(1);
   });
 
   it('nutzt den Rueckfall, wenn die Zone unbekannt ist', () => {
     expect(reanchorEdge(EDGES, '9_9_9', 2)).toBe(2);
+  });
+
+  it('haelt den Fortschritt in einer Zone, die der Akt mehrfach besucht', () => {
+    const route = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          __dirname,
+          '../../lib/exile-leveling/__fixtures__/route-b7b2dd0.json'
+        ),
+        'utf8'
+      )
+    ) as RouteData.Route;
+
+    // The Forest Encampment liegt auf den Kanten 135, 137, 145, 150 und 156.
+    // Jede davon muss sich selbst wiederfinden.
+    for (const edge of [135, 137, 145, 150, 156]) {
+      expect(route.edges[edge]).toBe('2_6_town');
+      expect(reanchorEdge(route.edges, '2_6_town', edge)).toBe(edge);
+    }
+  });
+
+  it('faellt auf keiner Kante der echten Route nach vorne', () => {
+    const route = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          __dirname,
+          '../../lib/exile-leveling/__fixtures__/route-b7b2dd0.json'
+        ),
+        'utf8'
+      )
+    ) as RouteData.Route;
+
+    for (let edge = 0; edge < route.edges.length; edge++) {
+      expect(reanchorEdge(route.edges, route.edges[edge], edge)).toBe(edge);
+    }
   });
 });
 
