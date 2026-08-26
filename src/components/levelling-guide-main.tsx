@@ -2,7 +2,7 @@ import type { RouteData } from '@/lib/exile-leveling';
 
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
-import { renderStepText } from '@/utilities/fragment-text';
+import FragmentText from './fragment-text';
 import { useRouteStore } from '@/store/route.store';
 
 interface Props {
@@ -39,11 +39,13 @@ export default function LevellingGuideMain({ route }: Props) {
                   isCurrent && 'bg-neutral-700'
                 )}
               >
-                <p>{renderStepText(step)}</p>
+                <p>
+                  <FragmentText step={step} />
+                </p>
 
                 {step.subSteps.map((subStep, subIndex) => (
-                  <p key={subIndex} className='pl-4 text-sm opacity-60'>
-                    {renderStepText(subStep)}
+                  <p key={subIndex} className='text-muted-foreground pl-4 text-sm'>
+                    <FragmentText step={subStep} />
                   </p>
                 ))}
 

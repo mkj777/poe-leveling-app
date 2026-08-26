@@ -17,3 +17,9 @@ es ist kein `@ts-nocheck` noetig.
 Erzeugt von `scripts/vendor-exile-leveling.mjs`, nicht von Hand bearbeiten.
 
 `data.ts`, `index.ts` und `build-route.ts` in diesem Verzeichnis sind eigener Code.
+
+## Icons
+
+`src/assets/exile-leveling/*.png` stammen aus demselben Projekt,
+`web/src/components/FragmentStep/Fragment/images/`. Die Farbwerte in
+`src/utilities/fragment-style.ts` folgen dessen `styles.module.css`.

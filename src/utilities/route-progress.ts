@@ -55,3 +55,42 @@ export function selectSegment(
 
   return segment;
 }
+
+export interface ActProgress {
+  /** Name der Sektion, also der Akt. */
+  act: string;
+  /** Kantenschritte in diesem Akt, die noch kommen. */
+  stepsLeft: number;
+  /** Kantenschritte im Akt insgesamt. */
+  stepsTotal: number;
+}
+
+/**
+ * In welchem Akt die aktuelle Kante liegt und wie viel davon noch aussteht.
+ * Gezaehlt werden Kantenschritte, also Zonenwechsel, weil das die Einheit ist,
+ * in der der Fortschritt laeuft.
+ */
+export function actProgress(
+  sections: RouteData.Section[],
+  currentEdge: number
+): ActProgress | null {
+  for (const section of sections) {
+    const edges = section.steps
+      .filter(
+        (step): step is RouteData.FragmentStep =>
+          step.type === 'fragment_step' && step.edgeIndex !== null
+      )
+      .map((step) => step.edgeIndex as number);
+
+    const position = edges.indexOf(currentEdge);
+    if (position === -1) continue;
+
+    return {
+      act: section.name,
+      stepsLeft: edges.length - position - 1,
+      stepsTotal: edges.length
+    };
+  }
+
+  return null;
+}

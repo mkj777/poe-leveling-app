@@ -1,6 +1,8 @@
 import type { CachedData, SyncDeps, UpstreamStatus } from './route-sync';
+import type { RouteData } from '@/lib/exile-leveling';
 
 import { invoke } from '@tauri-apps/api/tauri';
+import { parseCached } from './route-sync';
 
 // Bewusst eine eigene Datei: route-sync.ts bleibt damit frei von
 // Tauri-Importen und im Node-Testlauf ladbar.
@@ -9,3 +11,22 @@ export const tauriDeps: SyncDeps = {
   fetchUpstream: (sha) => invoke<void>('fetch_upstream', { sha }),
   readCached: () => invoke<CachedData | null>('read_cached')
 };
+
+/**
+ * Nur den lokalen Cache lesen und parsen, ohne Upstream zu fragen. Das
+ * Overlay-Fenster braucht die Route, aber nicht den taeglichen Abgleich, den
+ * das Hauptfenster ohnehin macht.
+ */
+export async function loadRouteFromCache(): Promise<{
+  route: RouteData.Route;
+  sha: string;
+} | null> {
+  const cached = await tauriDeps.readCached();
+  if (cached === null) return null;
+
+  try {
+    return { route: parseCached(cached), sha: cached.sha };
+  } catch {
+    return null;
+  }
+}

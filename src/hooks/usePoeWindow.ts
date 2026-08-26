@@ -1,22 +1,37 @@
-import { LogicalPosition, LogicalSize, appWindow } from '@tauri-apps/api/window';
+import {
+  PhysicalPosition,
+  PhysicalSize,
+  appWindow
+} from '@tauri-apps/api/window';
 import {
   OVERLAY_BASE_FONT_SIZE,
   OVERLAY_MIN_HEIGHT
 } from '@/utilities/constants';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { PoeBounds } from '@/utilities/overlay-geometry';
-import { computeOverlayRect } from '@/utilities/overlay-geometry';
+import { computeOverlayRect, offsetFromWindow } from '@/utilities/overlay-geometry';
 import { invoke } from '@tauri-apps/api/tauri';
 import { listen } from '@tauri-apps/api/event';
 import { useSettingsStore } from '@/store/settings.store';
 
 // Koppelt das Overlay an das Spielfenster. Das Backend meldet Bounds nur bei
 // Aenderung, die Geometrie rechnet computeOverlayRect (ADR-0005, ADR-0006).
-export function usePoeWindow(active: boolean, contentHeight: number) {
+export function usePoeWindow(
+  active: boolean,
+  contentHeight: number,
+  editMode = false
+) {
   const [bounds, setBounds] = useState<PoeBounds | null>(null);
   const overlayScale = useSettingsStore((state) => state.overlayScale);
   const overlayOffset = useSettingsStore((state) => state.overlayOffset);
+  const overlayAnchor = useSettingsStore((state) => state.overlayAnchor);
+  const setOverlayOffset = useSettingsStore((state) => state.setOverlayOffset);
+
+  // Was wir selbst gesetzt haben. Ohne das haelt der Drag-Handler unsere
+  // eigenen setPosition-Aufrufe fuer Nutzereingaben und schaukelt den Offset
+  // hoch, bis das Overlay aus dem Bild laeuft.
+  const lastSet = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     // Kein Riegel auf den Listener. Unter StrictMode laeuft der Effekt doppelt,
@@ -59,18 +74,77 @@ export function usePoeWindow(active: boolean, contentHeight: number) {
   useEffect(() => {
     if (!active || bounds === null || !bounds.found) return;
 
-    const height = Math.max(contentHeight, OVERLAY_MIN_HEIGHT);
-    const rect = computeOverlayRect(bounds, height, overlayScale, overlayOffset);
+    let cancelled = false;
 
-    // Das Overlay bleibt sichtbar, auch wenn das Spiel den Fokus verliert.
-    // Bei Fokusverlust zu verstecken klingt sauber, macht die App aber
-    // unauffindbar: wer Start drueckt, hat gerade die App im Vordergrund und
-    // nicht das Spiel, das Fenster verschwindet also im selben Moment.
     void (async () => {
-      await appWindow.setSize(new LogicalSize(rect.width, height));
-      await appWindow.setPosition(new LogicalPosition(rect.x, rect.y));
+      // Die Bounds aus GetWindowRect sind physische Pixel, die gemessene
+      // Inhaltshoehe sind CSS-Pixel. Ohne den Faktor sitzt das Overlay auf
+      // jedem skalierten Bildschirm falsch.
+      const scale = await appWindow.scaleFactor();
+      const height = Math.round(
+        Math.max(contentHeight, OVERLAY_MIN_HEIGHT) * scale
+      );
+      const rect = computeOverlayRect(
+        bounds,
+        height,
+        overlayScale,
+        overlayOffset,
+        overlayAnchor
+      );
+
+      if (cancelled) return;
+
+      lastSet.current = { x: rect.x, y: rect.y };
+      await appWindow.setSize(new PhysicalSize(rect.width, height));
+      await appWindow.setPosition(new PhysicalPosition(rect.x, rect.y));
     })();
-  }, [active, bounds, contentHeight, overlayScale, overlayOffset]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [active, bounds, contentHeight, overlayScale, overlayOffset, overlayAnchor]);
+
+  useEffect(() => {
+    void appWindow.setIgnoreCursorEvents(active && !editMode);
+  }, [active, editMode]);
+
+  useEffect(() => {
+    if (!editMode) return;
+
+    // Beim Ziehen die neue Lage als Bruchteil des Spiel-Rects zuruecklegen,
+    // nicht als Pixel. Sonst stimmt sie nach Aufloesungswechsel nicht mehr.
+    const unlisten = appWindow.onMoved(async ({ payload }) => {
+      if (bounds === null || !bounds.found) return;
+
+      const self = lastSet.current;
+      if (
+        self !== null &&
+        Math.abs(payload.x - self.x) < 2 &&
+        Math.abs(payload.y - self.y) < 2
+      ) {
+        return;
+      }
+
+      const size = await appWindow.outerSize();
+
+      setOverlayOffset(
+        offsetFromWindow(
+          bounds,
+          {
+            x: payload.x,
+            y: payload.y,
+            width: size.width,
+            height: size.height
+          },
+          overlayAnchor
+        )
+      );
+    });
+
+    return () => {
+      void unlisten.then((off) => off());
+    };
+  }, [editMode, bounds, setOverlayOffset, overlayAnchor]);
 
   return { bounds };
 }
