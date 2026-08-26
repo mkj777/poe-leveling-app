@@ -52,8 +52,14 @@ schubweise. Genau dann will niemand von Hand nachinstallieren.
 
 ## Konsequenzen
 
-* Delta-Updates. Gemessen an 0.2.0 → 0.2.1: 89 KB statt 7,3 MB, weil `vpk` 197 der 198
-  Dateien als unverändert erkennt und nur die ausführbare Datei patcht.
+* Delta-Updates, aber nur mit einem Vorgänger im Ausgabeverzeichnis. `vpk pack` rechnet
+  das Delta gegen ein Paket, das dort schon liegt. Der CI-Runner startet leer, deshalb
+  enthielten 0.92.0 und 0.93.0 ausschließlich volle Pakete und jedes Update lud 5,5 MB.
+  Lokal war das nie aufgefallen, weil dort die Vorgängerversion vom vorigen Lauf noch
+  herumlag. `scripts/release-velopack.mjs` holt sie jetzt vor dem Packen mit
+  `vpk download github`, und `deltaMissing` bricht ab, wenn trotz Vorgänger kein Delta
+  entsteht. Ohne diese Prüfung rutschte der Fehler zwei Releases lang still durch.
+  Gemessen 0.93.0 → 0.94.0: 286 KB statt 5,56 MB.
 * Installation pro Benutzer nach `%LocalAppData%`, ohne Rechteabfrage.
 * Keine Signaturschlüssel nötig. Velopack prüft SHA über das Release-Feed.
 * Kein Dialog, kein Knopf, kein Neustart mitten im Betrieb. Die Oberfläche zeigt nur an,

@@ -7,9 +7,10 @@
  * eigene Ressourcen daneben gibt es seit ADR-0009 keine mehr.
  *
  * Aufruf:
- *   node scripts/release-velopack.mjs              nur bauen und packen
- *   node scripts/release-velopack.mjs --upload     zusaetzlich zu GitHub
- *   node scripts/release-velopack.mjs --skip-build vorhandenes Kompilat nutzen
+ *   node scripts/release-velopack.mjs                 nur bauen und packen
+ *   node scripts/release-velopack.mjs --upload        zusaetzlich zu GitHub
+ *   node scripts/release-velopack.mjs --skip-build    vorhandenes Kompilat nutzen
+ *   node scripts/release-velopack.mjs --skip-download ohne Vorgaenger, kein Delta
  *
  * `RELEASE_VERSION` uebersteuert die Version aus `tauri.conf.json`.
  */
@@ -97,6 +98,45 @@ function stage(exeName) {
   return STAGE_DIR;
 }
 
+/**
+ * Holt das zuletzt veroeffentlichte Paket in das Ausgabeverzeichnis.
+ *
+ * `vpk pack` rechnet ein Delta nur gegen ein Paket, das dort schon liegt. Der
+ * CI-Runner startet leer, deshalb enthielten 0.92.0 und 0.93.0 ausschliesslich
+ * volle Pakete und jedes Update lud 5,5 MB statt rund 90 KB. Lokal war das nie
+ * aufgefallen, weil dort die Vorgaengerversion vom vorigen Lauf noch herumlag.
+ */
+function downloadPrevious(token) {
+  const args = [
+    'download',
+    'github',
+    '--repoUrl',
+    REPO_URL,
+    '--outputDir',
+    OUTPUT_DIR
+  ];
+
+  if (token) args.push('--token', token);
+
+  run('vpk', args);
+}
+
+/**
+ * Liegt ein aelteres volles Paket daneben, muss nach dem Packen ein Delta
+ * entstanden sein. Trifft das nicht zu, ist der Download stillschweigend ins
+ * Leere gelaufen, und genau dieses stille Durchrutschen hat den Fehler zwei
+ * Releases lang verdeckt. Beim allerersten Release gibt es keinen Vorgaenger,
+ * dann greift die Pruefung nicht.
+ */
+export function deltaMissing(files, version) {
+  const hasPrevious = files.some(
+    (name) => name.endsWith('-full.nupkg') && !name.includes(`-${version}-`)
+  );
+  const hasDelta = files.includes(`${PACK_ID}-${version}-delta.nupkg`);
+
+  return hasPrevious && !hasDelta;
+}
+
 function main() {
   const args = process.argv.slice(2);
   const config = JSON.parse(
@@ -110,6 +150,10 @@ function main() {
   }
 
   stage(exeName);
+
+  if (!args.includes('--skip-download')) {
+    downloadPrevious(process.env.GITHUB_TOKEN);
+  }
 
   run('vpk', [
     'pack',
@@ -125,6 +169,12 @@ function main() {
     // Das Setup holt es dann nach, statt beim Start ins Leere zu greifen.
     '--framework', 'webview2'
   ]);
+
+  if (deltaMissing(fs.readdirSync(OUTPUT_DIR), version)) {
+    throw new Error(
+      `Kein Delta fuer ${version} entstanden, obwohl ein aelteres Paket daneben liegt`
+    );
+  }
 
   if (args.includes('--upload')) {
     const token = process.env.GITHUB_TOKEN;

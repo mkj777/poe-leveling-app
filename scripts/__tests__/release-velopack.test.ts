@@ -7,6 +7,7 @@ import {
   PACK_ID,
   REPO_URL,
   commandLine,
+  deltaMissing,
   normaliseVersion,
   quoteArg
 } from '../release-velopack.mjs';
@@ -73,5 +74,53 @@ describe('quoteArg', () => {
     expect(commandLine('vpk', ['--mainExe', 'PoE Guide.exe'])).toBe(
       'vpk --mainExe "PoE Guide.exe"'
     );
+  });
+});
+
+describe('deltaMissing', () => {
+  const files = (...names: string[]) => names;
+
+  it('schlaegt an, wenn ein Vorgaenger daliegt und kein Delta entstand', () => {
+    expect(
+      deltaMissing(
+        files(
+          `${PACK_ID}-0.93.0-full.nupkg`,
+          `${PACK_ID}-0.94.0-full.nupkg`,
+          'RELEASES'
+        ),
+        '0.94.0'
+      )
+    ).toBe(true);
+  });
+
+  it('ist zufrieden, wenn das Delta danebenliegt', () => {
+    expect(
+      deltaMissing(
+        files(
+          `${PACK_ID}-0.93.0-full.nupkg`,
+          `${PACK_ID}-0.94.0-full.nupkg`,
+          `${PACK_ID}-0.94.0-delta.nupkg`
+        ),
+        '0.94.0'
+      )
+    ).toBe(false);
+  });
+
+  it('laesst das allererste Release durch, dort gibt es keinen Vorgaenger', () => {
+    expect(
+      deltaMissing(files(`${PACK_ID}-0.94.0-full.nupkg`, 'RELEASES'), '0.94.0')
+    ).toBe(false);
+  });
+
+  it('haelt das eigene volle Paket nicht fuer einen Vorgaenger', () => {
+    // Der Dateiname der laufenden Version enthaelt die Version selbst. Wer
+    // hier nur auf "-full.nupkg" prueft, bekommt immer einen Treffer.
+    expect(deltaMissing(files(`${PACK_ID}-0.94.0-full.nupkg`), '0.94.0')).toBe(
+      false
+    );
+  });
+
+  it('kommt mit einem leeren Verzeichnis zurecht', () => {
+    expect(deltaMissing([], '0.94.0')).toBe(false);
   });
 });
