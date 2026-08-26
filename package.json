@@ -7,8 +7,6 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "nvmrc": "node -v > .nvmrc",
-    "predev": "yarn nvmrc",
     "test": "vitest run",
     "test:watch": "vitest",
     "vendor:exile-leveling": "node scripts/vendor-exile-leveling.mjs",
