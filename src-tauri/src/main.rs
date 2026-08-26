@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod data_sync;
+mod dev_control;
 mod game_paths;
 mod overlay;
 
@@ -42,6 +43,10 @@ async fn main() {
                     _ => {}
                 })
                 .build(app)?;
+
+            // Nur in Debug-Bauten, nur auf der Loopback-Adresse. Erlaubt es,
+            // das Overlay ohne Klick im Fenster zu schalten.
+            dev_control::serve(app.handle().clone());
 
             Ok(())
         })

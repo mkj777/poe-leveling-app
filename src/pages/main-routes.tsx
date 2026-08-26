@@ -5,6 +5,8 @@ import MainPage from './main.page';
 import { publishOverlaySettings } from '@/services/overlay-settings';
 import SettingsPage from './settings.page';
 import appStates from '@/states/app.state';
+import { listen } from '@tauri-apps/api/event';
+import { emit } from '@tauri-apps/api/event';
 import { useEffect } from 'react';
 import useMachine from '@/hooks/useMachine';
 import { useRouteSync } from '@/hooks/useRouteSync';
@@ -22,6 +24,35 @@ export default function MainRoutes() {
   useEffect(() => {
     publishOverlaySettings(useSettingsStore.getState());
     return useSettingsStore.subscribe(publishOverlaySettings);
+  }, []);
+
+  // Fernsteuerung aus dev_control.rs, damit sich das Overlay ohne Klick im
+  // Fenster schalten laesst. Im Release gibt es den Server nicht.
+  useEffect(() => {
+    const unlisten = listen<string>('dev-control', (event) => {
+      const running = useAppStore.getState().appState === AppState.IN_GAME;
+
+      switch (event.payload) {
+        case 'start':
+          useAppStore.getState().setAppState(AppState.IN_GAME);
+          break;
+        case 'stop':
+          useAppStore.getState().setAppState(AppState.NORMAL);
+          break;
+        case 'toggle':
+          useAppStore
+            .getState()
+            .setAppState(running ? AppState.NORMAL : AppState.IN_GAME);
+          break;
+        case 'edit':
+          void emit('overlay-edit-toggle');
+          break;
+      }
+    });
+
+    return () => {
+      void unlisten.then((off) => off());
+    };
   }, []);
 
   useEffect(() => {
