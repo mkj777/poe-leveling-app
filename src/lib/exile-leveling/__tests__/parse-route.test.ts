@@ -116,6 +116,18 @@ describe('buildDefaultRoute im Speedleveling', () => {
     expect(types).not.toContain('trial');
   });
 
+  it('trifft mit demselben Kantenindex eine andere Zone als der Ligastart', () => {
+    // Der Grund, warum das Overlay die Lesart zu jeder Meldung mitbekommt und
+    // nicht nur beim Wechsel. Der Index, der im Speedleveling The Sarn
+    // Ramparts meint, meint im Ligastart eine Zone zehn Kanten frueher, The
+    // Causeway. Wer nur die Zahl schickt, verschiebt das Overlay stumm.
+    const league = buildDefaultRoute(readRoutes(), readBundle(), 'league-start');
+    const sarnRamparts = speed().edges.indexOf('2_8_1');
+
+    expect(sarnRamparts).toBeGreaterThan(-1);
+    expect(league.edges[sarnRamparts]).not.toBe('2_8_1');
+  });
+
   it('haelt jede Kante besetzt', () => {
     // Jede Kante braucht ihren Kopfschritt, sonst findet selectPending sie
     // nicht mehr und das Overlay bliebe leer.

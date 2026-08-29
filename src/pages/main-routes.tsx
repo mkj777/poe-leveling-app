@@ -1,6 +1,8 @@
 import { AppState, useAppStore } from '@/store/app.store';
 import { Route, Routes } from 'react-router-dom';
 
+import type { GuideState } from '@/utilities/guide-mode';
+import { GUIDE_STATE_EVENT, OVERLAY_READY_EVENT } from '@/utilities/guide-mode';
 import MainPage from './main.page';
 import NewRunDialog from '@/components/new-run-dialog';
 import { publishOverlaySettings } from '@/services/overlay-settings';
@@ -10,8 +12,17 @@ import { listen } from '@tauri-apps/api/event';
 import { emit } from '@tauri-apps/api/event';
 import { useEffect } from 'react';
 import useMachine from '@/hooks/useMachine';
+import { useGuideStore } from '@/store/guide.store';
+import { useRouteStore } from '@/store/route.store';
 import { useRouteSync } from '@/hooks/useRouteSync';
 import { useSettingsStore } from '@/store/settings.store';
+
+function guideState(): GuideState {
+  return {
+    mode: useGuideStore.getState().mode,
+    currentEdge: useRouteStore.getState().currentEdge
+  };
+}
 
 export default function MainRoutes() {
   const { transition } = useMachine(appStates, 'normal');
@@ -21,6 +32,33 @@ export default function MainRoutes() {
   // jedem Fenster, auch im Overlay und im Layout-Fenster. Der Abgleich liefe
   // dort dreimal, und der Rundfunk wuerde sich selbst zuhoeren.
   useRouteSync();
+
+  // Das Overlay parst seine Route selbst und braucht dafuer die Lesart. Es
+  // bekommt sie zu jeder Kante mitgeschickt, nicht nur beim Wechsel: eine
+  // blosse Zahl trifft in der kuerzeren Speedleveling-Liste eine andere Zone
+  // als in der laengeren des Ligastarts (ADR-0011).
+  //
+  // Hier und nicht in MainPage: von der Einstellungsseite aus wechselt man den
+  // Modus, und dort war MainPage nicht mehr montiert.
+  const mode = useGuideStore((state) => state.mode);
+  const currentEdge = useRouteStore((state) => state.currentEdge);
+
+  useEffect(() => {
+    void emit(GUIDE_STATE_EVENT, { mode, currentEdge } satisfies GuideState);
+  }, [mode, currentEdge]);
+
+  // Das Overlay startet spaeter als dieses Fenster und hat die bisherigen
+  // Meldungen nie gehoert. Es meldet sich, sobald es horcht, und bekommt den
+  // Stand als Antwort.
+  useEffect(() => {
+    const ready = listen(OVERLAY_READY_EVENT, () => {
+      void emit(GUIDE_STATE_EVENT, guideState());
+    });
+
+    return () => {
+      void ready.then((off) => off());
+    };
+  }, []);
 
   useEffect(() => {
     publishOverlaySettings(useSettingsStore.getState());

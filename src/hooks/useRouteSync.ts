@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import type { GuideMode, GuideModeMessage } from '@/utilities/guide-mode';
-import { GUIDE_MODE_EVENT } from '@/utilities/guide-mode';
-import { emit } from '@tauri-apps/api/event';
+import type { GuideMode } from '@/utilities/guide-mode';
 import { reanchorEdge } from '@/utilities/route-progress';
 import { syncRoute } from '@/services/route-sync';
 import { tauriDeps } from '@/services/route-sync.tauri';
@@ -55,14 +53,6 @@ export function useRouteSync() {
       }
 
       store.setSyncState('idle');
-
-      // Das Overlay parst seine Route selbst und erfaehrt hier, in welcher
-      // Lesart und an welcher Stelle. Laeuft keines, hoert schlicht niemand zu.
-      const message: GuideModeMessage = {
-        mode,
-        currentEdge: useRouteStore.getState().currentEdge
-      };
-      void emit(GUIDE_MODE_EVENT, message);
     };
 
     // Der zweite Mount unter StrictMode soll den Netzzugriff nicht wiederholen,

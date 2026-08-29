@@ -25,7 +25,6 @@ export default function MainPage() {
   const [areaName, setAreaName] = useState<string>();
 
   const route = useRouteStore((state) => state.route);
-  const currentEdge = useRouteStore((state) => state.currentEdge);
 
   const { setAppState, appScanningState } = useAppStore((state) => state);
 
@@ -108,12 +107,6 @@ export default function MainPage() {
       setAppState(AppState.NORMAL);
     });
   }, []);
-
-  // Das Overlay ist ein eigenes Fenster und haelt seinen eigenen Zustand.
-  // Der Fortschritt kommt von hier, weil hier Client.txt gelesen wird.
-  useEffect(() => {
-    void emit('edge-changed', currentEdge);
-  }, [currentEdge]);
 
   const handleSetClientTxt = async () => {
     const selection = await open({

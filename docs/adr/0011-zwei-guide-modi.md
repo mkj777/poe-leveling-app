@@ -100,8 +100,45 @@ sich denselben Trial-Anhänger teilt.
   wäre der Index ins Leere gelaufen und das Overlay leer geblieben, ohne
   Fehlermeldung. Die Ossuary liegt auf Kante 233, Speedleveling hat 236: drei
   Kanten Abstand, die der Upstream jederzeit aufbrauchen kann.
-* Das Overlay parst seine Route selbst und erfährt den Modus als
-  `guide-mode-changed`, zusammen mit der aktuellen Kante.
+* Das Overlay parst seine Route selbst und erfährt Modus und Kante vom
+  Hauptfenster, siehe den Nachtrag unten.
 * Ein Test hält die vier Formen fest, in denen Crafting und Trial heute
   vorkommen. Taucht eine fünfte auf, hat der Upstream etwas Neues gebaut, und die
   Regel gehört angesehen, bevor sie darüber läuft.
+
+## Nachtrag 2026-08-29: der Kantenindex allein reicht nicht
+
+Die erste Fassung schickte dem Overlay den Modus nur bei einer Änderung, den
+Kantenindex dagegen bei jedem Zonenwechsel. Das war falsch, und der Fehler war
+im Betrieb stumm.
+
+Beide Fenster parsen die Route selbst. Halten sie verschiedene Lesarten, meint
+derselbe Index verschiedene Zonen: Kante 172 ist im Speedleveling The Sarn
+Ramparts und im Ligastart The Causeway, zehn Kanten früher. Wer im Hauptfenster
+dorthin sprang, las im Overlay „Get Crafting: Cold Damage - Rank 2, Find and take
+Kishara's Star". Ausgerechnet ein Craftingschritt, den es im Speedleveling nicht
+gibt, war der Hinweis auf die falsche Lesart.
+
+Ein Index ist ohne die Route, in die er zeigt, bedeutungslos. Beides gehört
+darum in dieselbe Meldung:
+
+```ts
+export interface GuideState {
+  mode: GuideMode;
+  currentEdge: number;
+}
+```
+
+Das Overlay lädt seine Route neu, sobald die gemeldete Lesart nicht die geladene
+ist, und **erst danach** setzt es die Kante. Eine verpasste Meldung heilt damit
+bei der nächsten von selbst, statt bis zum Neustart falsch zu bleiben.
+
+Beim Aufbau ruft das Overlay `overlay-ready`, das Hauptfenster antwortet mit dem
+Stand. Vorher las es den Modus aus dem gemeinsamen `localStorage`. Der ist
+zwischen den Fenstern zwar geteilt, gemessen im laufenden Bau, aber er ist die
+falsche Quelle: der Stand gehört dem Fenster, das ihn führt, nicht dem Speicher.
+Dasselbe galt für die Kante, die das Overlay bis dahin aus seinem eigenen
+persistierten Store nahm und erst beim nächsten Zonenwechsel korrigiert bekam.
+
+Der Rundfunk sitzt jetzt in `MainRoutes` statt in `MainPage`. Den Modus wechselt
+man auf der Einstellungsseite, und dort war `MainPage` nicht mehr montiert.
