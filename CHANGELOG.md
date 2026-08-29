@@ -7,6 +7,27 @@ GitHub-Releases. Fehlt der Abschnitt, bricht der Release-Workflow ab.
 Versionen folgen [SemVer](https://semver.org/lang/de/), Format angelehnt an
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## 0.98.0 (2026-08-29)
+
+### Behoben
+
+- Das Overlay zeigte im Speedleveling einen anderen Schritt als die Liste im
+  Hauptfenster, meist einen weiter vorn. Beide Fenster parsen die Route selbst,
+  ausgetauscht wurde aber nur der Kantenindex. Speedleveling hat 236 Kanten,
+  der Ligastart 248: derselbe Zahlenwert trifft je Lesart eine andere Zone.
+  Kante 172 ist im Speedleveling The Sarn Ramparts und im Ligastart The
+  Causeway, zehn Kanten früher. Wer dorthin sprang, sah im Overlay „Get
+  Crafting: Cold Damage - Rank 2, Find and take Kishara's Star".
+- Der Modus gehört jetzt zu jeder Meldung ans Overlay, nicht nur zum Wechsel.
+  Das Overlay lädt seine Route neu, bevor es einen Index anwendet, der zu einer
+  anderen Lesart gehört. Eine verpasste Meldung heilt damit von selbst.
+- Das Overlay meldet sich beim Start und bekommt den Stand als Antwort. Vorher
+  riet es aus dem gemeinsamen Speicher, und Kante wie Modus konnten beim
+  Aufbau veraltet sein.
+- Der Fortschritt wird auch dann ans Overlay gemeldet, wenn die
+  Einstellungsseite offen ist. Bisher hing das am Hauptbildschirm, der dort
+  nicht mehr gerendert wird.
+
 ## 0.97.0 (2026-08-29)
 
 ### Neu

@@ -5,32 +5,45 @@ import {
   OVERLAY_HEADER_HEIGHT,
   OVERLAY_MIN_HEIGHT
 } from '@/utilities/constants';
-import type { GuideMode, GuideModeMessage } from '@/utilities/guide-mode';
+import type { GuideMode, GuideState } from '@/utilities/guide-mode';
 import type { OverlaySettings } from '@/services/overlay-settings';
-import { GUIDE_MODE_EVENT } from '@/utilities/guide-mode';
+import { GUIDE_STATE_EVENT, OVERLAY_READY_EVENT } from '@/utilities/guide-mode';
 import { OVERLAY_SETTINGS_EVENT } from '@/services/overlay-settings';
-import { listen } from '@tauri-apps/api/event';
+import { emit, listen } from '@tauri-apps/api/event';
 import { loadRouteFromCache } from '@/services/route-sync.tauri';
 import { usePoeWindow } from '@/hooks/usePoeWindow';
-import { useGuideStore } from '@/store/guide.store';
 import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';
 
-async function loadRoute(mode: GuideMode, edge?: number) {
-  const loaded = await loadRouteFromCache(mode);
-  if (loaded === null) return;
+// Modulweit, weil das Fenster genau eine Route haelt. Zeigt an, in welcher
+// Lesart sie geparst wurde, damit ein Kantenindex nur auf die Route trifft,
+// zu der er gehoert.
+let loadedMode: GuideMode | null = null;
 
-  const store = useRouteStore.getState();
-  store.setRoute(loaded.route, loaded.sha);
+// Meldungen werden nacheinander abgearbeitet. Kommen Moduswechsel und
+// Kantenwechsel dicht hintereinander, duerfen ihre Ladevorgaenge sich nicht
+// ueberholen und die Route des jeweils anderen setzen.
+let queue: Promise<void> = Promise.resolve();
+
+async function applyState(state: GuideState) {
+  if (loadedMode !== state.mode) {
+    const loaded = await loadRouteFromCache(state.mode);
+    // Ohne Route auch keine Kante: ein Index auf der alten Lesart waere
+    // schlimmer als gar keine Anzeige.
+    if (loaded === null) return;
+
+    loadedMode = state.mode;
+    useRouteStore.getState().setRoute(loaded.route, loaded.sha);
+  }
 
   // Erst nach der Route: setCurrentEdge schlaegt die Zone darin nach.
-  if (edge !== undefined) store.setCurrentEdge(edge);
+  useRouteStore.getState().setCurrentEdge(state.currentEdge);
 }
 
 /**
- * Eigenes Fenster, damit das Hauptfenster Hauptfenster bleiben kann. Es haengt
- * bewusst nicht am Hauptfenster: die Route parst es selbst aus dem lokalen
- * Cache, den Fortschritt bekommt es als Ereignis.
+ * Eigenes Fenster, damit das Hauptfenster Hauptfenster bleiben kann. Die Route
+ * parst es selbst aus dem lokalen Cache, welche Lesart und welche Kante sagt
+ * ihm das Hauptfenster.
  */
 export default function OverlayPage() {
   const [contentHeight, setContentHeight] = useState(OVERLAY_MIN_HEIGHT);
@@ -48,18 +61,35 @@ export default function OverlayPage() {
     return () => document.body.classList.remove('overlay-window');
   }, []);
 
-  // Der Modus kommt beim Aufbau aus dem eigenen Store, den zustand aus dem
-  // gemeinsamen localStorage wiederherstellt. Ein Wechsel danach kommt als
-  // Ereignis aus dem Hauptfenster.
   useEffect(() => {
-    void loadRoute(useGuideStore.getState().mode);
+    let stop: (() => void) | undefined;
+    let cancelled = false;
+
+    void (async () => {
+      const off = await listen<GuideState>(GUIDE_STATE_EVENT, (event) => {
+        const state = event.payload;
+        queue = queue.then(() => applyState(state));
+      });
+
+      if (cancelled) {
+        off();
+        return;
+      }
+      stop = off;
+
+      // Erst horchen, dann melden. Andersherum kann die Antwort vor dem
+      // Zuhoerer eintreffen, und das Overlay bliebe bis zum naechsten
+      // Zonenwechsel leer.
+      await emit(OVERLAY_READY_EVENT);
+    })();
+
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
   }, []);
 
   useEffect(() => {
-    const edge = listen<number>('edge-changed', (event) => {
-      useRouteStore.getState().setCurrentEdge(event.payload);
-    });
-
     const toggle = listen('overlay-edit-toggle', () => {
       setEditMode((value) => !value);
     });
@@ -73,16 +103,9 @@ export default function OverlayPage() {
       }
     );
 
-    const guideMode = listen<GuideModeMessage>(GUIDE_MODE_EVENT, (event) => {
-      useGuideStore.getState().setMode(event.payload.mode);
-      void loadRoute(event.payload.mode, event.payload.currentEdge);
-    });
-
     return () => {
-      void edge.then((off) => off());
       void toggle.then((off) => off());
       void settings.then((off) => off());
-      void guideMode.then((off) => off());
     };
   }, []);
 
