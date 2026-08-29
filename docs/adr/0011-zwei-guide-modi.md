@@ -142,3 +142,41 @@ persistierten Store nahm und erst beim nächsten Zonenwechsel korrigiert bekam.
 
 Der Rundfunk sitzt jetzt in `MainRoutes` statt in `MainPage`. Den Modus wechselt
 man auf der Einstellungsseite, und dort war `MainPage` nicht mehr montiert.
+
+## Nachtrag 2026-08-29: den Fortschritt speichert nur das Hauptfenster
+
+Der Nachtrag oben stellt sicher, dass beide Fenster dieselbe Lesart halten. Er
+beseitigt aber nur die Ursache, nicht den Weg, über den sich der Fehler
+festsetzte.
+
+`setCurrentEdge` schlägt die Zone in der **eigenen** Route nach:
+
+```ts
+setCurrentEdge: (currentEdge) =>
+  set({ currentEdge, currentAreaId: get().route?.edges[currentEdge] ?? null })
+```
+
+Beide Fenster luden denselben persistierten Eintrag `route`, und beide
+schrieben hinein. Das Overlay mit der Ligastart-Route bekam „Kante 172" und
+legte dazu The Causeway ab, wo das Hauptfenster The Sarn Ramparts meinte. Wer
+zuletzt schrieb, gewann. Beim nächsten Start knüpfte `useRouteSync` an diese
+Zone an und stand zehn Kanten zurück. Der Fehler überlebte damit den Neustart,
+der ihn hätte beheben sollen.
+
+Das Overlay bekommt darum keinen Speicher mehr. Es liest keinen Fortschritt und
+schreibt keinen: es ist Anzeige und bekommt Lesart und Kante ohnehin gesagt.
+
+```ts
+export const useRouteStore = isOverlayWindow()
+  ? create<RouteStore>()(createState)
+  : create<RouteStore>()(persist(createState, { name: 'route', ... }));
+```
+
+Die Rolle kommt aus dem Hash, nicht aus der Fenster-Kennung von Tauri, damit die
+Stores ohne Tauri im Node-Lauf ladbar bleiben. Adresse des Fensters, Route im
+Router und Rollenprüfung teilen sich dafür eine Konstante, und ein Test hält
+fest, dass die Adresse wirklich als Overlay erkannt wird. Drei getrennte
+Zeichenketten wären drei Gelegenheiten, still auseinanderzulaufen.
+
+Damit ist der doppelte Zustand nicht mehr unwahrscheinlich, sondern unmöglich:
+es gibt nur noch einen Schreiber.

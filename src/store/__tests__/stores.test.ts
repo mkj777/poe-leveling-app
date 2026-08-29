@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RouteData } from '@/lib/exile-leveling';
 import { AppScanningState, AppState, useAppStore } from '../app.store';
@@ -156,5 +156,51 @@ describe('guide.store', () => {
     // Daran misst NewRunDialog die Pause seit dem letzten Start.
     useGuideStore.getState().markOpened(1_700_000_000_000);
     expect(useGuideStore.getState().lastOpenedAt).toBe(1_700_000_000_000);
+  });
+});
+
+describe('route.store, wer den Fortschritt speichert', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+    localStorage.removeItem('route');
+  });
+
+  it('das Hauptfenster legt ihn ab', async () => {
+    localStorage.removeItem('route');
+    vi.resetModules();
+
+    const { useRouteStore: store } = await import('../route.store');
+    store.getState().setCurrentEdge(7);
+
+    expect(JSON.parse(localStorage.getItem('route')!).state.currentEdge).toBe(7);
+  });
+
+  it('das Overlay legt nichts ab', async () => {
+    // Es rechnet die Zone aus seiner eigenen Route aus. Hielte es je wieder
+    // eine andere Lesart, wuerde es damit den Stand des Hauptfensters
+    // ueberschreiben und dessen Fortschritt beim naechsten Start verschieben.
+    localStorage.removeItem('route');
+    vi.stubGlobal('location', { hash: '#/overlay' });
+    vi.resetModules();
+
+    const { useRouteStore: store } = await import('../route.store');
+    store.getState().setCurrentEdge(7);
+
+    expect(store.getState().currentEdge).toBe(7);
+    expect(localStorage.getItem('route')).toBeNull();
+  });
+
+  it('das Overlay liest auch nichts, was schon dasteht', async () => {
+    localStorage.setItem(
+      'route',
+      JSON.stringify({ state: { currentEdge: 99, currentAreaId: 'x' }, version: 2 })
+    );
+    vi.stubGlobal('location', { hash: '#/overlay' });
+    vi.resetModules();
+
+    const { useRouteStore: store } = await import('../route.store');
+
+    expect(store.getState().currentEdge).toBe(0);
   });
 });

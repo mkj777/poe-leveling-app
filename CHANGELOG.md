@@ -7,6 +7,25 @@ GitHub-Releases. Fehlt der Abschnitt, bricht der Release-Workflow ab.
 Versionen folgen [SemVer](https://semver.org/lang/de/), Format angelehnt an
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## 0.99.0 (2026-08-29)
+
+### Behoben
+
+- Den Fortschritt speichert jetzt allein das Hauptfenster. Bisher schrieben
+  beide Fenster in denselben Eintrag, und die dazugehörige Zone rechnete jedes
+  aus seiner eigenen Route aus. Hielt das Overlay eine andere Lesart, legte es
+  zur selben Kante eine andere Zone ab und überschrieb damit den Stand. Beim
+  nächsten Start knüpfte die App an diese Zone an und stand zehn Kanten
+  zurück. Der Fehler überlebte so den Neustart, der ihn hätte beheben sollen.
+- Das Overlay liest und schreibt keinen Fortschritt mehr. Es ist Anzeige und
+  bekommt Lesart und Kante vom Hauptfenster gesagt.
+
+### Intern
+
+- Adresse des Overlay-Fensters, seine Route im Router und die Rollenprüfung
+  teilen sich eine Konstante. Ein Test hält fest, dass die Adresse wirklich als
+  Overlay erkannt wird.
+
 ## 0.98.0 (2026-08-29)
 
 ### Behoben
