@@ -2,6 +2,7 @@ import { AppScanningState, useAppStore } from '@/store/app.store';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 import { IState } from '@/hooks/useMachine';
+import { OVERLAY_WINDOW_URL } from '@/utilities/constants';
 import { invoke } from '@tauri-apps/api/core';
 
 const OVERLAY_LABEL = 'overlay';
@@ -42,7 +43,7 @@ const appStates: IState[] = [
         // Groesse und Position setzt das Overlay selbst anhand des
         // Spielfensters, siehe usePoeWindow und ADR-0006.
         const overlay = new WebviewWindow(OVERLAY_LABEL, {
-          url: 'index.html/#/overlay',
+          url: OVERLAY_WINDOW_URL,
           title: 'PoE Leveling Guide Overlay',
           alwaysOnTop: true,
           decorations: false,

@@ -44,3 +44,13 @@ export const OVERLAY_SCALE_MAX = 2.0;
 export const OVERLAY_SCALE_STEP = 0.1;
 
 export const OVERLAY_BASE_FONT_SIZE = 16;
+
+/**
+ * Die Route des Overlay-Fensters, an drei Stellen gebraucht: beim Anlegen des
+ * Fensters, beim Aufloesen im Router und beim Bestimmen der Rolle eines
+ * Fensters (siehe `window-role.ts`). Drei getrennte Zeichenketten waeren drei
+ * Gelegenheiten, still auseinanderzulaufen.
+ */
+export const OVERLAY_ROUTE = '/overlay';
+
+export const OVERLAY_WINDOW_URL = `index.html/#${OVERLAY_ROUTE}`;

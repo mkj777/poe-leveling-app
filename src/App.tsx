@@ -1,6 +1,7 @@
 import { HashRouter, Route, Routes } from 'react-router-dom';
 
 import MainRoutes from './pages/main-routes';
+import { OVERLAY_ROUTE } from './utilities/constants';
 import OverlayPage from './pages/overlay.page';
 import { onUpdateReady } from './services/updater';
 import { useAppStore } from './store/app.store';
@@ -36,7 +37,7 @@ function App() {
       <Routes>
         <Route path='/*' element={<MainRoutes />} />
 
-        <Route path='/overlay' element={<OverlayPage />} />
+        <Route path={OVERLAY_ROUTE} element={<OverlayPage />} />
         <Route path='*' element={<h1>404 Not Found</h1>} />
       </Routes>
     </HashRouter>
