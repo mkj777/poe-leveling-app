@@ -50,7 +50,7 @@ let route: RouteData.Route;
 let steps: RouteData.FragmentStep[];
 
 beforeAll(() => {
-  route = buildDefaultRoute(readRoutes(), readBundle());
+  route = buildDefaultRoute(readRoutes(), readBundle(), 'league-start');
   steps = flattenSteps(route.sections);
 });
 
@@ -71,7 +71,9 @@ describe('Start der App', () => {
     const routes = readRoutes();
     const bundle = readBundle();
 
-    const result = bench(() => buildDefaultRoute(routes, bundle), { runs: 5 });
+    const result = bench(() => buildDefaultRoute(routes, bundle, 'league-start'), {
+      runs: 5
+    });
     report('buildDefaultRoute, 10 Akte', result, 25);
 
     expect(result.median).toBeLessThan(25);

@@ -48,7 +48,14 @@ export function reanchorEdge(
     }
   }
 
-  return best === -1 ? fallback : best;
+  if (best !== -1) return best;
+
+  // Kommt die Zone gar nicht mehr vor, bleibt der gespeicherte Index, geklemmt
+  // auf die neue Laenge. Das ist der Fall beim Moduswechsel: vier Zonen gibt
+  // es nur im Ligastart, und dessen Kantenliste ist die laengere. Die Ossuary
+  // liegt dort auf Kante 233, Speedleveling hat 236. Ein Index dahinter waere
+  // kein Schritt mehr, sondern ein leeres Overlay ohne Fehlermeldung.
+  return Math.max(0, Math.min(fallback, edges.length - 1));
 }
 
 // Die Sektionen sind Akte, fuer Anzeige und Fortschritt zaehlt aber die

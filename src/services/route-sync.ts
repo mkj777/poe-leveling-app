@@ -1,4 +1,5 @@
 import type { GameDataBundle, RouteData } from '@/lib/exile-leveling';
+import type { GuideMode } from '@/utilities/guide-mode';
 
 import { buildDefaultRoute } from '@/lib/exile-leveling/build-route';
 
@@ -29,7 +30,10 @@ export interface SyncResult {
   error: string | null;
 }
 
-export function parseCached(cached: CachedData): RouteData.Route {
+export function parseCached(
+  cached: CachedData,
+  mode: GuideMode
+): RouteData.Route {
   const bundle: GameDataBundle = {
     Areas: JSON.parse(cached.json['areas']),
     AwakenedGemLookup: JSON.parse(cached.json['awakened-gem-lookup']),
@@ -41,7 +45,7 @@ export function parseCached(cached: CachedData): RouteData.Route {
     VaalGemLookup: JSON.parse(cached.json['vaal-gem-lookup'])
   };
 
-  return buildDefaultRoute(cached.routes, bundle);
+  return buildDefaultRoute(cached.routes, bundle, mode);
 }
 
 function describeError(error: unknown): string {
@@ -53,7 +57,10 @@ function describeError(error: unknown): string {
  * Aufrufer setzt daraus den Zustand, und eine durchgereichte Ausnahme wuerde
  * ihn auf "wird geladen" stehen lassen.
  */
-export async function syncRoute(deps: SyncDeps): Promise<SyncResult> {
+export async function syncRoute(
+  deps: SyncDeps,
+  mode: GuideMode
+): Promise<SyncResult> {
   let status: SyncStatus = 'unchanged';
 
   try {
@@ -92,7 +99,7 @@ export async function syncRoute(deps: SyncDeps): Promise<SyncResult> {
   try {
     return {
       status,
-      route: parseCached(cached),
+      route: parseCached(cached, mode),
       sha: cached.sha,
       error: null
     };

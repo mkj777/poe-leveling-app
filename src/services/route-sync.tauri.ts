@@ -1,4 +1,5 @@
 import type { CachedData, SyncDeps, UpstreamStatus } from './route-sync';
+import type { GuideMode } from '@/utilities/guide-mode';
 import type { RouteData } from '@/lib/exile-leveling';
 
 import { invoke } from '@tauri-apps/api/core';
@@ -17,7 +18,7 @@ export const tauriDeps: SyncDeps = {
  * Overlay-Fenster braucht die Route, aber nicht den taeglichen Abgleich, den
  * das Hauptfenster ohnehin macht.
  */
-export async function loadRouteFromCache(): Promise<{
+export async function loadRouteFromCache(mode: GuideMode): Promise<{
   route: RouteData.Route;
   sha: string;
 } | null> {
@@ -25,7 +26,7 @@ export async function loadRouteFromCache(): Promise<{
   if (cached === null) return null;
 
   try {
-    return { route: parseCached(cached), sha: cached.sha };
+    return { route: parseCached(cached, mode), sha: cached.sha };
   } catch {
     return null;
   }

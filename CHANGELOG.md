@@ -7,6 +7,34 @@ GitHub-Releases. Fehlt der Abschnitt, bricht der Release-Workflow ab.
 Versionen folgen [SemVer](https://semver.org/lang/de/), Format angelehnt an
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## 0.97.0 (2026-08-29)
+
+### Neu
+
+- Zweiter Modus **Speedleveling** für den nächsten Charakter derselben Liga.
+  Craftingrezepte und Trials gelten dort schon, ihre Schritte fallen darum weg,
+  ebenso die Umwege, die nur beim Ligastart etwas bringen: Tidal Island mit
+  Hailrake, The Den, die Catacombs, das Silver Locket, die Ossuary und die Suche
+  nach der Chemist's Strongbox. Aus 488 Schritten auf 248 Kanten werden 409 auf
+  236.
+- Nach elf Tagen ohne Start fragt die App beim Öffnen, ob ein neuer Durchgang
+  ansteht, und lässt zwischen Ligastart und Speedleveling wählen. Beide
+  Antworten setzen auf Akt 1 zurück, eine dritte lässt alles stehen. Beim
+  allerersten Start wird nicht gefragt.
+- Der Modus steht auch in den Einstellungen. Ein Wechsel dort behält den
+  Fortschritt und knüpft an der nächstgelegenen passenden Zone wieder an.
+
+### Behoben
+
+- Ein Wiederanschluss konnte auf einen Kantenindex zeigen, den es nicht gibt,
+  wenn die zuletzt betretene Zone in der Route fehlt. Das Overlay wäre leer
+  geblieben, ohne Fehlermeldung. Der Index wird jetzt auf die Länge der Route
+  geklemmt. Aufgefallen beim Moduswechsel: die Ossuary liegt im Ligastart auf
+  Kante 233, Speedleveling hat nur 236.
+- Der tägliche Datenabgleich setzte seinen Takt unter React StrictMode nicht neu
+  auf, nachdem der erste Mount ihn abgeräumt hatte. Betraf nur den
+  Entwicklungslauf.
+
 ## 0.96.0 (2026-08-27)
 
 ### Intern

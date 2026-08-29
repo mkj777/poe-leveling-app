@@ -47,7 +47,7 @@ describe('syncRoute', () => {
       checkUpstream: async () => ({ changed: false, sha: 'b7b2dd0' }),
       fetchUpstream,
       readCached: async () => cached()
-    });
+    }, 'league-start');
 
     expect(fetchUpstream).not.toHaveBeenCalled();
     expect(result.status).toBe('unchanged');
@@ -61,7 +61,7 @@ describe('syncRoute', () => {
       checkUpstream: async () => ({ changed: true, sha: 'deadbee' }),
       fetchUpstream,
       readCached: async () => cached('deadbee')
-    });
+    }, 'league-start');
 
     expect(fetchUpstream).toHaveBeenCalledWith('deadbee');
     expect(result.status).toBe('updated');
@@ -76,7 +76,7 @@ describe('syncRoute', () => {
       },
       fetchUpstream: async () => undefined,
       readCached: async () => cached()
-    });
+    }, 'league-start');
 
     expect(result.status).toBe('offline');
     expect(result.route?.sections).toHaveLength(10);
@@ -89,7 +89,7 @@ describe('syncRoute', () => {
       },
       fetchUpstream: async () => undefined,
       readCached: async () => null
-    });
+    }, 'league-start');
 
     expect(result.status).toBe('error');
     expect(result.route).toBeNull();
@@ -104,7 +104,7 @@ describe('syncRoute', () => {
       readCached: async () => {
         throw 'kaputt ohne Error';
       }
-    });
+    }, 'league-start');
 
     expect(result.status).toBe('error');
     expect(result.error).toContain('kaputt ohne Error');
@@ -118,7 +118,7 @@ describe('syncRoute', () => {
       checkUpstream: async () => ({ changed: false, sha: 'b7b2dd0' }),
       fetchUpstream: async () => undefined,
       readCached: async () => broken
-    });
+    }, 'league-start');
 
     expect(result.status).toBe('error');
     expect(result.route).toBeNull();
