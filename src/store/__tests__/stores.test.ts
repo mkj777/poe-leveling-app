@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { RouteData } from '@/lib/exile-leveling';
 import { AppScanningState, AppState, useAppStore } from '../app.store';
+import { useGuideStore } from '../guide.store';
 import { useRouteStore } from '../route.store';
 import { useSettingsStore } from '../settings.store';
 
@@ -134,5 +135,26 @@ describe('settings.store', () => {
     expect(after.overlayScale).toBe(1);
     expect(after.overlayOffset).toEqual({ dx: 0, dy: 0 });
     expect(after.clientTxtPath).toBe('C:/poe/Client.txt');
+  });
+});
+
+describe('guide.store', () => {
+  beforeEach(() => {
+    useGuideStore.setState({ mode: 'league-start', lastOpenedAt: null });
+  });
+
+  it('faengt im bisherigen Ablauf an', () => {
+    expect(useGuideStore.getState().mode).toBe('league-start');
+  });
+
+  it('wechselt den Modus', () => {
+    useGuideStore.getState().setMode('speedleveling');
+    expect(useGuideStore.getState().mode).toBe('speedleveling');
+  });
+
+  it('haelt den Zeitpunkt des Starts fest', () => {
+    // Daran misst NewRunDialog die Pause seit dem letzten Start.
+    useGuideStore.getState().markOpened(1_700_000_000_000);
+    expect(useGuideStore.getState().lastOpenedAt).toBe(1_700_000_000_000);
   });
 });

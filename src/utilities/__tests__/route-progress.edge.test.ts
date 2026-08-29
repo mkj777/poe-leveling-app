@@ -73,8 +73,17 @@ describe('Grenzen des Kantenindex', () => {
     expect(advanceEdge(edges, 0, '')).toBe(0);
   });
 
-  it('reanchorEdge auf leerer Kantenliste nimmt den Rueckfall', () => {
-    expect(reanchorEdge([], '1_1_1', 7)).toBe(7);
+  it('reanchorEdge auf leerer Kantenliste bleibt im gueltigen Bereich', () => {
+    // Kommt in einer geparsten Route nicht vor, sie traegt immer mindestens
+    // die Startkante. Der Rueckfall darf trotzdem kein Index sein, den es
+    // nicht gibt.
+    expect(reanchorEdge([], '1_1_1', 7)).toBe(0);
+  });
+
+  it('reanchorEdge klemmt auf eine kuerzer gewordene Kantenliste', () => {
+    // Der Moduswechsel: vier Zonen gibt es nur im Ligastart, und dessen
+    // Kantenliste ist die laengere.
+    expect(reanchorEdge(['a', 'b', 'c'], 'weg', 99)).toBe(2);
   });
 
   it('reanchorEdge trifft den ersten Index, wenn die Zone dort steht', () => {

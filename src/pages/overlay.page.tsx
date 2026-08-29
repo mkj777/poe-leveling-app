@@ -5,13 +5,27 @@ import {
   OVERLAY_HEADER_HEIGHT,
   OVERLAY_MIN_HEIGHT
 } from '@/utilities/constants';
+import type { GuideMode, GuideModeMessage } from '@/utilities/guide-mode';
 import type { OverlaySettings } from '@/services/overlay-settings';
+import { GUIDE_MODE_EVENT } from '@/utilities/guide-mode';
 import { OVERLAY_SETTINGS_EVENT } from '@/services/overlay-settings';
 import { listen } from '@tauri-apps/api/event';
 import { loadRouteFromCache } from '@/services/route-sync.tauri';
 import { usePoeWindow } from '@/hooks/usePoeWindow';
+import { useGuideStore } from '@/store/guide.store';
 import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';
+
+async function loadRoute(mode: GuideMode, edge?: number) {
+  const loaded = await loadRouteFromCache(mode);
+  if (loaded === null) return;
+
+  const store = useRouteStore.getState();
+  store.setRoute(loaded.route, loaded.sha);
+
+  // Erst nach der Route: setCurrentEdge schlaegt die Zone darin nach.
+  if (edge !== undefined) store.setCurrentEdge(edge);
+}
 
 /**
  * Eigenes Fenster, damit das Hauptfenster Hauptfenster bleiben kann. Es haengt
@@ -34,11 +48,11 @@ export default function OverlayPage() {
     return () => document.body.classList.remove('overlay-window');
   }, []);
 
+  // Der Modus kommt beim Aufbau aus dem eigenen Store, den zustand aus dem
+  // gemeinsamen localStorage wiederherstellt. Ein Wechsel danach kommt als
+  // Ereignis aus dem Hauptfenster.
   useEffect(() => {
-    void (async () => {
-      const loaded = await loadRouteFromCache();
-      if (loaded !== null) useRouteStore.getState().setRoute(loaded.route, loaded.sha);
-    })();
+    void loadRoute(useGuideStore.getState().mode);
   }, []);
 
   useEffect(() => {
@@ -59,10 +73,16 @@ export default function OverlayPage() {
       }
     );
 
+    const guideMode = listen<GuideModeMessage>(GUIDE_MODE_EVENT, (event) => {
+      useGuideStore.getState().setMode(event.payload.mode);
+      void loadRoute(event.payload.mode, event.payload.currentEdge);
+    });
+
     return () => {
       void edge.then((off) => off());
       void toggle.then((off) => off());
       void settings.then((off) => off());
+      void guideMode.then((off) => off());
     };
   }, []);
 

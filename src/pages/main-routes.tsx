@@ -2,6 +2,7 @@ import { AppState, useAppStore } from '@/store/app.store';
 import { Route, Routes } from 'react-router-dom';
 
 import MainPage from './main.page';
+import NewRunDialog from '@/components/new-run-dialog';
 import { publishOverlaySettings } from '@/services/overlay-settings';
 import SettingsPage from './settings.page';
 import appStates from '@/states/app.state';
@@ -67,9 +68,15 @@ export default function MainRoutes() {
   }, [appState]);
 
   return (
-    <Routes>
-      <Route path='/' element={<MainPage />} />
-      <Route path='/settings' element={<SettingsPage />} />
-    </Routes>
+    <>
+      {/* Ausserhalb der Routen: die Frage nach einem neuen Durchgang gilt dem
+          Start der App, nicht einer Seite. */}
+      <NewRunDialog />
+
+      <Routes>
+        <Route path='/' element={<MainPage />} />
+        <Route path='/settings' element={<SettingsPage />} />
+      </Routes>
+    </>
   );
 }

@@ -20,6 +20,9 @@ import {
 import { emit } from '@tauri-apps/api/event';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
+import type { GuideMode } from '@/utilities/guide-mode';
+import { GUIDE_MODE_OPTIONS } from '@/utilities/guide-mode';
+import { useGuideStore } from '@/store/guide.store';
 import { useNavigate } from 'react-router-dom';
 import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';
@@ -54,6 +57,8 @@ export default function SettingsPage() {
   const navigator = useNavigate();
   const settingStore = useSettingsStore((state) => state);
   const sha = useRouteStore((state) => state.sha);
+  const guideMode = useGuideStore((state) => state.mode);
+  const setGuideMode = useGuideStore((state) => state.setMode);
   const overlayRunning = useAppStore((state) => state.appState) === AppState.IN_GAME;
 
   const [clientTxtPathValue, setClientTxtPathValue] = useState(
@@ -114,6 +119,33 @@ export default function SettingsPage() {
                 <File className='mr-2 size-4' /> Browse
               </Button>
             </div>
+          </Section>
+
+          <Section
+            title='Guide mode'
+            hint='The app asks on its own after eleven days without a start. Switching here keeps your progress and puts you back at the nearest matching zone.'
+          >
+            <Select
+              value={guideMode}
+              onValueChange={(value) => setGuideMode(value as GuideMode)}
+            >
+              <SelectTrigger className='w-full'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GUIDE_MODE_OPTIONS.map((option) => (
+                  <SelectItem key={option.mode} value={option.mode}>
+                    {option.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className='text-muted-foreground text-xs'>
+              {
+                GUIDE_MODE_OPTIONS.find((option) => option.mode === guideMode)
+                  ?.hint
+              }
+            </p>
           </Section>
 
           <Section
