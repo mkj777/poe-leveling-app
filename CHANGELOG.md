@@ -7,6 +7,61 @@ GitHub-Releases. Fehlt der Abschnitt, bricht der Release-Workflow ab.
 Versionen folgen [SemVer](https://semver.org/lang/de/), Format angelehnt an
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## 1.0.0 (2026-08-31)
+
+Erste Ausgabe ohne Vorbehalt.
+
+### Neu
+
+- Ein geladenes Update lässt sich sofort einspielen, statt auf den nächsten
+  Start zu warten. Der Hinweis in der Kopfzeile ist jetzt ein Knopf, und die
+  Meldung beim Laden trägt denselben. Die App startet dabei von selbst neu.
+
+### Geändert
+
+- Unter dem letzten Schritt des Guides steht das Kürzel, mit dem das Overlay
+  zugeht. Sonst steht es nur in den Einstellungen, und dort sieht mitten im
+  Spiel niemand nach. Es liegt jetzt auf Ctrl+Alt+0 statt auf
+  Ctrl+Shift+Alt+F12 und steht nur noch an einer Stelle im Quelltext, statt an
+  dreien.
+- Das Overlay zeigt nur noch an. Es parst keine Route mehr, hält keine
+  Spieldaten, keinen Fortschritt und keine gespeicherten Einstellungen. Das
+  Hauptfenster rechnet aus, was zu sehen ist, und schickt es als fertige
+  Zeilen. Damit gibt es nichts mehr, das zwischen den Fenstern auseinander
+  laufen könnte.
+
+### Behoben
+
+- Liste und Overlay hoben unterschiedliche Schritte hervor, um je einen
+  versetzt. Ein Block der Liste begann mit dem Übergang in seine Zone, und der
+  ist erledigt, sobald Client.txt die Zone meldet: hervorgehoben war damit der
+  zuletzt gemachte Schritt, während das Overlay den nächsten zeigte. An
+  Kante 53 stand in der Liste „➞ The Slums" und im Overlay „➞ The Crematorium".
+  Ein Block endet jetzt mit dem Übergang, statt mit ihm zu beginnen. Beide
+  Fenster zeigen damit dieselben Zeilen, für jede Kante der Route geprüft.
+- Zog man das Overlay an eine andere Stelle und fasste danach im Hauptfenster
+  einen Regler an, sprang die Platzierung zurück. Beide Fenster schrieben in
+  denselben Eintrag, und das Hauptfenster kannte die Verschiebung nie.
+  Gezogen wird jetzt im Overlay, gespeichert im Hauptfenster.
+- Der Moduswechsel fragte GitHub, bevor er die Route neu las, und dauerte
+  damit so lange wie dieser Abgleich, für den die Bibliothek keine Zeitgrenze
+  setzt. Er liest jetzt direkt aus dem Cache: die Daten sind dieselben, nur die
+  Lesart ist eine andere. Gemessen 37 ms statt einer Netzrunde.
+
+### Intern
+
+- Das Overlay-Fenster wurde beim Anhalten an zwei Stellen geschlossen. Ein Rest
+  aus der Zeit, als es zwei Fenster gab: eine gewann, die andere fand nichts
+  mehr und meldete „window not found". Geschlossen wird jetzt an einer Stelle.
+- `loadRouteFromCache` und die Zustellung der Lesart ans Overlay entfallen.
+  Der Umbau entfernt unterm Strich Code (ADR-0012).
+- Symbole werden als Name über die Fenstergrenze gereicht statt als Adresse im
+  Bündel.
+- Der wöchentliche Blick auf den Upstream-Parser meldete Änderung, wo keine war.
+  Der Generator schrieb `ATTRIBUTION.md` jedes Mal ohne einen später von Hand
+  ergänzten Abschnitt neu, und der Upstream-Klon landete als Submodul im
+  Vorschlag. Beides behoben.
+
 ## 0.99.0 (2026-08-29)
 
 ### Behoben
