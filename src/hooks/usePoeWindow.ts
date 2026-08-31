@@ -8,8 +8,10 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { PoeBounds } from '@/utilities/overlay-geometry';
 import { computeOverlayRect, offsetFromWindow } from '@/utilities/overlay-geometry';
+import type { OverlayPlacement } from '@/utilities/overlay-view';
+import { OVERLAY_PLACEMENT_EVENT } from '@/utilities/overlay-view';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { emit, listen } from '@tauri-apps/api/event';
 import { useSettingsStore } from '@/store/settings.store';
 const appWindow = getCurrentWebviewWindow()
 
@@ -125,24 +127,30 @@ export function usePoeWindow(
 
       const size = await appWindow.outerSize();
 
-      setOverlayOffset(
-        offsetFromWindow(
-          bounds,
-          {
-            x: payload.x,
-            y: payload.y,
-            width: size.width,
-            height: size.height
-          },
-          overlayAnchor
-        )
+      const offset = offsetFromWindow(
+        bounds,
+        {
+          x: payload.x,
+          y: payload.y,
+          width: size.width,
+          height: size.height
+        },
+        overlayAnchor
       );
+
+      // Hier setzen, damit das Fenster sofort folgt, und dem Hauptfenster
+      // melden, das die Einstellungen speichert (ADR-0012).
+      setOverlayOffset(offset);
+      void emit(OVERLAY_PLACEMENT_EVENT, {
+        overlayScale,
+        overlayOffset: offset
+      } satisfies OverlayPlacement);
     });
 
     return () => {
       void unlisten.then((off) => off());
     };
-  }, [editMode, bounds, setOverlayOffset, overlayAnchor]);
+  }, [editMode, bounds, setOverlayOffset, overlayAnchor, overlayScale]);
 
   return { bounds };
 }

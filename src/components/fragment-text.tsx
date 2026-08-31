@@ -1,48 +1,32 @@
-import type { Fragments, RouteData } from '@/lib/exile-leveling';
-import {
-  FRAGMENT_COLOURS,
-  fragmentColour,
-  fragmentIcon
-} from '@/utilities/fragment-style';
+import type { LineView } from '@/utilities/overlay-view';
+import { FRAGMENT_COLOURS, ICON_SOURCES } from '@/utilities/fragment-style';
 
-import { renderFragment } from '@/utilities/fragment-text';
-
-function Fragment({ fragment }: { fragment: Fragments.AnyFragment }) {
-  const text = renderFragment(fragment);
-  const icon = fragmentIcon(fragment);
-  const colour = FRAGMENT_COLOURS[fragmentColour(fragment)];
-
-  if (typeof fragment === 'string') return <>{text}</>;
-
-  return (
-    <span className={colour}>
-      {/* Nur die Hoehe festlegen, die Breite folgt dem Bild. Die Icons sind
-          nicht quadratisch: das Quest-Ausrufezeichen misst 30x64, Trial und
-          Waypoint sind breiter als hoch. Beide Masse zu setzen zog das eine in
-          die Breite und stauchte die anderen. */}
-      {icon !== null && (
-        <img
-          src={icon}
-          alt=''
-          aria-hidden
-          className='mr-0.5 inline-block h-[1em] w-auto align-[-0.15em]'
-        />
-      )}
-      {text}
-    </span>
-  );
-}
-
-/** Ein Schritt mit den Farben und Symbolen des Originals. */
-export default function FragmentText({
-  step
-}: {
-  step: RouteData.FragmentStep;
-}) {
+/**
+ * Eine Zeile des Guides, in den Farben und Symbolen des Originals.
+ *
+ * Nimmt bewusst fertige Daten und keinen Schritt: dieselbe Komponente malt im
+ * Hauptfenster und im Overlay, und das Overlay hat keine Route, aus der es
+ * etwas ableiten koennte (ADR-0012).
+ */
+export default function FragmentLine({ parts }: { parts: LineView }) {
   return (
     <>
-      {step.parts.map((part, index) => (
-        <Fragment key={index} fragment={part} />
+      {parts.map((part, index) => (
+        <span key={index} className={FRAGMENT_COLOURS[part.colour]}>
+          {/* Nur die Hoehe festlegen, die Breite folgt dem Bild. Die Icons sind
+              nicht quadratisch: das Quest-Ausrufezeichen misst 30x64, Trial und
+              Waypoint sind breiter als hoch. Beide Masse zu setzen zog das eine
+              in die Breite und stauchte die anderen. */}
+          {part.icon !== null && (
+            <img
+              src={ICON_SOURCES[part.icon]}
+              alt=''
+              aria-hidden
+              className='mr-0.5 inline-block h-[1em] w-auto align-[-0.15em]'
+            />
+          )}
+          {part.text}
+        </span>
       ))}
     </>
   );

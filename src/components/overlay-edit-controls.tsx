@@ -5,7 +5,10 @@ import {
   OVERLAY_SCALE_STEP
 } from '@/utilities/constants';
 
+import type { OverlayPlacement } from '@/utilities/overlay-view';
 import { Button } from './ui/button';
+import { OVERLAY_PLACEMENT_EVENT } from '@/utilities/overlay-view';
+import { emit } from '@tauri-apps/api/event';
 import { useSettingsStore } from '@/store/settings.store';
 
 interface Props {
@@ -22,12 +25,29 @@ export default function OverlayEditControls({ onClose }: Props) {
     (state) => state.resetOverlayPlacement
   );
 
+  // Hier setzen, damit es sofort zu sehen ist, und dem Hauptfenster melden,
+  // dem die Einstellungen gehoeren. Gespeichert wird nur dort (ADR-0012).
+  const report = (overlayScale: number, overlayOffset: { dx: number; dy: number }) => {
+    void emit(OVERLAY_PLACEMENT_EVENT, {
+      overlayScale,
+      overlayOffset
+    } satisfies OverlayPlacement);
+  };
+
   const step = (direction: number) => {
     const next = Math.min(
       Math.max(overlayScale + direction * OVERLAY_SCALE_STEP, OVERLAY_SCALE_MIN),
       OVERLAY_SCALE_MAX
     );
-    setOverlayScale(Math.round(next * 10) / 10);
+    const rounded = Math.round(next * 10) / 10;
+
+    setOverlayScale(rounded);
+    report(rounded, useSettingsStore.getState().overlayOffset);
+  };
+
+  const reset = () => {
+    resetOverlayPlacement();
+    report(1, { dx: 0, dy: 0 });
   };
 
   return (
@@ -62,7 +82,7 @@ export default function OverlayEditControls({ onClose }: Props) {
           size='icon'
           className='size-7'
           title='Reset'
-          onClick={resetOverlayPlacement}
+          onClick={reset}
         >
           <RotateCcw size={16} />
         </Button>

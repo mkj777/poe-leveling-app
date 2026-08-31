@@ -1,8 +1,14 @@
 import { AppState, useAppStore } from '@/store/app.store';
 import { Route, Routes } from 'react-router-dom';
 
-import type { GuideState } from '@/utilities/guide-mode';
-import { GUIDE_STATE_EVENT, OVERLAY_READY_EVENT } from '@/utilities/guide-mode';
+import type { OverlayPlacement, OverlayView } from '@/utilities/overlay-view';
+import {
+  EMPTY_OVERLAY_VIEW,
+  OVERLAY_PLACEMENT_EVENT,
+  OVERLAY_READY_EVENT,
+  OVERLAY_VIEW_EVENT,
+  buildOverlayView
+} from '@/utilities/overlay-view';
 import MainPage from './main.page';
 import NewRunDialog from '@/components/new-run-dialog';
 import { publishOverlaySettings } from '@/services/overlay-settings';
@@ -12,16 +18,15 @@ import { listen } from '@tauri-apps/api/event';
 import { emit } from '@tauri-apps/api/event';
 import { useEffect } from 'react';
 import useMachine from '@/hooks/useMachine';
-import { useGuideStore } from '@/store/guide.store';
 import { useRouteStore } from '@/store/route.store';
 import { useRouteSync } from '@/hooks/useRouteSync';
 import { useSettingsStore } from '@/store/settings.store';
 
-function guideState(): GuideState {
-  return {
-    mode: useGuideStore.getState().mode,
-    currentEdge: useRouteStore.getState().currentEdge
-  };
+function overlayView(): OverlayView {
+  const { route, currentEdge } = useRouteStore.getState();
+  return route === null
+    ? EMPTY_OVERLAY_VIEW
+    : buildOverlayView(route, currentEdge);
 }
 
 export default function MainRoutes() {
@@ -33,30 +38,42 @@ export default function MainRoutes() {
   // dort dreimal, und der Rundfunk wuerde sich selbst zuhoeren.
   useRouteSync();
 
-  // Das Overlay parst seine Route selbst und braucht dafuer die Lesart. Es
-  // bekommt sie zu jeder Kante mitgeschickt, nicht nur beim Wechsel: eine
-  // blosse Zahl trifft in der kuerzeren Speedleveling-Liste eine andere Zone
-  // als in der laengeren des Ligastarts (ADR-0011).
+  // Das Overlay zeigt nur an. Was es zeigt, rechnet dieses Fenster aus, denn
+  // hier liegen Route und Spieldaten (ADR-0012).
   //
   // Hier und nicht in MainPage: von der Einstellungsseite aus wechselt man den
-  // Modus, und dort war MainPage nicht mehr montiert.
-  const mode = useGuideStore((state) => state.mode);
+  // Modus, und dort ist MainPage nicht montiert.
+  const route = useRouteStore((state) => state.route);
   const currentEdge = useRouteStore((state) => state.currentEdge);
 
   useEffect(() => {
-    void emit(GUIDE_STATE_EVENT, { mode, currentEdge } satisfies GuideState);
-  }, [mode, currentEdge]);
+    void emit(OVERLAY_VIEW_EVENT, overlayView());
+  }, [route, currentEdge]);
 
-  // Das Overlay startet spaeter als dieses Fenster und hat die bisherigen
-  // Meldungen nie gehoert. Es meldet sich, sobald es horcht, und bekommt den
-  // Stand als Antwort.
   useEffect(() => {
+    // Das Overlay startet spaeter als dieses Fenster und hat die bisherigen
+    // Meldungen nie gehoert. Es meldet sich, sobald es horcht, und bekommt
+    // Inhalt und Einstellungen als Antwort. Beides haelt es nur im Speicher.
     const ready = listen(OVERLAY_READY_EVENT, () => {
-      void emit(GUIDE_STATE_EVENT, guideState());
+      void emit(OVERLAY_VIEW_EVENT, overlayView());
+      publishOverlaySettings(useSettingsStore.getState());
     });
+
+    // Die Gegenrichtung: gezogen und skaliert wird im Overlay, gespeichert
+    // hier. Zwei Schreiber auf einem Eintrag haben sich schon einmal
+    // gegenseitig ueberschrieben (ADR-0011, zweiter Nachtrag).
+    const placement = listen<OverlayPlacement>(
+      OVERLAY_PLACEMENT_EVENT,
+      (event) => {
+        const settings = useSettingsStore.getState();
+        settings.setOverlayScale(event.payload.overlayScale);
+        settings.setOverlayOffset(event.payload.overlayOffset);
+      }
+    );
 
     return () => {
       void ready.then((off) => off());
+      void placement.then((off) => off());
     };
   }, []);
 

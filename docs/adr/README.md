@@ -22,3 +22,4 @@ Begriffe: [`../glossary.md`](../glossary.md)
 | [0009](0009-layout-overlay-entfernt.md) | Layout-Overlay entfernt, Bilder kommen nur noch aus dem Bundle | angenommen |
 | [0010](0010-angezeigter-schritt-ist-der-naechste.md) | Angezeigt wird der nächste Schritt, nicht der erreichte Übergang | angenommen |
 | [0011](0011-zwei-guide-modi.md) | Zwei Lesarten der Route, Ligastart und Speedleveling | angenommen |
+| [0012](0012-overlay-ist-nur-anzeige.md) | Das Overlay ist nur Anzeige | angenommen |

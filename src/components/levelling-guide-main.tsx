@@ -2,8 +2,9 @@ import type { RouteData } from '@/lib/exile-leveling';
 
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
-import FragmentText from './fragment-text';
+import FragmentLine from './fragment-text';
 import { blockSections } from '@/utilities/route-progress';
+import { toStepView } from '@/utilities/overlay-view';
 import { useEffect, useMemo, useRef } from 'react';
 import { useRouteStore } from '@/store/route.store';
 
@@ -20,10 +21,21 @@ export default function LevellingGuideMain({ route }: Props) {
   // Ziel.
   const currentBlock = useRef<HTMLDivElement>(null);
 
-  // Ein Block endet mit dem Uebergang in die naechste Zone, statt mit ihm zu
-  // beginnen. Sonst stuende oben im hervorgehobenen Block der Schritt, der
-  // gerade erledigt wurde, und nicht der naechste.
-  const sections = useMemo(() => blockSections(route.sections), [route]);
+  // Einmal je Route in die Form gebracht, in der auch das Overlay seine Zeilen
+  // bekommt (ADR-0012). Eine Darstellung, ein Bauplan, zwei Fenster. Und
+  // dieselbe Einteilung, damit hier derselbe Schritt hervorgehoben ist, den
+  // das Overlay zeigt.
+  const sections = useMemo(
+    () =>
+      blockSections(route.sections).map((section) => ({
+        name: section.name,
+        blocks: section.blocks.map((block) => ({
+          edgeIndex: block.edgeIndex,
+          steps: block.steps.map(toStepView)
+        }))
+      })),
+    [route]
+  );
 
   // Beim Start und bei jedem Zonenwechsel zurueck zum aktuellen Block. Wer
   // dazwischen selbst scrollt, wird nicht gestoert: das laeuft nur, wenn sich
@@ -54,7 +66,6 @@ export default function LevellingGuideMain({ route }: Props) {
               <div
                 key={`${section.name}-${index}`}
                 ref={isCurrent ? currentBlock : undefined}
-                id={edgeIndex === null ? undefined : `edge-${edgeIndex}`}
                 className={cn(
                   'relative border-b-[1px] px-3 py-2',
                   isCurrent && 'bg-neutral-700'
@@ -63,7 +74,7 @@ export default function LevellingGuideMain({ route }: Props) {
                 {block.steps.map((step, stepIndex) => (
                   <div key={stepIndex}>
                     <p className={stepIndex === 0 ? undefined : 'pt-1'}>
-                      <FragmentText step={step} />
+                      <FragmentLine parts={step.parts} />
                     </p>
 
                     {step.subSteps.map((subStep, subIndex) => (
@@ -71,7 +82,7 @@ export default function LevellingGuideMain({ route }: Props) {
                         key={subIndex}
                         className='text-muted-foreground pl-4 text-sm'
                       >
-                        <FragmentText step={subStep} />
+                        <FragmentLine parts={subStep} />
                       </p>
                     ))}
                   </div>

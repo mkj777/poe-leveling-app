@@ -66,9 +66,11 @@ const appStates: IState[] = [
 
         invoke('open_poe_window');
       },
-      leave: async () => {
-        await close(OVERLAY_LABEL);
-      }
+      // Geschlossen wird beim Betreten von `normal`, und dorthin fuehrt jeder
+      // Weg von hier. Zwei Stellen waren ein Rest aus der Zeit mit zwei
+      // Fenstern (ADR-0009): sie liefen gegeneinander, eine gewann, die andere
+      // fand nichts mehr und meldete "window not found".
+      leave: () => {}
     }
   }
 ];
