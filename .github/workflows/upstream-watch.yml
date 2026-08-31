@@ -29,6 +29,9 @@ jobs:
       - name: Pull Request bei Aenderungen
         uses: peter-evans/create-pull-request@v6
         with:
+          # Nur das, was das Skript schreibt. Ohne das nimmt die Action den
+          # Upstream-Checkout unter `upstream/` als Submodul mit.
+          add-paths: src/lib/exile-leveling
           branch: upstream/parser-drift
           title: 'chore: Route-Parser von exile-leveling nachziehen'
           commit-message: 'chore: Route-Parser von exile-leveling nachziehen'

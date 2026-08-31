@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Klon von exile-leveling, den upstream-watch.yml hierher legt
+/upstream/
