@@ -21,3 +21,14 @@ export function onUpdateReady(
 export async function currentVersion(): Promise<string> {
   return invoke<string>('update_current_version');
 }
+
+/**
+ * Spielt ein bereitliegendes Update sofort ein und startet die App neu.
+ *
+ * Loest die Zusage nicht ein, sondern beschleunigt sie: eingespielt wuerde es
+ * ohnehin, beim naechsten Start. Die Promise kommt im Erfolgsfall nie zurueck,
+ * weil der Prozess vorher endet. Nur ein Fehlschlag meldet sich.
+ */
+export async function applyUpdateNow(): Promise<string> {
+  return invoke<string>('update_apply_now');
+}
