@@ -22,6 +22,7 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import type { GuideMode } from '@/utilities/guide-mode';
 import { GUIDE_MODE_OPTIONS } from '@/utilities/guide-mode';
+import { SHORTCUT_CLOSE_OVERLAY, shortcutLabel } from '@/utilities/shortcuts';
 import { useGuideStore } from '@/store/guide.store';
 import { useNavigate } from 'react-router-dom';
 import { useRouteStore } from '@/store/route.store';
@@ -150,7 +151,9 @@ export default function SettingsPage() {
 
           <Section
             title='Overlay'
-            hint='It places itself in the game window and follows it. Ctrl+Shift+Alt+F12 closes it.'
+            hint={`It places itself in the game window and follows it. ${shortcutLabel(
+              SHORTCUT_CLOSE_OVERLAY
+            )} closes it.`}
           >
             <div className='flex flex-col gap-1.5'>
               <Label className='text-xs font-normal'>Position</Label>

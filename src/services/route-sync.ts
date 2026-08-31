@@ -2,6 +2,7 @@ import type { GameDataBundle, RouteData } from '@/lib/exile-leveling';
 import type { GuideMode } from '@/utilities/guide-mode';
 
 import { buildDefaultRoute } from '@/lib/exile-leveling/build-route';
+import { withShortcutHint } from '@/utilities/shortcut-hint';
 
 export interface UpstreamStatus {
   changed: boolean;
@@ -45,7 +46,9 @@ export function parseCached(
     VaalGemLookup: JSON.parse(cached.json['vaal-gem-lookup'])
   };
 
-  return buildDefaultRoute(cached.routes, bundle, mode);
+  // Der Hinweis auf das Kuerzel kommt nicht aus der Route, siehe
+  // shortcut-hint.ts.
+  return withShortcutHint(buildDefaultRoute(cached.routes, bundle, mode));
 }
 
 function describeError(error: unknown): string {
