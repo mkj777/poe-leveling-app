@@ -53,28 +53,22 @@ function describeError(error: unknown): string {
 }
 
 /**
+ * Liest den lokalen Cache und parst ihn in der gewuenschten Lesart. Fragt
+ * Upstream nicht.
+ *
+ * Das ist der Weg fuer einen Moduswechsel: die Daten sind dieselben, nur die
+ * Lesart ist eine andere. Ein Netzzugriff dafuer waere Wartezeit ohne
+ * Gegenwert, und genau daran hing der Wechsel frueher, samt Zeitgrenze, die
+ * reqwest nicht kennt.
+ *
  * Liefert immer ein Ergebnis und wirft nie. Das ist der ganze Zweck: der
  * Aufrufer setzt daraus den Zustand, und eine durchgereichte Ausnahme wuerde
  * ihn auf "wird geladen" stehen lassen.
  */
-export async function syncRoute(
-  deps: SyncDeps,
+export async function loadRoute(
+  deps: Pick<SyncDeps, 'readCached'>,
   mode: GuideMode
 ): Promise<SyncResult> {
-  let status: SyncStatus = 'unchanged';
-
-  try {
-    const upstream = await deps.checkUpstream();
-    if (upstream.changed) {
-      await deps.fetchUpstream(upstream.sha);
-      status = 'updated';
-    }
-  } catch {
-    // Netzfehler oder Rate-Limit sind kein Grund, ohne Guide dazustehen.
-    // Der Cache traegt weiter, der naechste Takt versucht es erneut.
-    status = 'offline';
-  }
-
   let cached: CachedData | null;
   try {
     cached = await deps.readCached();
@@ -98,7 +92,7 @@ export async function syncRoute(
 
   try {
     return {
-      status,
+      status: 'unchanged',
       route: parseCached(cached, mode),
       sha: cached.sha,
       error: null
@@ -111,4 +105,29 @@ export async function syncRoute(
       error: describeError(error)
     };
   }
+}
+
+/** Gleicht mit Upstream ab und laedt danach. Der taegliche Weg (ADR-0001). */
+export async function syncRoute(
+  deps: SyncDeps,
+  mode: GuideMode
+): Promise<SyncResult> {
+  let status: SyncStatus = 'unchanged';
+
+  try {
+    const upstream = await deps.checkUpstream();
+    if (upstream.changed) {
+      await deps.fetchUpstream(upstream.sha);
+      status = 'updated';
+    }
+  } catch {
+    // Netzfehler oder Rate-Limit sind kein Grund, ohne Guide dazustehen.
+    // Der Cache traegt weiter, der naechste Takt versucht es erneut.
+    status = 'offline';
+  }
+
+  const result = await loadRoute(deps, mode);
+
+  // Ein Fehler beim Lesen wiegt schwerer als die Meldung vom Abgleich.
+  return result.status === 'error' ? result : { ...result, status };
 }

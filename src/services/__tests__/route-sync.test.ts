@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { CachedData } from '../route-sync';
-import { syncRoute } from '../route-sync';
+import type { CachedData, SyncDeps } from '../route-sync';
+import { loadRoute, syncRoute } from '../route-sync';
 
 const SNAPSHOT = path.resolve(
   __dirname,
@@ -122,6 +122,73 @@ describe('syncRoute', () => {
 
     expect(result.status).toBe('error');
     expect(result.route).toBeNull();
+    expect(result.sha).toBe('b7b2dd0');
+  });
+});
+
+describe('loadRoute', () => {
+  it('fragt Upstream gar nicht erst', async () => {
+    // Der Weg fuer den Moduswechsel. Die Daten sind dieselben, nur die Lesart
+    // ist eine andere, und ein Request an GitHub waere Wartezeit ohne
+    // Gegenwert. Genau daran hing der Wechsel frueher.
+    const checkUpstream = vi.fn(async () => ({ changed: true, sha: 'neu' }));
+    const fetchUpstream = vi.fn(async () => undefined);
+
+    // Bewusst die vollen Abhaengigkeiten: der Test soll zeigen, dass loadRoute
+    // sie nicht anfasst, obwohl es sie haette.
+    const deps: SyncDeps = {
+      checkUpstream,
+      fetchUpstream,
+      readCached: async () => cached()
+    };
+
+    const result = await loadRoute(deps, 'speedleveling');
+
+    expect(checkUpstream).not.toHaveBeenCalled();
+    expect(fetchUpstream).not.toHaveBeenCalled();
+    expect(result.status).toBe('unchanged');
+    expect(result.route?.edges).toHaveLength(236);
+  });
+
+  it('parst in der verlangten Lesart', async () => {
+    const deps = { readCached: async () => cached() };
+
+    expect((await loadRoute(deps, 'league-start')).route?.edges).toHaveLength(
+      248
+    );
+    expect((await loadRoute(deps, 'speedleveling')).route?.edges).toHaveLength(
+      236
+    );
+  });
+
+  it('meldet Fehler, wenn der Cache leer ist', async () => {
+    const result = await loadRoute({ readCached: async () => null }, 'league-start');
+
+    expect(result.status).toBe('error');
+    expect(result.route).toBeNull();
+  });
+
+  it('meldet Fehler, wenn das Lesen scheitert', async () => {
+    const result = await loadRoute(
+      {
+        readCached: async () => {
+          throw new Error('Platte weg');
+        }
+      },
+      'league-start'
+    );
+
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('Platte weg');
+  });
+
+  it('meldet Fehler, wenn der Cache beschaedigt ist', async () => {
+    const broken = cached();
+    broken.json['areas'] = '{ das ist kein json';
+
+    const result = await loadRoute({ readCached: async () => broken }, 'league-start');
+
+    expect(result.status).toBe('error');
     expect(result.sha).toBe('b7b2dd0');
   });
 });
