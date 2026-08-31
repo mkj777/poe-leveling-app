@@ -14,7 +14,8 @@ import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { cn } from '@/lib/utils';
-import { currentVersion } from '@/services/updater';
+import { applyUpdateNow, currentVersion } from '@/services/updater';
+import { useToast } from './ui/use-toast';
 import logo from '@/assets/icon.ico';
 import { useNavigate } from 'react-router-dom';
 import { useRouteStore } from '@/store/route.store';
@@ -29,6 +30,20 @@ export default function Navbar() {
 
   const [openResetDialog, setOpenResetDialog] = useState(false);
   const [appVersion, setAppVersion] = useState<string | null>();
+
+  const { toast } = useToast();
+
+  // Im Erfolgsfall kommt der Aufruf nie zurueck: die App beendet sich und
+  // startet neu. Meldet sich also nur, wenn nichts passiert ist.
+  const installNow = () => {
+    void applyUpdateNow().catch((error: unknown) => {
+      toast({
+        title: 'Update could not be installed',
+        description: String(error),
+        variant: 'destructive'
+      });
+    });
+  };
 
   // Velopack kennt die tatsaechlich installierte Paketversion, und genau die
   // vergleicht es spaeter gegen das Release-Feed. Ohne Installation faellt der
@@ -75,15 +90,19 @@ export default function Navbar() {
           <span className='text-muted-foreground text-xs' data-tauri-drag-region>
             {appVersion}
           </span>
-          {/* Kein Knopf: es gibt nichts anzustossen. Das Update ist geladen
-              und wird beim naechsten Start eingespielt. */}
+          {/* Eingespielt wird es beim naechsten Start ohnehin. Der Knopf ist
+              fuer die, die nicht warten wollen und sonst von Hand schliessen
+              und wieder oeffnen muessten. */}
           {newUpdateAvailable && (
-            <span
-              className='text-xs text-emerald-400'
-              data-tauri-drag-region
+            <Button
+              variant='ghost'
+              size='sm'
+              className='h-6 px-2 text-xs text-emerald-400 hover:text-emerald-300'
+              title='Installs the update and restarts the app. Without this it installs on the next start.'
+              onClick={installNow}
             >
-              update on next start
-            </span>
+              Update now
+            </Button>
           )}
         </div>
 

@@ -12,7 +12,8 @@
 //!   wieder schliesst.
 //!
 //! Beim naechsten Start laeuft damit die neue Version, ohne Dialog, ohne Klick
-//! und ohne dass zwischendurch ein Fenster verschwindet.
+//! und ohne dass zwischendurch ein Fenster verschwindet. Wer nicht warten will,
+//! nimmt `update_apply_now`: derselbe Vorgang, nur sofort und mit Neustart.
 //!
 //! Velopack liefert eine synchrone API. Jeder Aufruf landet deshalb in
 //! `spawn_blocking`, sonst blockiert die Pruefung den Tokio-Worker und damit
@@ -21,6 +22,8 @@
 //! `UpdateManager::new` verlangt eine installierte Anwendung. Im Entwicklungs-
 //! lauf und im portablen Betrieb gibt es kein Velopack-Manifest, dort passiert
 //! schlicht nichts.
+
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use tauri::Emitter;
 use velopack::sources::GithubSource;
@@ -90,6 +93,41 @@ pub fn check_and_download(app: tauri::AppHandle) {
     });
 }
 
+/// Gesetzt, sobald ein Neustart mit Update angestossen wurde. `app.exit` loest
+/// gleich darauf `apply_on_exit` aus, und der Auftrag darf nicht zweimal
+/// erteilt werden: der zweite wuerde denselben Ordner ein zweites Mal
+/// uebernehmen wollen.
+static RESTART_REQUESTED: AtomicBool = AtomicBool::new(false);
+
+/// Spielt ein bereitliegendes Paket sofort ein und startet die App neu.
+///
+/// Fuer den Fall, dass jemand die neue Version jetzt haben will, statt die App
+/// von Hand zu schliessen und wieder zu oeffnen. Der Updater wartet auch hier
+/// auf das Ende dieses Prozesses, darum wird direkt danach beendet.
+#[tauri::command]
+pub fn update_apply_now(app: tauri::AppHandle) -> Result<String, String> {
+    let manager = manager_if_installed()
+        .ok_or_else(|| "Die App ist nicht installiert, es gibt nichts einzuspielen".to_string())?;
+
+    let asset = manager
+        .get_update_pending_restart()
+        .ok_or_else(|| "Es liegt kein geladenes Update bereit".to_string())?;
+
+    let version = asset.Version.clone();
+
+    // silent: kein Fortschrittsfenster. restart: die App kommt von selbst
+    // wieder, sonst waere der Knopf nur ein umstaendliches Beenden.
+    manager
+        .wait_exit_then_apply_updates(&asset, true, true, Vec::<String>::new())
+        .map_err(|error| error.to_string())?;
+
+    RESTART_REQUESTED.store(true, Ordering::SeqCst);
+    println!("[updater] {} wird jetzt eingespielt, die App startet neu", version);
+
+    app.exit(0);
+    Ok(version)
+}
+
 /// Uebergibt ein bereitliegendes Paket an den Velopack-Updater, der es
 /// einspielt, sobald dieser Prozess beendet ist.
 ///
@@ -97,6 +135,11 @@ pub fn check_and_download(app: tauri::AppHandle) {
 /// eingespielt, das eine fruehere Sitzung geladen hat und das damals liegen
 /// blieb, etwa weil die App abgestuerzt ist.
 pub fn apply_on_exit() {
+    // Schon ueber update_apply_now angestossen, samt Neustart.
+    if RESTART_REQUESTED.load(Ordering::SeqCst) {
+        return;
+    }
+
     let Some(manager) = manager_if_installed() else {
         return;
     };

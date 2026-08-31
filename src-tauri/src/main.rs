@@ -68,7 +68,8 @@ async fn main() {
             overlay::start_poe_tracking,
             overlay::poe_bounds,
             game_paths::detect_client_txt,
-            updater::update_current_version
+            updater::update_current_version,
+            updater::update_apply_now
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
