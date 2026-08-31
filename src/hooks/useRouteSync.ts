@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 
 import type { GuideMode } from '@/utilities/guide-mode';
+import { loadRoute, syncRoute } from '@/services/route-sync';
 import { reanchorEdge } from '@/utilities/route-progress';
-import { syncRoute } from '@/services/route-sync';
 import { tauriDeps } from '@/services/route-sync.tauri';
 import { useGuideStore } from '@/store/guide.store';
 import { useRouteStore } from '@/store/route.store';
@@ -20,10 +20,11 @@ export function useRouteSync() {
   const parsedFor = useRef<GuideMode | null>(null);
 
   useEffect(() => {
+    const first = parsedFor.current === null;
     const changed = parsedFor.current !== mode;
     parsedFor.current = mode;
 
-    const run = async () => {
+    const run = async (withUpstream: boolean) => {
       const store = useRouteStore.getState();
       store.setSyncState('syncing');
 
@@ -32,7 +33,9 @@ export function useRouteSync() {
       // Moduswechsel hinweg, in dem die Kantenliste eine andere Laenge bekommt.
       const previousArea = store.currentAreaId;
 
-      const result = await syncRoute(tauriDeps, mode);
+      const result = withUpstream
+        ? await syncRoute(tauriDeps, mode)
+        : await loadRoute(tauriDeps, mode);
 
       if (result.route === null || result.sha === null) {
         store.setSyncState('error', result.error);
@@ -55,12 +58,17 @@ export function useRouteSync() {
       store.setSyncState('idle');
     };
 
+    // Der erste Lauf fragt Upstream, ein Moduswechsel nicht: die Daten sind
+    // dieselben, nur die Lesart ist eine andere. Frueher lief auch der Wechsel
+    // durch den Abgleich und dauerte damit so lange wie ein Request an GitHub,
+    // fuer den reqwest keine Zeitgrenze setzt.
+    //
     // Der zweite Mount unter StrictMode soll den Netzzugriff nicht wiederholen,
     // den Takt aber sehr wohl neu setzen: das Cleanup des ersten hat ihn
     // gerade abgeraeumt.
-    if (changed) void run();
+    if (changed) void run(first);
 
-    const timer = setInterval(() => void run(), DAY_IN_MS);
+    const timer = setInterval(() => void run(true), DAY_IN_MS);
 
     return () => clearInterval(timer);
   }, [mode]);
