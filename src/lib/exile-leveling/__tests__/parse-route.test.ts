@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -139,5 +139,77 @@ describe('buildDefaultRoute im Speedleveling', () => {
     );
 
     expect(heads.size).toBe(route.edges.length);
+  });
+});
+
+describe('der Weg bleibt begehbar', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /**
+   * Der Upstream-Parser prueft selbst, ob die Route zusammenhaengt: er warnt
+   * bei `not connected to current area`, bei fehlenden und bei ungenutzten
+   * Wegpunkten. Genau daran haengt der automatische Vorlauf, denn advanceEdge
+   * rueckt nur vor, wenn Client.txt die naechste Kante meldet.
+   */
+  function meldungen(mode: 'league-start' | 'speedleveling'): string[] {
+    const gesammelt: string[] = [];
+    const sammeln = (...teile: unknown[]) => {
+      gesammelt.push(teile.join(' '));
+    };
+
+    vi.spyOn(console, 'warn').mockImplementation(sammeln);
+    vi.spyOn(console, 'error').mockImplementation(sammeln);
+    vi.spyOn(console, 'log').mockImplementation(sammeln);
+
+    buildDefaultRoute(readRoutes(), readBundle(), mode);
+    vi.restoreAllMocks();
+
+    // Craftingbereiche, die niemand einsammelt, sind im Speedleveling der
+    // Normalfall und keine Beanstandung am Weg.
+    return gesammelt.filter((zeile) => !zeile.includes('missing crafting area'));
+  }
+
+  it('meldet im Ligastart nichts', () => {
+    expect(meldungen('league-start')).toEqual([]);
+  });
+
+  it('meldet im Speedleveling nichts', () => {
+    // Ohne LEAGUE_START faellt jeder Umweg weg, und Upstream haelt die Route
+    // mit eigenen #ifndef-Zweigen zusammen. Bricht das, sind Zonen nicht mehr
+    // verbunden, und der Fortschritt bliebe stehen, statt vorzuruecken.
+    expect(meldungen('speedleveling')).toEqual([]);
+  });
+
+  it('jede Kante hat einen Kopfschritt, an dem der Vorlauf greift', () => {
+    for (const mode of ['league-start', 'speedleveling'] as const) {
+      const route = buildDefaultRoute(readRoutes(), readBundle(), mode);
+      const kanten = new Set(
+        route.sections
+          .flatMap((section) => section.steps)
+          .filter(
+            (step): step is RouteData.FragmentStep =>
+              step.type === 'fragment_step' && step.edgeIndex !== null
+          )
+          .map((step) => step.edgeIndex)
+      );
+
+      expect(kanten.size, mode).toBe(route.edges.length);
+    }
+  });
+
+  it('nennt keine Zone zweimal hintereinander', () => {
+    // Client.txt meldet nur beim Betreten. Staenden zwei gleiche Zonen
+    // nebeneinander, muesste man sie verlassen und neu betreten, um
+    // vorzuruecken.
+    for (const mode of ['league-start', 'speedleveling'] as const) {
+      const { edges } = buildDefaultRoute(readRoutes(), readBundle(), mode);
+      const doppelt = edges.filter(
+        (area, index) => index > 0 && edges[index - 1] === area
+      );
+
+      expect(doppelt, mode).toEqual([]);
+    }
   });
 });
