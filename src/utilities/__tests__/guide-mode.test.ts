@@ -10,7 +10,7 @@ import {
   isSkippable,
   shouldOfferNewRun
 } from '../guide-mode';
-import { groupSteps } from '../route-progress';
+import { blockSections } from '../route-progress';
 
 function step(
   parts: Fragments.AnyFragment[],
@@ -270,11 +270,13 @@ describe('an der echten Route', () => {
   it('hinterlaesst keinen leeren Block', () => {
     // Ein Block ohne Zeile waere ein Trenner ohne Inhalt und ein "Jump here"
     // ins Nichts.
-    const blocks = groupSteps(
-      fragmentSteps(filterRoute(route, 'speedleveling'))
-    );
+    const blocks = blockSections(
+      filterRoute(route, 'speedleveling').sections
+    ).flatMap((section) => section.blocks);
 
-    expect(blocks.every((block) => block.length > 0)).toBe(true);
-    expect(blocks).toHaveLength(route.edges.length);
+    expect(blocks.every((block) => block.steps.length > 0)).toBe(true);
+
+    // Je Kante ein Sprungziel, plus der Block vor der ersten Kante.
+    expect(blocks).toHaveLength(route.edges.length + 1);
   });
 });

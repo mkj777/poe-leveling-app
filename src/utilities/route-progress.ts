@@ -70,23 +70,72 @@ export function flattenSteps(
     );
 }
 
-// Die Liste im Hauptfenster zeigt einen Block je Kante. Ein Block ist genau
-// das, wohin "Jump here" springt, und bekommt darum genau einen Trenner. Vorher
-// trug jede Zeile einen, und damit war nicht zu sehen, welcher Text noch zum
-// selben Schritt gehoert.
-export function groupSteps(
-  steps: RouteData.FragmentStep[]
-): RouteData.FragmentStep[][] {
-  const groups: RouteData.FragmentStep[][] = [];
+/**
+ * Ein Block der Liste im Hauptfenster: die Schritte, die man tut, waehrend man
+ * an einer Kante steht.
+ *
+ * `edgeIndex` ist die Kante, an der man dabei **steht**, nicht die, in die der
+ * letzte Schritt fuehrt. Ein Block endet mit dem Uebergang in die naechste
+ * Zone, denn was dahinter kommt, tut man erst dort.
+ */
+export interface StepBlock {
+  edgeIndex: number | null;
+  steps: RouteData.FragmentStep[];
+}
 
-  for (const step of steps) {
-    // Schritte vor der ersten Kante kommen in der echten Route nicht vor,
-    // landen aber in einem eigenen Block statt unter den Tisch zu fallen.
-    if (step.edgeIndex !== null || groups.length === 0) groups.push([step]);
-    else groups[groups.length - 1].push(step);
+export interface SectionBlocks {
+  name: string;
+  blocks: StepBlock[];
+}
+
+/**
+ * Teilt die Route in Bloecke, genau wie `selectPending` sie fuer das Overlay
+ * auswaehlt. Beides muss dasselbe ergeben, sonst zeigt die Liste einen anderen
+ * Schritt als das Overlay.
+ *
+ * Frueher begann ein Block mit dem Uebergang in seine Zone. Der ist aber schon
+ * erledigt, sobald Client.txt die Zone meldet: die Liste hob damit den zuletzt
+ * gemachten Schritt hervor, waehrend das Overlay den naechsten zeigte. An
+ * Kante 53 stand in der Liste "➞ The Slums" und im Overlay "➞ The Crematorium".
+ *
+ * Bloecke laufen ueber Aktgrenzen hinweg, denn der letzte Schritt eines Akts
+ * und der Uebergang in den naechsten gehoeren zusammen. Ein Block landet bei
+ * dem Akt, in dem er anfaengt.
+ */
+export function blockSections(
+  sections: RouteData.Section[]
+): SectionBlocks[] {
+  const result: SectionBlocks[] = sections.map((section) => ({
+    name: section.name,
+    blocks: []
+  }));
+
+  let edgeIndex: number | null = null;
+  let current: RouteData.FragmentStep[] = [];
+  let startedIn = 0;
+
+  sections.forEach((section, index) => {
+    for (const step of section.steps) {
+      if (step.type !== 'fragment_step') continue;
+
+      if (current.length === 0) startedIn = index;
+      current.push(step);
+
+      if (step.edgeIndex !== null) {
+        result[startedIn].blocks.push({ edgeIndex, steps: current });
+        edgeIndex = step.edgeIndex;
+        current = [];
+      }
+    }
+  });
+
+  // Was nach dem letzten Uebergang noch kommt, steht an der zuletzt erreichten
+  // Kante.
+  if (current.length > 0) {
+    result[startedIn].blocks.push({ edgeIndex, steps: current });
   }
 
-  return groups;
+  return result;
 }
 
 export interface ActProgress {

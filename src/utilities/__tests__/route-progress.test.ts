@@ -6,8 +6,8 @@ import type { RouteData } from '@/lib/exile-leveling';
 import {
   actProgress,
   advanceEdge,
+  blockSections,
   flattenSteps,
-  groupSteps,
   reanchorEdge,
   selectPending
 } from '../route-progress';
@@ -224,9 +224,12 @@ describe('selectPending', () => {
     }
   });
 });
+describe('blockSections', () => {
+  const section = (name: string, steps: RouteData.Step[]) => ({ name, steps });
 
-describe('groupSteps', () => {
-  it('beginnt einen Block bei jedem Schritt mit eigener Kante', () => {
+  it('beendet einen Block mit dem Uebergang, statt ihn damit zu beginnen', () => {
+    // Der Uebergang ist erledigt, sobald Client.txt die Zone meldet. Er gehoert
+    // ans Ende dessen, was man davor tut, nicht an den Anfang dessen danach.
     const steps = [
       step(0, 'betrete A'),
       step(null, 'toete X'),
@@ -234,48 +237,103 @@ describe('groupSteps', () => {
       step(null, 'hole Waypoint')
     ];
 
-    expect(groupSteps(steps).map((group) => group.map((s) => s.parts[0]))).toEqual([
-      ['betrete A', 'toete X'],
-      ['betrete B', 'hole Waypoint']
+    expect(
+      blockSections([section('Act 1', steps)])[0].blocks.map((block) => ({
+        edgeIndex: block.edgeIndex,
+        texte: block.steps.map((entry) => entry.parts[0])
+      }))
+    ).toEqual([
+      { edgeIndex: null, texte: ['betrete A'] },
+      { edgeIndex: 0, texte: ['toete X', 'betrete B'] },
+      { edgeIndex: 1, texte: ['hole Waypoint'] }
     ]);
   });
 
-  it('gibt einen Block je Kante, wenn keine Kante Zwischenschritte hat', () => {
-    expect(groupSteps([step(0, 'a'), step(1, 'b')])).toHaveLength(2);
+  it('nennt als Kante die, an der man steht', () => {
+    // Nicht die, in die der letzte Schritt fuehrt: an Kante 0 stehend tut man
+    // das, was bis zum Betreten von Kante 1 zu tun ist.
+    const blocks = blockSections([
+      section('Act 1', [step(0, 'a'), step(null, 'b'), step(1, 'c')])
+    ])[0].blocks;
+
+    expect(blocks[1].edgeIndex).toBe(0);
+    expect(blocks[1].steps.map((entry) => entry.parts[0])).toEqual(['b', 'c']);
   });
 
-  it('sammelt fuehrende Schritte ohne Kante in einem eigenen Block', () => {
-    const groups = groupSteps([step(null, 'a'), step(null, 'b'), step(0, 'c')]);
+  it('laesst einen Block ueber die Aktgrenze laufen, im Akt seines Anfangs', () => {
+    const sections = blockSections([
+      section('Act 1', [step(0, 'betrete A'), step(null, 'raeum auf')]),
+      section('Act 2', [step(1, 'betrete B')])
+    ]);
 
-    expect(groups.map((group) => group.map((s) => s.parts[0]))).toEqual([
-      ['a', 'b'],
-      ['c']
+    expect(
+      sections[0].blocks.map((block) => block.steps.map((e) => e.parts[0]))
+    ).toEqual([['betrete A'], ['raeum auf', 'betrete B']]);
+    expect(sections[1].blocks).toEqual([]);
+  });
+
+  it('kommt mit einer leeren Route zurecht', () => {
+    expect(blockSections([])).toEqual([]);
+    expect(blockSections([section('Act 1', [])])).toEqual([
+      { name: 'Act 1', blocks: [] }
     ]);
   });
 
-  it('kommt mit einer leeren Liste zurecht', () => {
-    expect(groupSteps([])).toEqual([]);
+  it('laesst Gem-Schritte aus', () => {
+    const gem: RouteData.GemStep = {
+      type: 'gem_step',
+      requiredGem: { id: 'x', note: '', count: 1 },
+      rewardType: 'quest',
+      count: 1
+    };
+
+    const blocks = blockSections([section('Act 1', [gem, step(0, 'a')])])[0]
+      .blocks;
+
+    expect(blocks).toEqual([{ edgeIndex: null, steps: [step(0, 'a')] }]);
   });
 
   it('teilt die echte Route lueckenlos in Bloecke', () => {
-    const route = JSON.parse(
-      fs.readFileSync(
-        path.resolve(
-          __dirname,
-          '../../lib/exile-leveling/__fixtures__/route-b7b2dd0.json'
-        ),
-        'utf8'
-      )
-    ) as RouteData.Route;
-
+    const route = echteRoute();
     const all = flattenSteps(route.sections);
-    const groups = groupSteps(all);
+
+    const blocks = blockSections(route.sections).flatMap(
+      (entry) => entry.blocks
+    );
 
     // Kein Schritt geht verloren, keiner taucht doppelt auf.
-    expect(groups.flat()).toEqual(all);
-    // Genau ein Block je Kante, also genau ein Sprungziel je Block.
-    expect(groups.filter((group) => group[0].edgeIndex !== null)).toHaveLength(
-      route.edges.length
+    expect(blocks.flatMap((block) => block.steps)).toEqual(all);
+  });
+
+  it('hebt genau das hervor, was das Overlay zeigt', () => {
+    // Der eigentliche Punkt. Fuer jede Kante muss beides dieselbe Folge
+    // ergeben, sonst zeigt die Liste einen anderen Schritt als das Overlay.
+    // Vorher war es um je einen Schritt versetzt: an Kante 53 stand in der
+    // Liste "➞ The Slums" und im Overlay "➞ The Crematorium".
+    const route = echteRoute();
+    const all = flattenSteps(route.sections);
+
+    const blocks = blockSections(route.sections).flatMap(
+      (entry) => entry.blocks
     );
+
+    for (let edge = 0; edge < route.edges.length; edge++) {
+      const block = blocks.find((entry) => entry.edgeIndex === edge);
+
+      expect(block, `Kante ${edge} hat keinen Block`).toBeDefined();
+      expect(block!.steps, `Kante ${edge}`).toEqual(selectPending(all, edge));
+    }
   });
 });
+
+function echteRoute(): RouteData.Route {
+  return JSON.parse(
+    fs.readFileSync(
+      path.resolve(
+        __dirname,
+        '../../lib/exile-leveling/__fixtures__/route-b7b2dd0.json'
+      ),
+      'utf8'
+    )
+  ) as RouteData.Route;
+}
