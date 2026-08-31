@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { CachedData, SyncDeps } from '../route-sync';
+import type { RouteData } from '@/lib/exile-leveling';
+import { OVERLAY_SHORTCUT_HINT } from '@/utilities/shortcut-hint';
 import { loadRoute, syncRoute } from '../route-sync';
 
 const SNAPSHOT = path.resolve(
@@ -190,5 +192,35 @@ describe('loadRoute', () => {
 
     expect(result.status).toBe('error');
     expect(result.sha).toBe('b7b2dd0');
+  });
+});
+
+describe('der Hinweis auf das Kuerzel', () => {
+  const letzterSchritt = (route: RouteData.Route) =>
+    route.sections.at(-1)!.steps.at(-1) as RouteData.FragmentStep;
+
+  it('haengt an der Route, die die App anzeigt', async () => {
+    // buildDefaultRoute liefert genau das, was der Upstream-Parser liefert,
+    // und ein Golden-File-Test haelt es darauf fest. Was die App darueber
+    // hinaus zeigt, kommt hier dazu.
+    const result = await loadRoute(
+      { readCached: async () => cached() },
+      'league-start'
+    );
+
+    expect(letzterSchritt(result.route!).subSteps.at(-1)).toEqual(
+      OVERLAY_SHORTCUT_HINT
+    );
+  });
+
+  it('haengt in beiden Lesarten an', async () => {
+    const result = await loadRoute(
+      { readCached: async () => cached() },
+      'speedleveling'
+    );
+
+    expect(letzterSchritt(result.route!).subSteps.at(-1)).toEqual(
+      OVERLAY_SHORTCUT_HINT
+    );
   });
 });

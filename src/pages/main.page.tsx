@@ -7,6 +7,7 @@ import LevellingGuideMain from '@/components/levelling-guide-main';
 import MainScreen from '@/components/main-screen';
 import Navbar from '@/components/navbar';
 import { Switch } from 'ktools-r';
+import { SHORTCUT_CLOSE_OVERLAY } from '@/utilities/shortcuts';
 import { advanceEdge } from '@/utilities/route-progress';
 import { invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@tauri-apps/api/event';
@@ -78,7 +79,7 @@ export default function MainPage() {
 
       // Der Zustand wird bewusst ueber getState gelesen. Die Handler werden
       // einmal registriert und arbeiteten sonst auf einem eingefrorenen Wert.
-      await register('CmdOrCtrl+Shift+Alt+F12', () => {
+      await register(SHORTCUT_CLOSE_OVERLAY, () => {
         setAppState(AppState.NORMAL);
       });
 
