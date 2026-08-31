@@ -151,27 +151,3 @@ export function shouldOfferNewRun(
   if (lastOpenedAt === null) return false;
   return now - lastOpenedAt >= NEW_RUN_AFTER_MS;
 }
-
-/**
- * Was das Overlay braucht, um dasselbe zu zeigen wie das Hauptfenster.
- *
- * Der Modus gehoert zu jeder Meldung, nicht nur zum Wechsel. Ein Kantenindex
- * ist ohne die Route, in die er zeigt, bedeutungslos: Kante 172 ist im
- * Ligastart The Causeway und im Speedleveling The Sarn Ramparts, zehn Kanten
- * auseinander. Wer nur die Zahl schickt, verschiebt das Overlay stumm, sobald
- * die beiden Fenster verschiedene Lesarten halten (ADR-0011).
- */
-export const GUIDE_STATE_EVENT = 'guide-state';
-
-export interface GuideState {
-  mode: GuideMode;
-  currentEdge: number;
-}
-
-/**
- * Das Overlay meldet sich, sobald es horcht, und bekommt den Stand als
- * Antwort. Ohne diesen Anruf muesste es raten, und geraten hat es aus dem
- * gemeinsamen localStorage, der beim Aufbau nicht zwingend den Stand des
- * Hauptfensters trug.
- */
-export const OVERLAY_READY_EVENT = 'overlay-ready';

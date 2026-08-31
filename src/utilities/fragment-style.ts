@@ -27,6 +27,29 @@ export const FRAGMENT_COLOURS = {
 
 export type FragmentColour = keyof typeof FRAGMENT_COLOURS;
 
+/**
+ * Symbole werden als Name benannt, nicht als Adresse im Buendel. Das Overlay
+ * bekommt seine Zeilen als Daten geschickt (ADR-0012), und eine Adresse wie
+ * `/assets/quest-BQCG-isT.png` haette dort nichts zu suchen: sie gehoert dem
+ * Build, nicht dem Inhalt.
+ */
+export type IconName =
+  | 'waypoint'
+  | 'portal'
+  | 'quest'
+  | 'trial'
+  | 'crafting'
+  | 'town';
+
+export const ICON_SOURCES: Record<IconName, string> = {
+  waypoint,
+  portal,
+  quest,
+  trial,
+  crafting,
+  town
+};
+
 export function fragmentColour(fragment: Fragments.AnyFragment): FragmentColour {
   if (typeof fragment === 'string') return 'plain';
 
@@ -61,28 +84,30 @@ export function fragmentColour(fragment: Fragments.AnyFragment): FragmentColour 
   }
 }
 
-export function fragmentIcon(fragment: Fragments.AnyFragment): string | null {
+export function fragmentIcon(
+  fragment: Fragments.AnyFragment
+): IconName | null {
   if (typeof fragment === 'string') return null;
 
   switch (fragment.type) {
     case 'waypoint':
     case 'waypoint_get':
     case 'waypoint_use':
-      return waypoint;
+      return 'waypoint';
     case 'portal_set':
     case 'portal_use':
-      return portal;
+      return 'portal';
     case 'quest':
-      return quest;
+      return 'quest';
     case 'trial':
     case 'ascend':
-      return trial;
+      return 'trial';
     case 'crafting':
-      return crafting;
+      return 'crafting';
     case 'enter':
     case 'logout':
       // Nur Staedte tragen das Stadtsymbol, normale Zonen nicht.
-      return Data.Areas[fragment.areaId]?.is_town_area === true ? town : null;
+      return Data.Areas[fragment.areaId]?.is_town_area === true ? 'town' : null;
     default:
       return null;
   }

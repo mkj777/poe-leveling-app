@@ -1,56 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import InGameScreen from '@/components/in-game-screen';
 import {
   OVERLAY_HEADER_HEIGHT,
   OVERLAY_MIN_HEIGHT
 } from '@/utilities/constants';
-import type { GuideMode, GuideState } from '@/utilities/guide-mode';
 import type { OverlaySettings } from '@/services/overlay-settings';
-import { GUIDE_STATE_EVENT, OVERLAY_READY_EVENT } from '@/utilities/guide-mode';
+import type { OverlayView } from '@/utilities/overlay-view';
+import {
+  EMPTY_OVERLAY_VIEW,
+  OVERLAY_READY_EVENT,
+  OVERLAY_VIEW_EVENT
+} from '@/utilities/overlay-view';
 import { OVERLAY_SETTINGS_EVENT } from '@/services/overlay-settings';
 import { emit, listen } from '@tauri-apps/api/event';
-import { loadRouteFromCache } from '@/services/route-sync.tauri';
 import { usePoeWindow } from '@/hooks/usePoeWindow';
-import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';
 
-// Modulweit, weil das Fenster genau eine Route haelt. Zeigt an, in welcher
-// Lesart sie geparst wurde, damit ein Kantenindex nur auf die Route trifft,
-// zu der er gehoert.
-let loadedMode: GuideMode | null = null;
-
-// Meldungen werden nacheinander abgearbeitet. Kommen Moduswechsel und
-// Kantenwechsel dicht hintereinander, duerfen ihre Ladevorgaenge sich nicht
-// ueberholen und die Route des jeweils anderen setzen.
-let queue: Promise<void> = Promise.resolve();
-
-async function applyState(state: GuideState) {
-  if (loadedMode !== state.mode) {
-    const loaded = await loadRouteFromCache(state.mode);
-    // Ohne Route auch keine Kante: ein Index auf der alten Lesart waere
-    // schlimmer als gar keine Anzeige.
-    if (loaded === null) return;
-
-    loadedMode = state.mode;
-    useRouteStore.getState().setRoute(loaded.route, loaded.sha);
-  }
-
-  // Erst nach der Route: setCurrentEdge schlaegt die Zone darin nach.
-  useRouteStore.getState().setCurrentEdge(state.currentEdge);
-}
-
 /**
- * Eigenes Fenster, damit das Hauptfenster Hauptfenster bleiben kann. Die Route
- * parst es selbst aus dem lokalen Cache, welche Lesart und welche Kante sagt
- * ihm das Hauptfenster.
+ * Eigenes Fenster, damit das Hauptfenster Hauptfenster bleiben kann.
+ *
+ * Es zeigt an und sonst nichts (ADR-0012): keine Route, keine Spieldaten, kein
+ * Fortschritt, kein Speicher. Was zu sehen ist, sagt ihm das Hauptfenster,
+ * fertig ausgerechnet. Was der Nutzer hier zieht, meldet es dorthin zurueck.
  */
 export default function OverlayPage() {
+  const [view, setView] = useState<OverlayView>(EMPTY_OVERLAY_VIEW);
   const [contentHeight, setContentHeight] = useState(OVERLAY_MIN_HEIGHT);
   const [editMode, setEditMode] = useState(false);
 
-  const route = useRouteStore((state) => state.route);
-  const currentEdge = useRouteStore((state) => state.currentEdge);
+  const content = useRef<HTMLDivElement>(null);
 
   usePoeWindow(true, contentHeight, editMode);
 
@@ -66,9 +45,8 @@ export default function OverlayPage() {
     let cancelled = false;
 
     void (async () => {
-      const off = await listen<GuideState>(GUIDE_STATE_EVENT, (event) => {
-        const state = event.payload;
-        queue = queue.then(() => applyState(state));
+      const off = await listen<OverlayView>(OVERLAY_VIEW_EVENT, (event) => {
+        setView(event.payload);
       });
 
       if (cancelled) {
@@ -78,8 +56,8 @@ export default function OverlayPage() {
       stop = off;
 
       // Erst horchen, dann melden. Andersherum kann die Antwort vor dem
-      // Zuhoerer eintreffen, und das Overlay bliebe bis zum naechsten
-      // Zonenwechsel leer.
+      // Zuhoerer eintreffen, und das Overlay bliebe leer, bis sich der Stand
+      // das naechste Mal von selbst aendert.
       await emit(OVERLAY_READY_EVENT);
     })();
 
@@ -94,8 +72,8 @@ export default function OverlayPage() {
       setEditMode((value) => !value);
     });
 
-    // Groesse, Deckkraft und Verschiebung kommen aus den Einstellungen des
-    // Hauptfensters. Der eigene Store haelt sie danach wie gewohnt.
+    // Groesse, Deckkraft und Verschiebung gehoeren dem Hauptfenster. Hier
+    // liegen sie nur im Speicher, damit gezeichnet werden kann.
     const settings = listen<OverlaySettings>(
       OVERLAY_SETTINGS_EVENT,
       (event) => {
@@ -110,17 +88,21 @@ export default function OverlayPage() {
   }, []);
 
   useEffect(() => {
-    const element = document.getElementById(`edge-${currentEdge}`);
-    if (element === null) return;
+    if (content.current === null) return;
 
     setContentHeight(
-      Math.ceil(element.getBoundingClientRect().height) +
+      Math.ceil(content.current.getBoundingClientRect().height) +
         24 +
         OVERLAY_HEADER_HEIGHT
     );
-  }, [currentEdge, route]);
+  }, [view]);
 
   return (
-    <InGameScreen editMode={editMode} onCloseEdit={() => setEditMode(false)} />
+    <InGameScreen
+      view={view}
+      contentRef={content}
+      editMode={editMode}
+      onCloseEdit={() => setEditMode(false)}
+    />
   );
 }

@@ -13,6 +13,7 @@ import {
 } from '@/utilities/route-progress';
 import { bench, report } from './bench';
 import { buildDefaultRoute } from '@/lib/exile-leveling/build-route';
+import { buildOverlayView, toStepView } from '@/utilities/overlay-view';
 import { computeOverlayRect } from '@/utilities/overlay-geometry';
 import { renderStepText } from '@/utilities/fragment-text';
 
@@ -130,19 +131,35 @@ describe('ganze Route auf einmal', () => {
     expect(result.median).toBeLessThan(3);
   });
 
+  it('baut die Anzeige der ganzen Route in vertretbarer Zeit', () => {
+    // Das macht die Guide-Liste einmal je Route, in einem Memo. Seit das
+    // Overlay dieselbe Form bekommt (ADR-0012), ist das der echte Pfad.
+    const result = bench(
+      () => {
+        for (const step of steps) toStepView(step);
+      },
+      { runs: 10 }
+    );
+    report('toStepView, alle Schritte', result, 5);
+
+    expect(result.median).toBeLessThan(5);
+  });
+
   it('laeuft die Route Kante fuer Kante durch, ohne quadratisch zu werden', () => {
-    // Der wichtigste Schutz hier: selectPending und actProgress suchen linear.
-    // Wer sie versehentlich verschachtelt, faellt sofort auf.
+    // Der wichtigste Schutz hier: selectPending und actProgress suchen linear,
+    // und buildOverlayView ruft beide. Wer sie versehentlich verschachtelt,
+    // faellt sofort auf.
     const result = bench(
       () => {
         for (let edge = 0; edge < route.edges.length; edge++) {
-          selectPending(steps, edge);
-          actProgress(route.sections, edge);
+          // Genau das schickt das Hauptfenster bei jedem Zonenwechsel ans
+          // Overlay.
+          buildOverlayView(route, edge);
         }
       },
       { runs: 5 }
     );
-    report('248 Kanten, Segment und Akt', result, 25);
+    report('248 Kanten, ganze Overlay-Anzeige', result, 25);
 
     expect(result.median).toBeLessThan(25);
   });

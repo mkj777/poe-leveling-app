@@ -204,3 +204,38 @@ describe('route.store, wer den Fortschritt speichert', () => {
     expect(store.getState().currentEdge).toBe(0);
   });
 });
+
+describe('settings.store, wer die Einstellungen speichert', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+    localStorage.removeItem('settings');
+  });
+
+  it('das Hauptfenster legt sie ab', async () => {
+    localStorage.removeItem('settings');
+    vi.resetModules();
+
+    const { useSettingsStore: store } = await import('../settings.store');
+    store.getState().setOverlayOpacity(0.8);
+
+    expect(
+      JSON.parse(localStorage.getItem('settings')!).state.overlayOpacity
+    ).toBe(0.8);
+  });
+
+  it('das Overlay legt nichts ab, obwohl man dort zieht und skaliert', async () => {
+    // Nachgemessen bevor es das gab: Overlay verschieben, danach im
+    // Hauptfenster einen Regler anfassen, und die Verschiebung war weg. Das
+    // Hauptfenster kannte sie nie und schrieb seinen eigenen Stand darueber.
+    localStorage.removeItem('settings');
+    vi.stubGlobal('location', { hash: '#/overlay' });
+    vi.resetModules();
+
+    const { useSettingsStore: store } = await import('../settings.store');
+    store.getState().setOverlayOffset({ dx: 0.3, dy: 0.2 });
+
+    expect(store.getState().overlayOffset).toEqual({ dx: 0.3, dy: 0.2 });
+    expect(localStorage.getItem('settings')).toBeNull();
+  });
+});

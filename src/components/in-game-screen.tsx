@@ -1,23 +1,25 @@
-import { actProgress, flattenSteps, selectPending } from '@/utilities/route-progress';
+import type { OverlayView } from '@/utilities/overlay-view';
+import type { RefObject } from 'react';
 
-import FragmentText from './fragment-text';
+import FragmentLine from './fragment-text';
 import OverlayEditControls from './overlay-edit-controls';
-import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';
 
 interface Props {
+  view: OverlayView;
+  /** Zum Ausmessen der Inhaltshoehe, danach richtet sich das Fenster. */
+  contentRef: RefObject<HTMLDivElement>;
   editMode: boolean;
   onCloseEdit: () => void;
 }
 
-export default function InGameScreen({ editMode, onCloseEdit }: Props) {
-  const route = useRouteStore((state) => state.route);
-  const currentEdge = useRouteStore((state) => state.currentEdge);
+export default function InGameScreen({
+  view,
+  contentRef,
+  editMode,
+  onCloseEdit
+}: Props) {
   const opacity = useSettingsStore((state) => state.overlayOpacity);
-
-  const steps = route === null ? [] : flattenSteps(route.sections);
-  const pending = selectPending(steps, currentEdge);
-  const act = route === null ? null : actProgress(route.sections, currentEdge);
 
   return (
     <section
@@ -29,19 +31,19 @@ export default function InGameScreen({ editMode, onCloseEdit }: Props) {
     >
       {/* Ausserhalb des Flusses: die Kopfzeile soll den Schritt nicht aus der
           Mitte schieben, der Schritt ist die Mitte. */}
-      {act !== null && (
+      {view.act !== null && (
         <div className='absolute inset-x-3 top-2 flex items-baseline justify-between text-[0.7rem] tracking-wide text-white/45'>
-          <span>{act.act}</span>
+          <span>{view.act}</span>
           <span>
-            {act.stepsLeft === 0
+            {view.stepsLeft === 0
               ? 'last step of the act'
-              : `${act.stepsLeft} left in act`}
+              : `${view.stepsLeft} left in act`}
           </span>
         </div>
       )}
 
-      <div id={`edge-${currentEdge}`} className='flex flex-col gap-0.5'>
-        {pending.map((step, index) => (
+      <div ref={contentRef} className='flex flex-col gap-0.5'>
+        {view.steps.map((step, index) => (
           <div key={index}>
             <p
               className={
@@ -50,14 +52,14 @@ export default function InGameScreen({ editMode, onCloseEdit }: Props) {
                   : 'text-sm text-white/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]'
               }
             >
-              <FragmentText step={step} />
+              <FragmentLine parts={step.parts} />
             </p>
             {step.subSteps.map((subStep, subIndex) => (
               <p
                 key={subIndex}
                 className='pl-3 text-xs text-white/55 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]'
               >
-                <FragmentText step={subStep} />
+                <FragmentLine parts={subStep} />
               </p>
             ))}
           </div>
