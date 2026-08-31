@@ -3,7 +3,7 @@ import type { RouteData } from '@/lib/exile-leveling';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import FragmentText from './fragment-text';
-import { groupSteps } from '@/utilities/route-progress';
+import { blockSections } from '@/utilities/route-progress';
 import { useEffect, useMemo, useRef } from 'react';
 import { useRouteStore } from '@/store/route.store';
 
@@ -20,19 +20,10 @@ export default function LevellingGuideMain({ route }: Props) {
   // Ziel.
   const currentBlock = useRef<HTMLDivElement>(null);
 
-  const sections = useMemo(
-    () =>
-      route.sections.map((section) => ({
-        name: section.name,
-        blocks: groupSteps(
-          section.steps.filter(
-            (step): step is RouteData.FragmentStep =>
-              step.type === 'fragment_step'
-          )
-        )
-      })),
-    [route]
-  );
+  // Ein Block endet mit dem Uebergang in die naechste Zone, statt mit ihm zu
+  // beginnen. Sonst stuende oben im hervorgehobenen Block der Schritt, der
+  // gerade erledigt wurde, und nicht der naechste.
+  const sections = useMemo(() => blockSections(route.sections), [route]);
 
   // Beim Start und bei jedem Zonenwechsel zurueck zum aktuellen Block. Wer
   // dazwischen selbst scrollt, wird nicht gestoert: das laeuft nur, wenn sich
@@ -56,7 +47,7 @@ export default function LevellingGuideMain({ route }: Props) {
           </h3>
 
           {section.blocks.map((block, index) => {
-            const edgeIndex = block[0].edgeIndex;
+            const edgeIndex = block.edgeIndex;
             const isCurrent = edgeIndex === currentEdge;
 
             return (
@@ -69,7 +60,7 @@ export default function LevellingGuideMain({ route }: Props) {
                   isCurrent && 'bg-neutral-700'
                 )}
               >
-                {block.map((step, stepIndex) => (
+                {block.steps.map((step, stepIndex) => (
                   <div key={stepIndex}>
                     <p className={stepIndex === 0 ? undefined : 'pt-1'}>
                       <FragmentText step={step} />

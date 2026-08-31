@@ -5,7 +5,7 @@ import {
   actProgress,
   advanceEdge,
   flattenSteps,
-  groupSteps,
+  blockSections,
   reanchorEdge
 } from '../route-progress';
 
@@ -37,12 +37,19 @@ describe('leere und entartete Routen', () => {
     expect(flattenSteps(sections)).toHaveLength(1);
   });
 
-  it('groupSteps auf leerer Liste', () => {
-    expect(groupSteps([])).toEqual([]);
+  it('blockSections auf leerer Liste', () => {
+    expect(blockSections([{ name: 'Act 1', steps: [] }])[0].blocks).toEqual([]);
   });
 
-  it('groupSteps, wenn keine Kante gesetzt ist', () => {
-    expect(groupSteps([step(null, 'a'), step(null, 'b')])).toHaveLength(1);
+  it('blockSections, wenn keine Kante gesetzt ist', () => {
+    // Alles in einem Block, ohne Sprungziel: es gibt keine Kante, an der man
+    // dabei staende.
+    const blocks = blockSections([
+      { name: 'Act 1', steps: [step(null, 'a'), step(null, 'b')] }
+    ])[0].blocks;
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].edgeIndex).toBeNull();
   });
 
   it('actProgress auf keiner Sektion', () => {
@@ -100,28 +107,30 @@ describe('Grenzen des Kantenindex', () => {
 });
 
 describe('Blockgrenzen', () => {
-  it('schneidet an der naechsten Kante ab, nicht darueber hinaus', () => {
+  const nur = (steps: RouteData.FragmentStep[]) =>
+    blockSections([{ name: 'Act 1', steps }])[0].blocks;
+
+  it('endet mit dem Uebergang und nimmt nichts dahinter mit', () => {
     const steps = [step(0, 'a'), step(null, 'b'), step(1, 'c'), step(null, 'd')];
 
-    expect(groupSteps(steps)[0].map((s) => s.parts[0])).toEqual(['a', 'b']);
+    expect(nur(steps)[1].steps.map((entry) => entry.parts[0])).toEqual([
+      'b',
+      'c'
+    ]);
   });
 
   it('gibt einen Block je Kante, wenn direkt die naechste folgt', () => {
-    expect(groupSteps([step(0, 'a'), step(1, 'b')])).toEqual([
-      [step(0, 'a')],
-      [step(1, 'b')]
+    expect(nur([step(0, 'a'), step(1, 'b')])).toEqual([
+      { edgeIndex: null, steps: [step(0, 'a')] },
+      { edgeIndex: 0, steps: [step(1, 'b')] }
     ]);
   });
 
   it('legt jede Kante in einen eigenen Block, auch bei doppeltem Index', () => {
-    // Sollte in echten Routen nicht vorkommen. Frueher griff die Suche hier
-    // still den ersten Treffer, jetzt bleiben beide sichtbar.
+    // Sollte in echten Routen nicht vorkommen. Beide bleiben sichtbar, statt
+    // dass eine Suche still den ersten Treffer greift.
     const steps = [step(0, 'erste'), step(1, 'x'), step(0, 'zweite')];
 
-    expect(groupSteps(steps).map((g) => g[0].parts[0])).toEqual([
-      'erste',
-      'x',
-      'zweite'
-    ]);
+    expect(nur(steps).map((block) => block.edgeIndex)).toEqual([null, 0, 1]);
   });
 });
