@@ -2,84 +2,79 @@
 
 # POE Leveling App
 
-Overlay-App, die beim Leveln in Path of Exile hilft: Der Walkthrough von
-**[Exile Leveling](https://heartofphos.github.io/exile-leveling/)** liegt im
-Spielfenster, der Fortschritt schaltet anhand der Zonenwechsel in `Client.txt`
-selbst weiter.
+Overlay app that helps with levelling in Path of Exile: the walkthrough from
+**[Exile Leveling](https://heartofphos.github.io/exile-leveling/)** sits inside the
+game window, and progress advances on its own from the zone changes in `Client.txt`.
 
 Tauri (Rust) + React + TypeScript + Vite + Tailwind/shadcn.
 
-## Herkunft
+## Origin
 
-Dieses Projekt basiert auf **[Kazte/path-of-levelling](https://github.com/Kazte/path-of-levelling)**
-von [Kazte](https://github.com/Kazte), lizenziert unter MIT.
+This project is based on **[Kazte/path-of-levelling](https://github.com/Kazte/path-of-levelling)**
+by [Kazte](https://github.com/Kazte), licensed under MIT.
 
-Der Stand wurde inklusive vollständiger Git-History übernommen (172 Commits,
-letzter übernommener Upstream-Commit `51aef5e` vom 2024-09-03, Tags `v0.1.0`-`v0.2.0`).
-Es ist **kein GitHub-Fork**, sondern ein eigenständiges Repository: die
-Weiterentwicklung läuft unabhängig vom Original, Änderungen fließen weder
-automatisch zurueck noch herein.
+The code was taken over including its full git history (172 commits, last adopted
+upstream commit `51aef5e` from 2024-09-03, tags `v0.1.0`-`v0.2.0`). It is **not a
+GitHub fork** but a standalone repository: development continues independently of the
+original, and changes flow neither back nor in automatically.
 
-Dank an Kazte und alle
-[Contributors des Originals](https://github.com/Kazte/path-of-levelling/graphs/contributors).
+Thanks to Kazte and all
+[contributors of the original](https://github.com/Kazte/path-of-levelling/graphs/contributors).
 
-Die ursprüngliche README liegt unverändert als [README.upstream.md](README.upstream.md).
+The original README is kept unchanged as [README.upstream.md](README.upstream.md).
 
-## Installation und erster Start
+## Installation and first start
 
-1. `PoELevelingGuide-win-Setup.exe` aus den [Releases](https://github.com/mkj777/poe-leveling-app/releases)
-   herunterladen und starten. Installiert pro Benutzer nach `%LocalAppData%`, ohne
-   Rechteabfrage.
-2. Path of Exile starten, danach die App. Sie liest den Pfad zu `Client.txt` aus
-   dem laufenden Spiel. Läuft das Spiel nicht, bleibt "Client.txt not found"
-   stehen und die Datei lässt sich selbst auswählen, üblicherweise unter
+1. Download `PoELevelingGuide-win-Setup.exe` from the [releases](https://github.com/mkj777/poe-leveling-app/releases)
+   and run it. Installs per user into `%LocalAppData%`, no elevation prompt.
+2. Start Path of Exile, then the app. It reads the path to `Client.txt` from the running
+   game. If the game is not running, "Client.txt not found" stays on screen and the file
+   can be picked by hand, usually at
    `C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt`.
-3. Warten, bis der Walkthrough geladen ist. Er kommt aus dem
-   Exile-Leveling-Projekt, dafür braucht die App beim ersten Start Internet.
-   Danach liegt er lokal und hält sich selbst aktuell. Ein Build muss nicht
-   importiert werden.
-4. **Start** klicken. Das Overlay legt sich ins Spielfenster und folgt ihm.
+3. Wait until the walkthrough has loaded. It comes from the Exile Leveling project, so
+   the app needs internet access on first start. After that it is stored locally and
+   keeps itself up to date. No build needs to be imported.
+4. Click **Start**. The overlay places itself inside the game window and follows it.
 
-Position, Größe und Deckkraft des Overlays stehen in den Einstellungen. Um
-Updates ist nichts zu tun: die App holt eine neue Version im Hintergrund und
-installiert sie beim nächsten Start, siehe
-[ADR-0008](docs/adr/0008-autoupdate-ueber-velopack.md).
+Position, size and opacity of the overlay are in the settings. Nothing needs to be done
+about updates: the app fetches a new version in the background and installs it on the
+next start, see [ADR-0008](docs/adr/0008-autoupdate-via-velopack.md).
 
-## Tastenkürzel
+## Shortcuts
 
-- `Ctrl + Shift + Alt + F12` - Overlay schließen, zurück ins Hauptfenster
-- `Ctrl + Shift + Alt + →` - nächster Schritt
-- `Ctrl + Shift + Alt + ←` - vorheriger Schritt
-- `Ctrl + Shift + Alt + O` - Overlay verschieben, an/aus
+- `Ctrl + Alt + 0` - close the overlay, back to the main window
+- `Ctrl + Shift + Alt + →` - next step
+- `Ctrl + Shift + Alt + ←` - previous step
+- `Ctrl + Shift + Alt + O` - move the overlay, on/off
 
-## Entwicklung
+## Development
 
 ```bash
 yarn install
-yarn tauri dev      # App im Dev-Modus
-yarn test           # Unit-, Edge- und Performance-Tests
+yarn tauri dev      # app in dev mode
+yarn test           # unit, edge and performance tests
 ```
 
-Voraussetzungen: Node.js, Yarn, Rust-Toolchain und die
-[Tauri-Prerequisites](https://tauri.app/start/prerequisites/).
+Prerequisites: Node.js, Yarn, the Rust toolchain and the
+[Tauri prerequisites](https://tauri.app/start/prerequisites/).
 
 ## Release
 
-Tauri bundelt nicht selbst, gepackt wird mit [Velopack](https://velopack.io).
+Tauri does not bundle itself, packaging is done with [Velopack](https://velopack.io).
 
 ```bash
-dotnet tool install -g vpk   # einmalig
-yarn release:pack            # bauen und packen, Ergebnis unter src-tauri/target/velopack-releases
-yarn release:publish         # zusaetzlich zu GitHub, braucht GITHUB_TOKEN
+dotnet tool install -g vpk   # once
+yarn release:pack            # build and pack, output under src-tauri/target/velopack-releases
+yarn release:publish         # additionally upload to GitHub, needs GITHUB_TOKEN
 ```
 
-Im Normalfall macht das `.github/workflows/main.yml` beim Push eines Tags `vX.Y.Z`. Der
-Tag muss zur `version` in `src-tauri/tauri.conf.json` passen, sonst bricht der Lauf ab.
+Normally `.github/workflows/main.yml` does this when a tag `vX.Y.Z` is pushed. The tag
+must match the `version` in `src-tauri/tauri.conf.json`, otherwise the run aborts.
 
 ## Screenshots
 
 ![In Game View](/.github/images/image-04.webp)
 
-## Lizenz
+## Licence
 
-MIT. Copyright des Ursprungscodes bei Kazte, siehe [LICENSE](LICENSE).
+MIT. Copyright of the original code belongs to Kazte, see [LICENSE](LICENSE).

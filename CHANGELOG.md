@@ -1,242 +1,235 @@
 # Changelog
 
-Alle nennenswerten Änderungen je Version. Der Abschnitt einer Version wird beim
-Release von `scripts/release-notes.mjs` ausgelesen und zur Beschreibung des
-GitHub-Releases. Fehlt der Abschnitt, bricht der Release-Workflow ab.
+All notable changes per version. The section of a version is read by
+`scripts/release-notes.mjs` at release time and becomes the description of the GitHub
+release. If the section is missing, the release workflow aborts.
 
-Versionen folgen [SemVer](https://semver.org/lang/de/), Format angelehnt an
-[Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
+Versions follow [SemVer](https://semver.org/), the format is modelled on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## Unreleased
+
+### Changed
+
+- Error messages from the updater and the data sync, and the fallback text for an
+  unknown direction (`… degrees`), are in English now. Documentation, code comments,
+  commit messages and CI output were translated as well.
 
 ## 1.0.0 (2026-08-31)
 
-Erste Ausgabe ohne Vorbehalt.
+First release without caveats.
 
-### Neu
+### Added
 
-- Ein geladenes Update lässt sich sofort einspielen, statt auf den nächsten
-  Start zu warten. Der Hinweis in der Kopfzeile ist jetzt ein Knopf, und die
-  Meldung beim Laden trägt denselben. Die App startet dabei von selbst neu.
+- A downloaded update can be installed right away instead of waiting for the next
+  start. The notice in the header is now a button, and the toast shown after the
+  download carries the same one. The app restarts on its own.
 
-### Geändert
+### Changed
 
-- Unter dem letzten Schritt des Guides steht das Kürzel, mit dem das Overlay
-  zugeht. Sonst steht es nur in den Einstellungen, und dort sieht mitten im
-  Spiel niemand nach. Es liegt jetzt auf Ctrl+Alt+0 statt auf
-  Ctrl+Shift+Alt+F12 und steht nur noch an einer Stelle im Quelltext, statt an
-  dreien.
-- Das Overlay zeigt nur noch an. Es parst keine Route mehr, hält keine
-  Spieldaten, keinen Fortschritt und keine gespeicherten Einstellungen. Das
-  Hauptfenster rechnet aus, was zu sehen ist, und schickt es als fertige
-  Zeilen. Damit gibt es nichts mehr, das zwischen den Fenstern auseinander
-  laufen könnte.
+- The shortcut that closes the overlay is shown below the last step of the guide.
+  Otherwise it only appears in the settings, and nobody looks there in the middle of
+  a game. It now sits on Ctrl+Alt+0 instead of Ctrl+Shift+Alt+F12, and it lives in
+  one place in the source instead of three.
+- The overlay is display only. It no longer parses a route, holds no game data, no
+  progress and no persisted settings. The main window computes what is to be shown
+  and sends it as finished lines. With that there is nothing left that could drift
+  apart between the windows.
 
-### Behoben
+### Fixed
 
-- Liste und Overlay hoben unterschiedliche Schritte hervor, um je einen
-  versetzt. Ein Block der Liste begann mit dem Übergang in seine Zone, und der
-  ist erledigt, sobald Client.txt die Zone meldet: hervorgehoben war damit der
-  zuletzt gemachte Schritt, während das Overlay den nächsten zeigte. An
-  Kante 53 stand in der Liste „➞ The Slums" und im Overlay „➞ The Crematorium".
-  Ein Block endet jetzt mit dem Übergang, statt mit ihm zu beginnen. Beide
-  Fenster zeigen damit dieselben Zeilen, für jede Kante der Route geprüft.
-- Zog man das Overlay an eine andere Stelle und fasste danach im Hauptfenster
-  einen Regler an, sprang die Platzierung zurück. Beide Fenster schrieben in
-  denselben Eintrag, und das Hauptfenster kannte die Verschiebung nie.
-  Gezogen wird jetzt im Overlay, gespeichert im Hauptfenster.
-- Der Moduswechsel fragte GitHub, bevor er die Route neu las, und dauerte
-  damit so lange wie dieser Abgleich, für den die Bibliothek keine Zeitgrenze
-  setzt. Er liest jetzt direkt aus dem Cache: die Daten sind dieselben, nur die
-  Lesart ist eine andere. Gemessen 37 ms statt einer Netzrunde.
+- List and overlay highlighted different steps, each one off by one. A block in the
+  list began with the transition into its zone, and that transition is done as soon as
+  Client.txt reports the zone: the highlighted step was therefore the one just made,
+  while the overlay showed the next one. At edge 53 the list said "➞ The Slums" and the
+  overlay "➞ The Crematorium". A block now ends with the transition instead of starting
+  with it. Both windows show the same lines, checked for every edge of the route.
+- Dragging the overlay somewhere else and then touching a slider in the main window
+  reset the placement. Both windows wrote into the same entry, and the main window
+  never knew about the drag. Dragging now happens in the overlay, saving in the main
+  window.
+- Switching the mode asked GitHub before re-reading the route, and so took as long as
+  that check, for which the library sets no time limit. It now reads straight from the
+  cache: the data is the same, only the mode differs. Measured 37 ms instead of a
+  network round trip.
 
-### Intern
+### Internal
 
-- Das Overlay-Fenster wurde beim Anhalten an zwei Stellen geschlossen. Ein Rest
-  aus der Zeit, als es zwei Fenster gab: eine gewann, die andere fand nichts
-  mehr und meldete „window not found". Geschlossen wird jetzt an einer Stelle.
-- `loadRouteFromCache` und die Zustellung der Lesart ans Overlay entfallen.
-  Der Umbau entfernt unterm Strich Code (ADR-0012).
-- Symbole werden als Name über die Fenstergrenze gereicht statt als Adresse im
-  Bündel.
-- Der wöchentliche Blick auf den Upstream-Parser meldete Änderung, wo keine war.
-  Der Generator schrieb `ATTRIBUTION.md` jedes Mal ohne einen später von Hand
-  ergänzten Abschnitt neu, und der Upstream-Klon landete als Submodul im
-  Vorschlag. Beides behoben.
+- The overlay window was closed in two places on stop. A leftover from the time with
+  two windows: one won, the other found nothing and reported "window not found". It is
+  now closed in one place.
+- `loadRouteFromCache` and delivering the mode to the overlay are gone. The rework
+  removes code on balance (ADR-0012).
+- Icons are passed across the window boundary by name instead of by address inside the
+  bundle.
+- The weekly look at the upstream parser reported a change where there was none. The
+  generator rewrote `ATTRIBUTION.md` every time without a section added by hand later,
+  and the upstream clone ended up as a submodule in the proposal. Both fixed.
 
 ## 0.99.0 (2026-08-29)
 
-### Behoben
+### Fixed
 
-- Den Fortschritt speichert jetzt allein das Hauptfenster. Bisher schrieben
-  beide Fenster in denselben Eintrag, und die dazugehörige Zone rechnete jedes
-  aus seiner eigenen Route aus. Hielt das Overlay eine andere Lesart, legte es
-  zur selben Kante eine andere Zone ab und überschrieb damit den Stand. Beim
-  nächsten Start knüpfte die App an diese Zone an und stand zehn Kanten
-  zurück. Der Fehler überlebte so den Neustart, der ihn hätte beheben sollen.
-- Das Overlay liest und schreibt keinen Fortschritt mehr. Es ist Anzeige und
-  bekommt Lesart und Kante vom Hauptfenster gesagt.
+- Only the main window stores progress now. Before, both windows wrote into the same
+  entry, and each computed the associated zone from its own route. If the overlay held
+  a different mode, it stored a different zone for the same edge and overwrote the
+  state. On the next start the app re-anchored on that zone and stood ten edges back.
+  The bug thus survived the restart that should have fixed it.
+- The overlay no longer reads or writes progress. It is a display and is told mode and
+  edge by the main window.
 
-### Intern
+### Internal
 
-- Adresse des Overlay-Fensters, seine Route im Router und die Rollenprüfung
-  teilen sich eine Konstante. Ein Test hält fest, dass die Adresse wirklich als
-  Overlay erkannt wird.
+- The overlay window's address, its route in the router and the role check share one
+  constant. A test pins that the address really is recognised as the overlay.
 
 ## 0.98.0 (2026-08-29)
 
-### Behoben
+### Fixed
 
-- Das Overlay zeigte im Speedleveling einen anderen Schritt als die Liste im
-  Hauptfenster, meist einen weiter vorn. Beide Fenster parsen die Route selbst,
-  ausgetauscht wurde aber nur der Kantenindex. Speedleveling hat 236 Kanten,
-  der Ligastart 248: derselbe Zahlenwert trifft je Lesart eine andere Zone.
-  Kante 172 ist im Speedleveling The Sarn Ramparts und im Ligastart The
-  Causeway, zehn Kanten früher. Wer dorthin sprang, sah im Overlay „Get
-  Crafting: Cold Damage - Rank 2, Find and take Kishara's Star".
-- Der Modus gehört jetzt zu jeder Meldung ans Overlay, nicht nur zum Wechsel.
-  Das Overlay lädt seine Route neu, bevor es einen Index anwendet, der zu einer
-  anderen Lesart gehört. Eine verpasste Meldung heilt damit von selbst.
-- Das Overlay meldet sich beim Start und bekommt den Stand als Antwort. Vorher
-  riet es aus dem gemeinsamen Speicher, und Kante wie Modus konnten beim
-  Aufbau veraltet sein.
-- Der Fortschritt wird auch dann ans Overlay gemeldet, wenn die
-  Einstellungsseite offen ist. Bisher hing das am Hauptbildschirm, der dort
-  nicht mehr gerendert wird.
+- In speedleveling the overlay showed a different step than the list in the main
+  window, usually one further ahead. Both windows parse the route themselves, but only
+  the edge index was exchanged. Speedleveling has 236 edges, league start 248: the same
+  number hits a different zone per mode. Edge 172 is The Sarn Ramparts in speedleveling
+  and The Causeway at league start, ten edges earlier. Anyone who jumped there saw "Get
+  Crafting: Cold Damage - Rank 2, Find and take Kishara's Star" in the overlay.
+- The mode is now part of every message to the overlay, not only of the switch. The
+  overlay reloads its route before applying an index that belongs to a different mode.
+  A missed message thus heals itself.
+- The overlay reports in at startup and receives the state as the answer. Before, it
+  guessed from the shared storage, and edge and mode could be stale while it was being
+  built.
+- Progress is reported to the overlay even while the settings page is open. Before,
+  that hung on the main screen, which is no longer rendered there.
 
 ## 0.97.0 (2026-08-29)
 
-### Neu
+### Added
 
-- Zweiter Modus **Speedleveling** für den nächsten Charakter derselben Liga.
-  Craftingrezepte und Trials gelten dort schon, ihre Schritte fallen darum weg,
-  ebenso die Umwege, die nur beim Ligastart etwas bringen: Tidal Island mit
-  Hailrake, The Den, die Catacombs, das Silver Locket, die Ossuary und die Suche
-  nach der Chemist's Strongbox. Aus 488 Schritten auf 248 Kanten werden 409 auf
-  236.
-- Nach elf Tagen ohne Start fragt die App beim Öffnen, ob ein neuer Durchgang
-  ansteht, und lässt zwischen Ligastart und Speedleveling wählen. Beide
-  Antworten setzen auf Akt 1 zurück, eine dritte lässt alles stehen. Beim
-  allerersten Start wird nicht gefragt.
-- Der Modus steht auch in den Einstellungen. Ein Wechsel dort behält den
-  Fortschritt und knüpft an der nächstgelegenen passenden Zone wieder an.
+- Second mode **Speedleveling** for the next character of the same league. Crafting
+  recipes and trials already count there, so their steps are dropped, as are the
+  detours that only pay off at league start: Tidal Island with Hailrake, The Den, the
+  Catacombs, the Silver Locket, the Ossuary and the search for the Chemist's Strongbox.
+  488 steps on 248 edges become 409 on 236.
+- After eleven days without a start, the app asks on opening whether a new run is due
+  and lets you choose between league start and speedleveling. Both answers reset to
+  Act 1, a third one leaves everything as it is. On the very first start nothing is
+  asked.
+- The mode is also in the settings. Switching there keeps progress and re-anchors on
+  the nearest matching zone.
 
-### Behoben
+### Fixed
 
-- Ein Wiederanschluss konnte auf einen Kantenindex zeigen, den es nicht gibt,
-  wenn die zuletzt betretene Zone in der Route fehlt. Das Overlay wäre leer
-  geblieben, ohne Fehlermeldung. Der Index wird jetzt auf die Länge der Route
-  geklemmt. Aufgefallen beim Moduswechsel: die Ossuary liegt im Ligastart auf
-  Kante 233, Speedleveling hat nur 236.
-- Der tägliche Datenabgleich setzte seinen Takt unter React StrictMode nicht neu
-  auf, nachdem der erste Mount ihn abgeräumt hatte. Betraf nur den
-  Entwicklungslauf.
+- Re-anchoring could point at an edge index that does not exist when the last entered
+  zone is missing from the route. The overlay would have stayed empty, with no error
+  message. The index is now clamped to the length of the route. Noticed when switching
+  modes: the Ossuary sits on edge 233 at league start, speedleveling has only 236.
+- The daily data sync did not restart its timer under React StrictMode after the first
+  mount had cleared it. Affected the development run only.
 
 ## 0.96.0 (2026-08-27)
 
-### Intern
+### Internal
 
-- Node 20 ist seit April 2026 ohne Support, CI baut jetzt auf Node 24 (aktives
-  LTS). `.nvmrc` steht auf `24`, Patches innerhalb des Majors nimmt CI mit.
-- `predev` schrieb bei jedem `yarn dev` die lokal installierte Node-Version nach
-  `.nvmrc`, und zwei Workflows lesen genau diese Datei. Wer lokal eine andere
-  Version ausprobierte, verschob damit unbemerkt die Toolchain von Release und
-  Upstream-Watch. Die Automatik ist entfernt, die Version wird bewusst gepflegt.
-- Dieser Changelog. Der Release-Workflow prüft vor dem Bauen, ob die Version
-  einen Abschnitt hat, und setzt ihn danach als Release-Beschreibung.
+- Node 20 has been out of support since April 2026, CI now builds on Node 24 (active
+  LTS). `.nvmrc` says `24`, CI picks up patches within the major.
+- `predev` wrote the locally installed Node version into `.nvmrc` on every `yarn dev`,
+  and two workflows read exactly that file. Anyone trying a different version locally
+  silently shifted the toolchain of release and upstream watch. The automation is
+  removed, the version is maintained deliberately.
+- This changelog. The release workflow checks before building whether the version has a
+  section, and sets it as the release description afterwards.
 
 ## 0.95.0 (2026-08-27)
 
-### Behoben
+### Fixed
 
-- Der Fortschritt überlebt einen Neustart wieder. Das Hauptfenster knüpfte beim
-  Start am **letzten** Vorkommen der zuletzt betretenen Zone an statt am
-  gespeicherten Schritt. 46 der 149 Zonen der Route werden mehrfach betreten,
-  The Forest Encampment etwa auf den Kanten 135, 137, 145, 150 und 156. Wer bei
-  135 aufhörte, stand nach dem Neustart 21 Kanten weiter. Das Overlay blieb
-  richtig, weil es diesen Weg nicht nimmt.
-- Ein Wiederanschluss findet jetzt das **nächstgelegene** Vorkommen, und nur
-  dann, wenn der gespeicherte Schritt nicht mehr passt, sich also die Route
-  darunter geändert hat.
-- Lief während des täglichen Datenabgleichs der Client.txt-Takt, konnte der
-  Fortschritt einen Schritt zurückspringen.
+- Progress survives a restart again. On startup the main window re-anchored on the
+  **last** occurrence of the last entered zone instead of the stored step. 46 of the
+  149 zones of the route are entered more than once, The Forest Encampment for instance
+  on edges 135, 137, 145, 150 and 156. Anyone who stopped at 135 stood 21 edges ahead
+  after the restart. The overlay stayed correct because it does not take that path.
+- Re-anchoring now finds the **nearest** occurrence, and only when the stored step no
+  longer fits, that is, the route underneath has changed.
+- If the Client.txt tick ran during the daily data sync, progress could jump back one
+  step.
 
-### Geändert
+### Changed
 
-- Die Guide-Liste springt beim Start und bei jedem Zonenwechsel zum aktuellen
-  Schritt, mittig ins Bild. Dazwischen lässt sie sich frei scrollen.
+- The guide list jumps to the current step on startup and on every zone change, centred
+  in view. In between it scrolls freely.
 
 ## 0.94.0 (2026-08-26)
 
-### Behoben
+### Fixed
 
-- Updates laden wieder nur die Differenz. Die Releases 0.92.0 und 0.93.0
-  enthielten ausschließlich vollständige Pakete, jedes Update zog also 5,5 MB
-  statt rund 90 KB. `vpk` rechnet ein Delta nur gegen ein Paket, das im
-  Ausgabeverzeichnis liegt, und der CI-Runner startet leer. Der Vorgänger wird
-  jetzt vor dem Packen geholt.
-- Bleibt das Delta trotz vorhandenem Vorgänger aus, bricht der Release ab. Ohne
-  diese Prüfung war der Fehler zwei Releases lang unsichtbar: es gab keine
-  Fehlermeldung, nur ein Release ohne Delta-Datei.
+- Updates download only the difference again. Releases 0.92.0 and 0.93.0 contained only
+  full packages, so every update pulled 5.5 MB instead of about 90 KB. `vpk` computes a
+  delta only against a package that sits in the output directory, and the CI runner
+  starts empty. The predecessor is now fetched before packing.
+- If the delta is missing despite an existing predecessor, the release aborts. Without
+  this check the bug was invisible for two releases: there was no error message, just a
+  release without a delta file.
 
 ## 0.93.0 (2026-08-26)
 
-### Behoben
+### Fixed
 
-- Über der mitlaufenden Akt-Überschrift stand ein Streifen der vorigen Zeile.
-- Die Symbole in den Schritten behalten ihr Seitenverhältnis. Sie waren auf ein
-  Quadrat gezwungen, das Quest-Ausrufezeichen dadurch auf gut die doppelte
-  Breite gezogen, Trial und Waypoint gestaucht.
+- A strip of the previous line showed above the sticky act heading.
+- The icons in the steps keep their aspect ratio. They were forced into a square, which
+  stretched the quest exclamation mark to about twice its width and squashed trial and
+  waypoint.
 
-### Geändert
+### Changed
 
-- Himmelsrichtungen stehen ausgeschrieben: „Go west" statt „Go W".
-- Die Akt-Überschrift ist größer und nicht mehr unterstrichen.
+- Compass directions are spelled out: "Go west" instead of "Go W".
+- The act heading is larger and no longer underlined.
 
 ## 0.92.0 (2026-08-26)
 
-### Geändert
+### Changed
 
-- Updates laufen ohne Zutun. Geprüft und geladen wird beim Start, eingespielt
-  beim Beenden, damit die App nicht mitten im Spiel neu startet. Der
-  Install-Knopf entfällt.
-- Das Overlay zeigt den nächsten Schritt statt des gerade erledigten
-  Zonenwechsels. In 101 von 248 Abschnitten stand dort vorher nur der Übergang,
-  den man eben gemacht hatte.
-- Die Guide-Liste zeigt einen Trenner je Schritt statt je Zeile, ein Block ist
-  damit genau das, wohin „Jump here" springt.
+- Updates run without any action. They are checked and downloaded at startup and
+  installed on exit, so the app does not restart in the middle of a game. The install
+  button is gone.
+- The overlay shows the next step instead of the zone change just made. In 101 of 248
+  segments it previously showed only the transition you had just made.
+- The guide list shows one separator per step instead of per line, so a block is
+  exactly what "Jump here" jumps to.
 
-### Entfernt
+### Removed
 
-- Das zweite, unbeschriftete Overlay am linken Bildschirmrand mit den
-  Zonenbildern. Es zeigte seit dem Umbau auf Velopack nur noch leere Rahmen, und
-  sein Zweck erschloss sich im Spiel nicht. Damit entfallen auch die 194
-  Zonenbilder und der Schalter dafür in den Einstellungen.
+- The second, unlabelled overlay at the left edge of the screen with the zone images.
+  Since the move to Velopack it only showed empty frames, and its purpose was not
+  obvious in game. With it go the 194 zone images and the switch for them in the
+  settings.
 
-### Behoben
+### Fixed
 
-- Zwei Symbole fehlten in der installierten Version. Dateien unter 4096 Byte
-  landen als `data:`-URI im Bündel, und die Sicherheitsrichtlinie der Anwendung
-  lässt für Bilder nur eigene Dateien zu. Betroffen waren genau die zwei Icons
-  knapp unter dieser Grenze. Im Entwicklungslauf konnte das nie auffallen.
+- Two icons were missing in the installed version. Files below 4096 bytes end up as
+  `data:` URIs in the bundle, and the app's security policy allows only its own files
+  for images. Affected were exactly the two icons just below that limit. In the
+  development run this could never show.
 
 ## 0.91.0 (2026-08-26)
 
-Erste Ausgabe unter dem Namen PoE Leveling Guide, abgeleitet von
+First release under the name PoE Leveling Guide, derived from
 [Kazte/path-of-levelling](https://github.com/Kazte/path-of-levelling).
 
-### Neu
+### Added
 
-- Overlay als eigenes Fenster. Es koppelt sich an das Spielfenster, folgt ihm
-  und lässt sich in Position, Größe und Deckkraft einstellen.
-- Fortschritt läuft automatisch mit, gelesen aus `Client.txt`. Der Pfad dorthin
-  wird aus dem laufenden Spiel abgeleitet.
-- Der Walkthrough kommt zur Laufzeit aus
-  [HeartofPhos/exile-leveling](https://github.com/HeartofPhos/exile-leveling) und
-  hält sich selbst aktuell. Ein Build muss nicht importiert werden.
-- Autoupdate über Velopack, Installation pro Benutzer nach `%LocalAppData%` ohne
-  Rechteabfrage.
+- Overlay as its own window. It attaches to the game window, follows it and can be
+  adjusted in position, size and opacity.
+- Progress advances automatically, read from `Client.txt`. The path to it is derived
+  from the running game.
+- The walkthrough comes at runtime from
+  [HeartofPhos/exile-leveling](https://github.com/HeartofPhos/exile-leveling) and keeps
+  itself up to date. No build needs to be imported.
+- Autoupdate via Velopack, per-user installation into `%LocalAppData%` with no
+  elevation prompt.
 
-### Behoben
+### Fixed
 
-- Der geerbte Updater zeigte auf die Releases des Ursprungsprojekts und trug
-  dessen Signaturschlüssel. Ein eigenes Release wäre damit nie ausgeliefert
-  worden, ein fremdes dagegen schon.
+- The inherited updater pointed at the releases of the original project and carried its
+  signing key. A release of our own would never have been delivered that way, a foreign
+  one would.

@@ -1,157 +1,157 @@
-# Glossar
+# Glossary
 
-Begriffe aus dem Zusammenspiel von `poe-leveling-app` und dem Upstream-Projekt
+Terms from the interplay of `poe-leveling-app` and the upstream project
 [HeartofPhos/exile-leveling](https://github.com/HeartofPhos/exile-leveling) (MIT).
-Kanonische Definitionen stehen dort in `common/src/types.d.ts`.
+The canonical definitions live there in `common/src/types.d.ts`.
 
-## Daten und Route
+## Data and route
 
-**Route-DSL**
-Das Textformat der Walkthrough-Quelldateien `common/data/routes/act-1.txt` bis
-`act-10.txt`. Zeilenorientiert, mit Direktiven (`#section`, `#sub`, `#ifdef`) und
-Fragmenten in geschweiften Klammern (`{enter|1_1_2}`).
+**Route DSL**
+The text format of the walkthrough source files `common/data/routes/act-1.txt` to
+`act-10.txt`. Line-oriented, with directives (`#section`, `#sub`, `#ifdef`) and
+fragments in curly braces (`{enter|1_1_2}`).
 
 **RouteFile**
-Ein Abschnitt der DSL, zerlegt an `#section`. `{ name, contents }`. Erzeugt von
-`getRouteFiles(routeSources)`. Die zehn Act-Dateien ergeben zehn RouteFiles.
+One section of the DSL, split at `#section`. `{ name, contents }`. Produced by
+`getRouteFiles(routeSources)`. The ten act files yield ten RouteFiles.
 
 **Route**
-Das geparste Ergebnis: `{ sections: Section[], edges: areaId[] }`. Erzeugt von
+The parsed result: `{ sections: Section[], edges: areaId[] }`. Produced by
 `parseRoute(routeFiles, routeState)`.
 
 **Section**
-Ein Act. `{ name: "Act 1", steps: Step[] }`.
+One act. `{ name: "Act 1", steps: Step[] }`.
 
 **Step**
-Entweder ein `FragmentStep` oder ein `GemStep`.
+Either a `FragmentStep` or a `GemStep`.
 
 **FragmentStep**
-Eine Zeile des Guides. `{ type: "fragment_step", parts: Fragment[], subSteps: FragmentStep[],
-edgeIndex: number | null }`. Die `parts` mischen rohe Strings und typisierte Fragmente.
+One line of the guide. `{ type: "fragment_step", parts: Fragment[], subSteps: FragmentStep[],
+edgeIndex: number | null }`. The `parts` mix raw strings and typed fragments.
 
 **GemStep**
-Ein buildabhängiger Schritt "hole Gem X". Entsteht nur bei importiertem PoB-Code. In
-diesem Projekt nicht erzeugt, siehe ADR-0007.
+A build-dependent step "get gem X". Only produced from an imported PoB code. Not
+generated in this project, see ADR-0007.
 
 **Fragment**
-Ein typisiertes Element innerhalb eines Schritts. Rund zwanzig Varianten, unter anderem
+A typed element inside a step. About twenty variants, among them
 `enter`, `area`, `arena`, `kill`, `quest`, `quest_text`, `waypoint`, `waypoint_use`,
 `waypoint_get`, `portal_set`, `portal_use`, `logout`, `trial`, `ascend`, `crafting`,
 `dir`, `generic`, `reward_quest`, `reward_vendor`, `copy`.
 
 **SubStep**
-Ein eingerückter Hinweis unter einem Schritt, in der DSL mit `#sub` markiert. Enthält
-Richtungs- und Layouttipps.
+An indented hint below a step, marked with `#sub` in the DSL. Contains direction and
+layout tips.
 
-## Zonenwechsel und Fortschritt
+## Zone changes and progress
 
 **Area ID**
-Der interne Zonenbezeichner von Path of Exile, etwa `1_1_2` (The Coast) oder `1_1_town`
-(Lioneye's Watch). Wird in `common/data/json/areas.json` aufgelöst.
+Path of Exile's internal zone identifier, such as `1_1_2` (The Coast) or `1_1_town`
+(Lioneye's Watch). Resolved via `common/data/json/areas.json`.
 
 **Edge**
-Ein Zonenwechsel entlang der Route. `route.edges` ist die geordnete Liste der Area IDs,
-die der Spieler nacheinander betritt.
+A zone change along the route. `route.edges` is the ordered list of area IDs the player
+enters one after another.
 
 **edgeIndex**
-Der Index in `route.edges`, den ein FragmentStep auslöst. `null`, wenn der Schritt keinen
-Zonenwechsel bedeutet (zum Beispiel eine Quest-Abgabe).
+The index into `route.edges` that a FragmentStep triggers. `null` if the step is not a
+zone change (a quest turn-in, for example).
 
 **currentEdge**
-Der Fortschrittszeiger dieser App. Läuft vor, wenn die aus `Client.txt` gelesene Zone
-`route.edges[currentEdge + 1]` entspricht. Siehe ADR-0004.
+This app's progress pointer. Advances when the zone read from `Client.txt` equals
+`route.edges[currentEdge + 1]`. See ADR-0004.
 
 **Client.txt**
-Das Logfile des Spiels unter `<PoE-Verzeichnis>/logs/Client.txt`. Enthält bei jedem
-Zonenwechsel eine Zeile `Generating level N area "<areaId>"`.
+The game's log file at `<PoE directory>/logs/Client.txt`. Contains a line
+`Generating level N area "<areaId>"` on every zone change.
 
-## Routenvarianten
+## Route variants
 
-**Präprozessor-Definition**
-Ein Schalter, der `#ifdef`- und `#ifndef`-Blöcke der DSL ein- oder ausblendet. Gesetzt in
+**Preprocessor definition**
+A switch that shows or hides `#ifdef` and `#ifndef` blocks of the DSL. Set in
 `RouteState.preprocessorDefinitions`.
 
 **LEAGUE_START**
-Variante für den Ligastart ohne vorhandene Ausrüstung. Aktiviert unter anderem den
-Umweg über Tidal Island und Hailrake. In diesem Projekt fest aktiv.
+Variant for the league start without existing gear. Enables, among other things, the
+detour via Tidal Island and Hailrake. Active in the `league-start` guide mode, disabled
+in `speedleveling`, see ADR-0011.
 
 **LIBRARY**
-Aktiviert den Umweg über die Bibliothek in Act 3 zum Kauf von Skill-Gems.
-In diesem Projekt fest aktiv.
+Enables the detour through the Library in Act 3 to buy skill gems. Always active in this
+project.
 
 **BANDIT_ALIRA, BANDIT_OAK, BANDIT_KRAITYN, BANDIT_KILL**
-Vier sich ausschließende Varianten der Banditenquest in Act 2. In diesem Projekt fest
-`BANDIT_ALIRA`, entsprechend dem Upstream-Default.
+Four mutually exclusive variants of the bandit quest in Act 2. Fixed to `BANDIT_ALIRA`
+in this project, matching the upstream default.
 
-**PoB-Code**
-Ein Path-of-Building-Export: Base64, zlib-komprimiert, darin XML. Quelle der
-buildabhängigen Gem-Schritte. Nicht implementiert, siehe ADR-0007.
+**PoB code**
+A Path of Building export: Base64, zlib-compressed, XML inside. Source of the
+build-dependent gem steps. Not implemented, see ADR-0007.
 
-**Referenz-Export**
-Die von der Website erzeugte JSON-Ausgabe `[...route.sections, "pob-code:none"]`. Dient
-in diesem Projekt als Golden File für den Parser-Test.
+**Reference export**
+The JSON output produced by the website, `[...route.sections, "pob-code:none"]`. Serves
+as the golden file for the parser test in this project.
 
 ## Overlay
 
-**PoE-Bounds**
-Position, Größe und Fokuszustand des Spielfensters, ermittelt in `src-tauri/src/overlay.rs`
-und per Event `poe-bounds` an das Frontend gesendet.
+**PoE bounds**
+Position, size and focus state of the game window, determined in
+`src-tauri/src/overlay.rs` and sent to the frontend via the `poe-bounds` event.
 
-**Anker**
-Der relative Bezugspunkt des Overlays im Spiel-Rect. Hier `{ x: 0.5, y: 1.0 }`, also
-horizontal mittig und vertikal am unteren Rand.
+**Anchor**
+The relative reference point of the overlay inside the game rect. Here `{ x: 0.5, y: 1.0 }`,
+that is, horizontally centred and vertically at the bottom edge.
 
 **BOTTOM_MARGIN**
-Abstand der Overlay-Unterkante zur Unterkante des Spielfensters, als Anteil der
-Spielhöhe. Hält das Overlay über Flask- und Skillbar frei.
+Distance from the overlay's bottom edge to the bottom edge of the game window, as a
+share of the game height. Keeps the overlay clear of the flask and skill bar.
 
 **Offset**
-Die vom Nutzer gesetzte Feinverschiebung, gespeichert als Bruchteil des Spiel-Rects
-(`{ dx, dy }`), nicht in Pixeln. Überlebt dadurch Auflösungs- und Monitorwechsel.
+The fine adjustment set by the user, stored as a fraction of the game rect
+(`{ dx, dy }`), not in pixels. Therefore survives resolution and monitor changes.
 
 **Scale**
-Gemeinsamer Skalierungsfaktor für Fensterbreite und Schriftgröße, Bereich 0.6 bis 2.0.
-Umgesetzt über die CSS-Wurzelgröße.
+Common scale factor for window width and font size, range 0.6 to 2.0. Applied via the
+CSS root size.
 
-**Edit-Modus**
-Zustand, in dem das Overlay nicht klickdurchlässig ist und Ziehgriff sowie Skalenregler
-zeigt. Per Hotkey umschaltbar. Entspricht `assertOverlayActive` / `assertGameActive` im
-Vorbildprojekt `awakened-poe-trade-extended`.
+**Edit mode**
+State in which the overlay is not click-through and shows a drag handle and a scale
+slider. Toggled by hotkey. Corresponds to `assertOverlayActive` / `assertGameActive` in
+the reference project `awakened-poe-trade-extended`.
 
-**Klickdurchlässig**
-Fensterzustand `setIgnoreCursorEvents(true)`: Mausereignisse gehen durch das Overlay
-hindurch an das Spiel.
+**Click-through**
+Window state `setIgnoreCursorEvents(true)`: mouse events pass through the overlay to the
+game.
 
 **Windowed Fullscreen**
-Der einzige Vollbildmodus, über dem sich unter Windows ein Overlay zeichnen lässt.
-Exklusiv-Fullscreen funktioniert nicht, siehe ADR-0005.
+The only fullscreen mode on top of which an overlay can be drawn on Windows. Exclusive
+fullscreen does not work, see ADR-0005.
 
 ## Synchronisation
 
 **Snapshot**
-Ein vollständiger, auf eine Commit-sha gepinnter Satz aus zehn Route-Dateien und acht
-JSON-Dateien im lokalen Cache.
+A complete set of ten route files and eight JSON files in the local cache, pinned to one
+commit sha.
 
 **sha**
-Der Upstream-Commit, aus dem der aktuelle Snapshot stammt. Teil des Cache-Pfads, damit
-Stände nebeneinander liegen können und ein abgebrochener Download den guten Stand nicht
-beschädigt.
+The upstream commit the current snapshot comes from. Part of the cache path, so that
+versions can sit side by side and an aborted download does not damage the good one.
 
 **Manifest**
-`manifest.json` im Cache-Verzeichnis. Hält `sha`, `etag` und `fetchedAt`.
+`manifest.json` in the cache directory. Holds `sha`, `etag` and `fetchedAt`.
 
 **Conditional GET**
-Anfrage mit `If-None-Match: <etag>`. Antwort 304 bedeutet unverändert, kostet kein
-Rate-Limit-Kontingent und keinen Body.
+A request with `If-None-Match: <etag>`. A 304 response means unchanged, costs no
+rate-limit quota and no body.
 
-**Build-Snapshot**
-Ein zum Buildzeitpunkt mitgelieferter Datensatz. Letzte Rückfallebene, falls weder Netz
-noch Cache verfügbar sind.
+**Build snapshot**
+A data set shipped at build time. Last line of fallback if neither network nor cache is
+available.
 
-**Parser-Drift**
-Der Fall, dass Upstream die DSL-Grammatik oder den Parser ändert und der vendored Stand
-nicht mehr passt. Wird vom CI-Watcher und vom Golden-File-Test sichtbar gemacht.
+**Parser drift**
+The case where upstream changes the DSL grammar or the parser and the vendored copy no
+longer fits. Made visible by the CI watcher and the golden-file test.
 
-**Datendrift**
-Der erwartete Normalfall: Upstream ändert nur Routeninhalte oder Spieldaten. Wird zur
-Laufzeit automatisch übernommen und erfordert nur ein Neuziehen des Golden-File-Fixtures.
+**Data drift**
+The expected normal case: upstream changes only route contents or game data. Picked up
+automatically at runtime and only requires re-generating the golden-file fixture.
