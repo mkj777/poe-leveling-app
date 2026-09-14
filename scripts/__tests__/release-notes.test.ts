@@ -2,26 +2,26 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-// @ts-expect-error Das Skript ist reines JavaScript ohne Typdeklarationen.
+// @ts-expect-error The script is plain JavaScript without type declarations.
 import { extractNotes } from '../release-notes.mjs';
 
 const CHANGELOG = [
   '# Changelog',
   '',
-  'Vorspann, der nicht in ein Release gehoert.',
+  'Preamble that does not belong in a release.',
   '',
   '## 0.96.0 (2026-08-27)',
   '',
-  '### Intern',
+  '### Internal',
   '',
   '- Node 24.',
   '',
   '## 0.95.0 (2026-08-27)',
   '',
-  '### Behoben',
+  '### Fixed',
   '',
-  '- Fortschritt ueberlebt den Neustart.',
-  '- Kein Ruecksprung mehr.',
+  '- Progress survives a restart.',
+  '- No more jumping back.',
   '',
   '## 0.94.0 (2026-08-26)',
   '',
@@ -30,44 +30,44 @@ const CHANGELOG = [
 ].join('\n');
 
 describe('extractNotes', () => {
-  it('nimmt genau den Abschnitt einer Version', () => {
+  it('takes exactly the section of one version', () => {
     expect(extractNotes(CHANGELOG, '0.95.0')).toBe(
-      ['### Behoben', '', '- Fortschritt ueberlebt den Neustart.', '- Kein Ruecksprung mehr.'].join(
+      ['### Fixed', '', '- Progress survives a restart.', '- No more jumping back.'].join(
         '\n'
       )
     );
   });
 
-  it('haengt den naechsten Abschnitt nicht an', () => {
+  it('does not append the next section', () => {
     expect(extractNotes(CHANGELOG, '0.96.0')).not.toContain('0.95.0');
-    expect(extractNotes(CHANGELOG, '0.96.0')).not.toContain('Neustart');
+    expect(extractNotes(CHANGELOG, '0.96.0')).not.toContain('restart');
   });
 
-  it('nimmt den Vorspann nicht mit', () => {
-    expect(extractNotes(CHANGELOG, '0.96.0')).not.toContain('Vorspann');
+  it('leaves the preamble out', () => {
+    expect(extractNotes(CHANGELOG, '0.96.0')).not.toContain('Preamble');
   });
 
-  it('kommt mit dem letzten Abschnitt der Datei zurecht', () => {
+  it('handles the last section of the file', () => {
     expect(extractNotes(CHANGELOG, '0.94.0')).toBe('- Deltas.');
   });
 
-  it('gibt null, wenn die Version fehlt', () => {
+  it('returns null when the version is missing', () => {
     expect(extractNotes(CHANGELOG, '9.9.9')).toBeNull();
   });
 
-  it('verwechselt keine Version, die mit derselben Ziffernfolge beginnt', () => {
-    // "0.9" darf nicht auf "0.95.0" passen, sonst bekaeme ein Release die
-    // Notizen eines anderen.
+  it('does not confuse a version that starts with the same digits', () => {
+    // "0.9" must not match "0.95.0", otherwise one release would get the
+    // notes of another.
     expect(extractNotes(CHANGELOG, '0.9')).toBeNull();
   });
 
-  it('gibt null bei einem leeren Abschnitt', () => {
-    const leer = ['## 1.0.0 (2026-01-01)', '', '## 0.9.0 (2025-12-01)', '', '- etwas'].join('\n');
+  it('returns null for an empty section', () => {
+    const empty = ['## 1.0.0 (2026-01-01)', '', '## 0.9.0 (2025-12-01)', '', '- something'].join('\n');
 
-    expect(extractNotes(leer, '1.0.0')).toBeNull();
+    expect(extractNotes(empty, '1.0.0')).toBeNull();
   });
 
-  it('findet jede veroeffentlichte Version im echten Changelog', () => {
+  it('finds every published version in the real changelog', () => {
     const changelog = fs.readFileSync(
       path.resolve(__dirname, '../../CHANGELOG.md'),
       'utf8'
@@ -75,14 +75,14 @@ describe('extractNotes', () => {
 
     for (const version of ['0.91.0', '0.92.0', '0.93.0', '0.94.0', '0.95.0']) {
       const notes = extractNotes(changelog, version);
-      expect(notes, `Abschnitt fuer ${version} fehlt`).not.toBeNull();
+      expect(notes, `section for ${version} is missing`).not.toBeNull();
       expect(notes!.length).toBeGreaterThan(40);
     }
   });
 
-  it('haelt den Changelog und die Version der Anwendung zusammen', () => {
-    // Ein Release ohne Eintrag soll frueh auffallen, nicht erst beim Lesen der
-    // leeren Beschreibung auf GitHub.
+  it('keeps the changelog and the app version together', () => {
+    // A release without an entry should show up early, not when reading the
+    // empty description on GitHub.
     const version = JSON.parse(
       fs.readFileSync(
         path.resolve(__dirname, '../../src-tauri/tauri.conf.json'),

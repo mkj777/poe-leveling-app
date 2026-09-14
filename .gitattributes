@@ -1,15 +1,15 @@
-# Ohne diese Datei macht Git auf Windows aus jedem LF im Objektspeicher ein
-# CRLF im Arbeitsverzeichnis. Der Release-Workflow laeuft auf windows-latest,
-# bekam also andere Dateien als die Entwicklungsmaschine. Konkret ist Vite
-# darueber gestolpert: ein Zeilenkommentar direkt vor einem `import` liess mit
-# CRLF die Import-Analyse ungueltigen Code erzeugen, und der Testlauf brach mit
-# "SyntaxError: Invalid or unexpected token" ab.
+# Without this file, Git on Windows turns every LF in the object store into a
+# CRLF in the working tree. The release workflow runs on windows-latest and so
+# received different files than the development machine. Vite tripped over
+# exactly that: a line comment directly before an `import` made the import
+# analysis produce invalid code with CRLF, and the test run aborted with
+# "SyntaxError: Invalid or unexpected token".
 #
-# Der Objektspeicher enthaelt ohnehin ueberall LF, das hier haelt nur die
-# Arbeitskopie gleich.
+# The object store contains LF everywhere anyway; this only keeps the working
+# copy the same.
 * text=auto eol=lf
 
-# Nichts von dem hier soll Git als Text anfassen.
+# None of these should be touched by Git as text.
 *.png binary
 *.webp binary
 *.ico binary

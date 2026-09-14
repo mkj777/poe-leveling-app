@@ -1,4 +1,4 @@
-name: Release veroeffentlichen
+name: Publish release
 
 on:
   push:
@@ -25,45 +25,45 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Frontend-Abhaengigkeiten
+      - name: Frontend dependencies
         run: yarn install --frozen-lockfile
 
       - name: Tests
         run: yarn test
 
-      # vpk ist ein dotnet-Werkzeug. Auf windows-latest liegt das SDK bereit.
-      - name: Velopack-CLI
+      # vpk is a dotnet tool. The SDK is available on windows-latest.
+      - name: Velopack CLI
         run: dotnet tool install -g vpk
 
-      # Der Tag ist die Quelle der Wahrheit fuer die Version. Weicht
-      # tauri.conf.json davon ab, bricht der Lauf hier ab, statt ein Release
-      # mit falscher Nummer zu erzeugen.
-      - name: Version aus dem Tag pruefen
+      # The tag is the source of truth for the version. If tauri.conf.json
+      # differs, the run aborts here instead of producing a release with the
+      # wrong number.
+      - name: Check version against the tag
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: |
           tag="${GITHUB_REF_NAME#v}"
           conf=$(node -p "require('./src-tauri/tauri.conf.json').version")
           if [ "$tag" != "$conf" ]; then
-            echo "Tag $tag passt nicht zu tauri.conf.json $conf" >&2
+            echo "Tag $tag does not match tauri.conf.json $conf" >&2
             exit 1
           fi
 
-      # Frueh, nicht erst nach zehn Minuten Bauzeit: ein Release ohne
-      # Changelog-Eintrag soll in Sekunden auffallen.
-      - name: Changelog-Eintrag pruefen
+      # Early, not after ten minutes of build time: a release without a
+      # changelog entry should show up within seconds.
+      - name: Check changelog entry
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: node scripts/release-notes.mjs "${GITHUB_REF_NAME#v}" > /dev/null
 
-      - name: Bauen, packen und hochladen
+      - name: Build, pack and upload
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/release-velopack.mjs --upload
 
-      # `vpk upload` legt das Release an, kann aber keine Beschreibung setzen.
-      # Ohne diesen Schritt blieben die Releases leer, wie 0.91.0 bis 0.95.0.
-      - name: Release-Beschreibung aus dem Changelog setzen
+      # `vpk upload` creates the release but cannot set a description.
+      # Without this step the releases stayed empty, like 0.91.0 to 0.95.0.
+      - name: Set release description from the changelog
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         env:

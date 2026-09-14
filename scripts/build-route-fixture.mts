@@ -1,9 +1,9 @@
-// Erzeugt die Golden-File-Erwartung mit dem UNVERAENDERTEN Upstream-Code.
-// Der Oracle ist bewusst nicht unsere vendored Kopie, sonst pruefte der Test
-// nichts. Aufruf ueber tsx, weil der Upstream .js-Specifier auf .ts-Dateien
-// benutzt und JSON-Importe mit Import-Attributen laedt:
+// Produces the golden-file expectation with the UNCHANGED upstream code.
+// The oracle is deliberately not our vendored copy, otherwise the test would
+// check nothing. Run via tsx, because upstream uses .js specifiers on .ts
+// files and loads JSON imports with import attributes:
 //
-//   npx --yes tsx scripts/build-route-fixture.mts [pfad-zum-klon]
+//   npx --yes tsx scripts/build-route-fixture.mts [path-to-clone]
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -26,8 +26,8 @@ const sources = Array.from({ length: 10 }, (_value, index) =>
   fs.readFileSync(path.join(routesDir, `act-${index + 1}.txt`), 'utf8')
 );
 
-// Defaults der Website, siehe web/src/state/build-data.ts und route.ts:
-// leagueStart true, library true, bandit Alira, kein PoB-Import.
+// Defaults of the website, see web/src/state/build-data.ts and route.ts:
+// leagueStart true, library true, bandit Alira, no PoB import.
 const state = initializeRouteState();
 state.preprocessorDefinitions.add('LEAGUE_START');
 state.preprocessorDefinitions.add('LIBRARY');
@@ -40,4 +40,4 @@ fs.mkdirSync(outDir, { recursive: true });
 const out = path.join(outDir, `route-${sha}.json`);
 fs.writeFileSync(out, JSON.stringify(route, null, 2), 'utf8');
 
-console.log(`fixture geschrieben: ${out}`);
+console.log(`fixture written: ${out}`);

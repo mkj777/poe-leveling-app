@@ -7,12 +7,12 @@ export default defineConfig(async () => ({
   plugins: [react()],
   clearScreen: false,
   build: {
-    // Vite haengt Dateien unter 4096 Byte als data:-URI ins Bundle. Die CSP
-    // der Anwendung erlaubt fuer Bilder nur 'self', also fielen genau die
-    // Icons aus, die knapp unter der Grenze lagen: quest.png und town.png
-    // blieben im Release 0.91.0 leer, im Dev-Server nicht, weil der jede
-    // Datei einzeln ausliefert. Eine Byte-Grenze darf nicht entscheiden, ob
-    // ein Bild ankommt.
+    // Vite inlines files under 4096 bytes as data: URIs into the bundle. The
+    // app's CSP allows only 'self' for images, so exactly the icons just
+    // below that limit dropped out: quest.png and town.png stayed blank in
+    // release 0.91.0, but not in the dev server, which serves every file
+    // individually. A byte threshold must not decide whether an image
+    // arrives.
     assetsInlineLimit: 0
   },
   server: {

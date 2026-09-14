@@ -15,17 +15,16 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text-summary', 'text'],
       /**
-       * Gemessen wird der eigene, testbare Kern: Geometrie, Fortschritt,
-       * Darstellung, Sync und Stores. Bewusst aussen vor:
+       * Measured is our own testable core: geometry, progress, rendering,
+       * sync and stores. Deliberately left out:
        *
-       * - route-processing ist unveraendert vom Upstream uebernommen. Dessen
-       *   Abdeckung ist deren Sache, unsere Zusicherung darauf ist der
-       *   Golden-File-Test.
-       * - Komponenten und Seiten brauchen eine DOM-Umgebung und pruefen vor
-       *   allem Darstellung. Was an ihnen entscheidbar ist, steckt in reinen
-       *   Funktionen daneben und wird dort geprueft.
-       * - Alles, was nur Tauri-Aufrufe weiterreicht, ist ohne laufende App
-       *   nicht sinnvoll pruefbar.
+       * - route-processing is taken unchanged from upstream. Its coverage is
+       *   their business; our guarantee on it is the golden-file test.
+       * - Components and pages need a DOM environment and mostly check
+       *   rendering. Whatever is decidable about them sits in pure functions
+       *   next to them and is tested there.
+       * - Anything that only forwards Tauri calls cannot be tested
+       *   meaningfully without a running app.
        */
       include: [
         'src/utilities/**/*.ts',

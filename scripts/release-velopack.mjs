@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 /**
- * Baut die Anwendung und schnuert daraus ein Velopack-Release.
+ * Builds the application and wraps it into a Velopack release.
  *
- * Tauri bundelt nicht mehr selbst (`bundle.active: false`), liefert also nur
- * das nackte Programm unter `target/release`. Das Frontend steckt im Kompilat,
- * eigene Ressourcen daneben gibt es seit ADR-0009 keine mehr.
+ * Tauri no longer bundles itself (`bundle.active: false`), so it only
+ * delivers the bare program under `target/release`. The frontend is inside
+ * the executable; since ADR-0009 there are no resources next to it.
  *
- * Aufruf:
- *   node scripts/release-velopack.mjs                 nur bauen und packen
- *   node scripts/release-velopack.mjs --upload        zusaetzlich zu GitHub
- *   node scripts/release-velopack.mjs --skip-build    vorhandenes Kompilat nutzen
- *   node scripts/release-velopack.mjs --skip-download ohne Vorgaenger, kein Delta
+ * Usage:
+ *   node scripts/release-velopack.mjs                 build and pack only
+ *   node scripts/release-velopack.mjs --upload        also upload to GitHub
+ *   node scripts/release-velopack.mjs --skip-build    use the existing executable
+ *   node scripts/release-velopack.mjs --skip-download no predecessor, no delta
  *
- * `RELEASE_VERSION` uebersteuert die Version aus `tauri.conf.json`.
+ * `RELEASE_VERSION` overrides the version from `tauri.conf.json`.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -30,26 +30,25 @@ export const PACK_ID = 'PoELevelingGuide';
 export const REPO_URL = 'https://github.com/mkj777/poe-leveling-app';
 
 /**
- * Velopack besteht auf reinem SemVer. Ein fuehrendes `v` aus einem Git-Tag
- * wuerde es zurueckweisen, deshalb faellt es hier weg.
+ * Velopack insists on plain SemVer. It would reject a leading `v` from a git
+ * tag, so it is stripped here.
  */
 export function normaliseVersion(raw) {
   const trimmed = String(raw).trim();
   const version = trimmed.startsWith('v') ? trimmed.slice(1) : trimmed;
 
   if (!/^\d+\.\d+\.\d+(?:[-+].+)?$/.test(version)) {
-    throw new Error(`Keine gueltige SemVer-Version: ${raw}`);
+    throw new Error(`Not a valid SemVer version: ${raw}`);
   }
 
   return version;
 }
 
 /**
- * `vpk` und `yarn` sind auf Windows Batch-Wrapper, die nur ueber die Shell
- * startbar sind. Node reicht die Argumente dann aber unveraendert an
- * `cmd.exe` weiter, das sie an Leerzeichen zerlegt: aus
- * `--mainExe PoE Leveling Guide.exe` werden drei Argumente. Deshalb hier
- * selbst klammern.
+ * On Windows, `vpk` and `yarn` are batch wrappers that can only be started
+ * through the shell. Node then passes the arguments unchanged to `cmd.exe`,
+ * which splits them at spaces: `--mainExe PoE Leveling Guide.exe` becomes
+ * three arguments. Hence the quoting here.
  */
 export function quoteArg(value) {
   const text = String(value);
@@ -61,8 +60,8 @@ export function commandLine(command, args) {
 }
 
 function run(command, args) {
-  // Als eine fertige Zeile statt als Argumentliste, weil Node sonst warnt,
-  // dass es bei `shell: true` nicht escaped. Escaped wird hier.
+  // As one finished line instead of an argument list, because Node otherwise
+  // warns that it does not escape with `shell: true`. Escaping happens here.
   const result = spawnSync(commandLine(command, args), {
     stdio: 'inherit',
     shell: true,
@@ -70,7 +69,7 @@ function run(command, args) {
   });
 
   if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(' ')} endete mit ${result.status}`);
+    throw new Error(`${command} ${args.join(' ')} exited with ${result.status}`);
   }
 }
 
@@ -80,12 +79,12 @@ function stage(exeName) {
 
   const exe = path.join(RELEASE_DIR, exeName);
   if (!fs.existsSync(exe)) {
-    throw new Error(`Kompilat fehlt: ${exe}`);
+    throw new Error(`Executable missing: ${exe}`);
   }
   fs.copyFileSync(exe, path.join(STAGE_DIR, exeName));
 
-  // Tauri linkt den WebView2-Loader statisch, andere Laufzeit-DLLs koennen
-  // aber je nach Toolchain danebenliegen. Was da ist, kommt mit.
+  // Tauri links the WebView2 loader statically, but other runtime DLLs may
+  // sit next to it depending on the toolchain. Whatever is there comes along.
   for (const entry of fs.readdirSync(RELEASE_DIR)) {
     if (entry.toLowerCase().endsWith('.dll')) {
       fs.copyFileSync(
@@ -99,12 +98,13 @@ function stage(exeName) {
 }
 
 /**
- * Holt das zuletzt veroeffentlichte Paket in das Ausgabeverzeichnis.
+ * Fetches the most recently published package into the output directory.
  *
- * `vpk pack` rechnet ein Delta nur gegen ein Paket, das dort schon liegt. Der
- * CI-Runner startet leer, deshalb enthielten 0.92.0 und 0.93.0 ausschliesslich
- * volle Pakete und jedes Update lud 5,5 MB statt rund 90 KB. Lokal war das nie
- * aufgefallen, weil dort die Vorgaengerversion vom vorigen Lauf noch herumlag.
+ * `vpk pack` computes a delta only against a package that is already there.
+ * The CI runner starts empty, which is why 0.92.0 and 0.93.0 contained only
+ * full packages and every update downloaded 5.5 MB instead of about 90 KB.
+ * Locally this never showed, because the previous version from the last run
+ * was still lying around.
  */
 function downloadPrevious(token) {
   const args = [
@@ -122,11 +122,10 @@ function downloadPrevious(token) {
 }
 
 /**
- * Liegt ein aelteres volles Paket daneben, muss nach dem Packen ein Delta
- * entstanden sein. Trifft das nicht zu, ist der Download stillschweigend ins
- * Leere gelaufen, und genau dieses stille Durchrutschen hat den Fehler zwei
- * Releases lang verdeckt. Beim allerersten Release gibt es keinen Vorgaenger,
- * dann greift die Pruefung nicht.
+ * If an older full package sits next to it, packing must have produced a
+ * delta. If not, the download silently came up empty, and exactly that silent
+ * slip hid the bug for two releases. The very first release has no
+ * predecessor, then the check does not apply.
  */
 export function deltaMissing(files, version) {
   const hasPrevious = files.some(
@@ -165,21 +164,21 @@ function main() {
     '--mainExe', exeName,
     '--icon', path.join(TAURI_DIR, 'icons', 'icon.ico'),
     '--outputDir', OUTPUT_DIR,
-    // WebView2 ist auf Windows 11 vorhanden, auf aelteren Staenden nicht.
-    // Das Setup holt es dann nach, statt beim Start ins Leere zu greifen.
+    // WebView2 is present on Windows 11, not on older installations. The
+    // setup then fetches it instead of failing at startup.
     '--framework', 'webview2'
   ]);
 
   if (deltaMissing(fs.readdirSync(OUTPUT_DIR), version)) {
     throw new Error(
-      `Kein Delta fuer ${version} entstanden, obwohl ein aelteres Paket daneben liegt`
+      `No delta produced for ${version} although an older package sits next to it`
     );
   }
 
   if (args.includes('--upload')) {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
-      throw new Error('GITHUB_TOKEN fehlt, ohne Token kein Upload');
+      throw new Error('GITHUB_TOKEN missing, no upload without a token');
     }
 
     run('vpk', [
@@ -194,7 +193,7 @@ function main() {
     ]);
   }
 
-  console.log(`\nFertig. Pakete liegen unter ${OUTPUT_DIR}`);
+  console.log(`\nDone. Packages are under ${OUTPUT_DIR}`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

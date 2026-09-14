@@ -23,5 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# Klon von exile-leveling, den upstream-watch.yml hierher legt
+# Clone of exile-leveling that upstream-watch.yml places here
 /upstream/

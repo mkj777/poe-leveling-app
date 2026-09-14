@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * Liest den Abschnitt einer Version aus `CHANGELOG.md`.
+ * Reads the section of one version from `CHANGELOG.md`.
  *
- * Der Release-Workflow ruft das zweimal: einmal vor dem Bauen, nur um
- * abzubrechen, wenn der Eintrag fehlt, und einmal danach, um die Beschreibung
- * des GitHub-Releases zu setzen. `vpk upload` kann keine Beschreibung setzen,
- * die Releases blieben deshalb bis 0.95.0 leer.
+ * The release workflow calls this twice: once before building, only to abort
+ * if the entry is missing, and once afterwards to set the description of the
+ * GitHub release. `vpk upload` cannot set a description, which is why the
+ * releases stayed empty up to 0.95.0.
  *
- * Aufruf:
- *   node scripts/release-notes.mjs 0.96.0     schreibt den Abschnitt nach stdout
+ * Usage:
+ *   node scripts/release-notes.mjs 0.96.0     writes the section to stdout
  *
- * Fehlt der Abschnitt, endet der Aufruf mit Code 1. Ein Release ohne Changelog
- * soll in Sekunden auffallen und nicht erst als leere Seite auf GitHub.
+ * If the section is missing, the call exits with code 1. A release without a
+ * changelog should show up within seconds, not as an empty page on GitHub.
  */
 
 import fs from 'node:fs';
@@ -23,15 +23,14 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const CHANGELOG_PATH = path.join(ROOT, 'CHANGELOG.md');
 
 /**
- * Der Abschnitt zwischen `## <version> (...)` und der naechsten `## `-Zeile,
- * ohne die Ueberschrift selbst. `null`, wenn es ihn nicht gibt oder er leer
- * ist.
+ * The section between `## <version> (...)` and the next `## ` line, without
+ * the heading itself. `null` if it does not exist or is empty.
  */
 export function extractNotes(changelog, version) {
   const lines = String(changelog).split(/\r?\n/);
 
-  // Das Leerzeichen hinter der Version gehoert zum Vergleich: sonst faende
-  // "0.9" den Abschnitt von "0.95.0".
+  // The space after the version is part of the comparison: otherwise "0.9"
+  // would find the section of "0.95.0".
   const start = lines.findIndex((line) => line.startsWith(`## ${version} `));
   if (start === -1) return null;
 
@@ -46,7 +45,7 @@ function main() {
   const version = process.argv[2];
 
   if (!version) {
-    console.error('Aufruf: node scripts/release-notes.mjs <version>');
+    console.error('Usage: node scripts/release-notes.mjs <version>');
     process.exit(1);
   }
 
@@ -54,7 +53,7 @@ function main() {
 
   if (notes === null) {
     console.error(
-      `CHANGELOG.md hat keinen Abschnitt fuer ${version}. Erwartet wird eine Zeile "## ${version} (JJJJ-MM-TT)".`
+      `CHANGELOG.md has no section for ${version}. Expected a line "## ${version} (YYYY-MM-DD)".`
     );
     process.exit(1);
   }

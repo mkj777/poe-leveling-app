@@ -1,4 +1,4 @@
-name: Upstream-Parser beobachten
+name: Watch upstream parser
 
 on:
   schedule:
@@ -23,32 +23,31 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Parser neu vendoren
+      - name: Re-vendor the parser
         run: node scripts/vendor-exile-leveling.mjs upstream
 
-      - name: Pull Request bei Aenderungen
+      - name: Pull request on changes
         uses: peter-evans/create-pull-request@v6
         with:
-          # Nur das, was das Skript schreibt. Ohne das nimmt die Action den
-          # Upstream-Checkout unter `upstream/` als Submodul mit.
+          # Only what the script writes. Without this the action would pick up
+          # the upstream checkout under `upstream/` as a submodule.
           add-paths: src/lib/exile-leveling
           branch: upstream/parser-drift
-          title: 'chore: Route-Parser von exile-leveling nachziehen'
-          commit-message: 'chore: Route-Parser von exile-leveling nachziehen'
+          title: 'chore: update the vendored exile-leveling route parser'
+          commit-message: 'chore: update the vendored exile-leveling route parser'
           body: |
-            Der Parser im Upstream hat sich geaendert. Der vendored Stand unter
-            `src/lib/exile-leveling/` wurde neu erzeugt.
+            The upstream parser has changed. The vendored copy under
+            `src/lib/exile-leveling/` was regenerated.
 
-            Vor dem Merge pruefen:
+            Check before merging:
 
-            - `yarn test` laeuft durch, insbesondere der Golden-File-Test.
-            - Schlaegt der Golden-File-Test fehl, entscheiden ob es Datendrift
-              oder Parserdrift ist:
-              - Datendrift, der Normalfall: Fixture neu ziehen mit
-                `yarn fixture:route`, dazu den Snapshot unter
-                `src/lib/exile-leveling/__fixtures__/` erneuern.
-              - Parserdrift: der vendored Code passt nicht mehr zu unserem
-                Loader in `data.ts`, echter Fix noetig.
-            - `yarn tsc --noEmit` laeuft durch. Schlaegt es an nicht genutzten
-              Variablen fehl, ist Upstream-Stil auf unsere strikten Optionen
-              getroffen, siehe ATTRIBUTION.md.
+            - `yarn test` passes, in particular the golden-file test.
+            - If the golden-file test fails, decide whether it is data drift
+              or parser drift:
+              - Data drift, the normal case: regenerate the fixture with
+                `yarn fixture:route` and refresh the snapshot under
+                `src/lib/exile-leveling/__fixtures__/` along with it.
+              - Parser drift: the vendored code no longer fits our loader in
+                `data.ts`, a real fix is needed.
+            - `yarn tsc --noEmit` passes. If it fails on unused variables,
+              upstream style has met our strict options, see ATTRIBUTION.md.

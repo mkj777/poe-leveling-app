@@ -18,8 +18,8 @@ tauri = { version = "2", features = ["tray-icon"] }
 serde = { version = "1.0", features = ["derive"] }
 async-fs = "2.1.0"
 serde_json = "1.0"
-# winapi 0.3 ist feature-gated. Die Module hier explizit nennen, statt sich
-# darauf zu verlassen, dass eine andere Kiste sie zufaellig einschaltet.
+# winapi 0.3 is feature-gated. Name the modules explicitly here instead of
+# relying on some other crate happening to enable them.
 winapi = { version = "0.3.9", features = [
     "handleapi",
     "minwindef",
@@ -30,11 +30,11 @@ winapi = { version = "0.3.9", features = [
     "winnt",
     "winuser",
 ] }
-# default-features = false haelt openssl draussen, siehe ADR-0003.
+# default-features = false keeps openssl out, see ADR-0003.
 reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "json"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-shell = "2"
-# Autoupdate. Ersetzt tauri-plugin-updater, siehe ADR-0008.
+# Autoupdate. Replaces tauri-plugin-updater, see ADR-0008.
 velopack = "1.2.0"
 
 [features]
