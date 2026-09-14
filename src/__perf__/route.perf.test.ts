@@ -65,109 +65,109 @@ const FHD = {
   found: true
 };
 
-describe('Start der App', () => {
-  it('parst die ganze Route schnell genug fuer einen Kaltstart', () => {
-    // Laeuft bei jedem Start und in jedem Fenster, das die Route braucht.
-    // Alles jenseits einer halben Sekunde waere als Verzoegerung spuerbar.
+describe('app start', () => {
+  it('parses the whole route fast enough for a cold start', () => {
+    // Runs on every start and in every window that needs the route.
+    // Anything beyond half a second would be noticeable as a delay.
     const routes = readRoutes();
     const bundle = readBundle();
 
     const result = bench(() => buildDefaultRoute(routes, bundle, 'league-start'), {
       runs: 5
     });
-    report('buildDefaultRoute, 10 Akte', result, 25);
+    report('buildDefaultRoute, 10 acts', result, 25);
 
     expect(result.median).toBeLessThan(25);
   });
 });
 
-describe('Anzeige eines Schritts', () => {
-  // Diese drei laufen bei jedem Neuzeichnen des Overlays, und Neuzeichnen
-  // passiert bei jeder Fensterbewegung des Spiels.
-  it('flacht die Route pro Bild schnell genug ab', () => {
+describe('displaying a step', () => {
+  // These three run on every redraw of the overlay, and redraws happen on
+  // every movement of the game window.
+  it('flattens the route fast enough per frame', () => {
     const result = bench(() => flattenSteps(route.sections));
-    report('flattenSteps, ganze Route', result, 1);
+    report('flattenSteps, whole route', result, 1);
 
     expect(result.median).toBeLessThan(1);
   });
 
-  it('findet die offenen Schritte einer Kante schnell genug', () => {
+  it('finds the pending steps of an edge fast enough', () => {
     const result = bench(() => selectPending(steps, 120));
-    report('selectPending, mittlere Kante', result, 0.5);
+    report('selectPending, middle edge', result, 0.5);
 
     expect(result.median).toBeLessThan(0.5);
   });
 
-  it('ermittelt Akt und Restschritte schnell genug', () => {
+  it('determines act and remaining steps fast enough', () => {
     const result = bench(() => actProgress(route.sections, 120));
-    report('actProgress, mittlere Kante', result, 0.5);
+    report('actProgress, middle edge', result, 0.5);
 
     expect(result.median).toBeLessThan(0.5);
   });
 
-  it('rendert ein ganzes Segment schnell genug', () => {
+  it('renders a whole segment fast enough', () => {
     const segment = selectPending(steps, 120);
 
     const result = bench(() => {
       for (const step of segment) renderStepText(step);
     });
-    report('renderStepText, ein Segment', result, 0.5);
+    report('renderStepText, one segment', result, 0.5);
 
     expect(result.median).toBeLessThan(0.5);
   });
 });
 
-describe('ganze Route auf einmal', () => {
-  it('rendert jeden Schritt der Route in vertretbarer Zeit', () => {
-    // Das macht die Guide-Liste im Hauptfenster beim ersten Aufbau.
+describe('whole route at once', () => {
+  it('renders every step of the route in reasonable time', () => {
+    // This is what the guide list in the main window does on first build.
     const result = bench(
       () => {
         for (const step of steps) renderStepText(step);
       },
       { runs: 10 }
     );
-    report('renderStepText, alle Schritte', result, 3);
+    report('renderStepText, all steps', result, 3);
 
     expect(result.median).toBeLessThan(3);
   });
 
-  it('baut die Anzeige der ganzen Route in vertretbarer Zeit', () => {
-    // Das macht die Guide-Liste einmal je Route, in einem Memo. Seit das
-    // Overlay dieselbe Form bekommt (ADR-0012), ist das der echte Pfad.
+  it('builds the view of the whole route in reasonable time', () => {
+    // The guide list does this once per route, in a memo. Since the overlay
+    // gets the same shape (ADR-0012), this is the real path.
     const result = bench(
       () => {
         for (const step of steps) toStepView(step);
       },
       { runs: 10 }
     );
-    report('toStepView, alle Schritte', result, 5);
+    report('toStepView, all steps', result, 5);
 
     expect(result.median).toBeLessThan(5);
   });
 
-  it('laeuft die Route Kante fuer Kante durch, ohne quadratisch zu werden', () => {
-    // Der wichtigste Schutz hier: selectPending und actProgress suchen linear,
-    // und buildOverlayView ruft beide. Wer sie versehentlich verschachtelt,
-    // faellt sofort auf.
+  it('walks the route edge by edge without going quadratic', () => {
+    // The most important guard here: selectPending and actProgress search
+    // linearly, and buildOverlayView calls both. Nesting them by accident
+    // shows up immediately.
     const result = bench(
       () => {
         for (let edge = 0; edge < route.edges.length; edge++) {
-          // Genau das schickt das Hauptfenster bei jedem Zonenwechsel ans
-          // Overlay.
+          // Exactly what the main window sends to the overlay on every zone
+          // change.
           buildOverlayView(route, edge);
         }
       },
       { runs: 5 }
     );
-    report('248 Kanten, ganze Overlay-Anzeige', result, 25);
+    report('248 edges, whole overlay view', result, 25);
 
     expect(result.median).toBeLessThan(25);
   });
 });
 
-describe('Fortschritt aus dem Log', () => {
-  it('prueft den Kantenvorlauf im Sekundentakt praktisch kostenlos', () => {
-    // Laeuft jede Sekunde, solange die App scannt.
+describe('progress from the log', () => {
+  it('checks the edge advance every second practically for free', () => {
+    // Runs every second while the app is scanning.
     const result = bench(
       () => {
         for (let i = 0; i < 1000; i++) {
@@ -176,12 +176,12 @@ describe('Fortschritt aus dem Log', () => {
       },
       { runs: 10 }
     );
-    report('advanceEdge, 1000 Aufrufe', result, 2);
+    report('advanceEdge, 1000 calls', result, 2);
 
     expect(result.median).toBeLessThan(2);
   });
 
-  it('knuepft nach einem Refresh schnell wieder an', () => {
+  it('re-anchors quickly after a refresh', () => {
     const result = bench(
       () => {
         for (const area of route.edges) {
@@ -190,16 +190,16 @@ describe('Fortschritt aus dem Log', () => {
       },
       { runs: 10 }
     );
-    report('reanchorEdge, alle Zonen', result, 5);
+    report('reanchorEdge, all zones', result, 5);
 
     expect(result.median).toBeLessThan(5);
   });
 });
 
-describe('Geometrie des Overlays', () => {
-  it('rechnet die Fensterlage weit unter einem Bild', () => {
-    // Bei jedem poe-bounds-Ereignis, also potenziell bei jeder Mausbewegung
-    // im Spiel. Alles ueber einer Millisekunde waere hier zu viel.
+describe('overlay geometry', () => {
+  it('computes the window position well within a frame', () => {
+    // On every poe-bounds event, so potentially on every mouse movement in
+    // the game. Anything above a millisecond would be too much here.
     const result = bench(
       () => {
         for (let i = 0; i < 1000; i++) {
@@ -208,7 +208,7 @@ describe('Geometrie des Overlays', () => {
       },
       { runs: 10 }
     );
-    report('computeOverlayRect, 1000 Aufrufe', result, 3);
+    report('computeOverlayRect, 1000 calls', result, 3);
 
     expect(result.median).toBeLessThan(3);
   });

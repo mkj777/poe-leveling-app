@@ -42,7 +42,7 @@ function cached(sha = 'b7b2dd0'): CachedData {
 }
 
 describe('syncRoute', () => {
-  it('laedt nichts, wenn Upstream unveraendert ist', async () => {
+  it('downloads nothing when upstream is unchanged', async () => {
     const fetchUpstream = vi.fn(async () => undefined);
 
     const result = await syncRoute({
@@ -56,7 +56,7 @@ describe('syncRoute', () => {
     expect(result.route?.sections).toHaveLength(10);
   });
 
-  it('laedt und parst, wenn Upstream neu ist', async () => {
+  it('downloads and parses when upstream is new', async () => {
     const fetchUpstream = vi.fn(async () => undefined);
 
     const result = await syncRoute({
@@ -71,7 +71,7 @@ describe('syncRoute', () => {
     expect(result.route?.edges).toHaveLength(248);
   });
 
-  it('faellt bei Netzfehler auf den Cache zurueck', async () => {
+  it('falls back to the cache on a network error', async () => {
     const result = await syncRoute({
       checkUpstream: async () => {
         throw new Error('offline');
@@ -84,7 +84,7 @@ describe('syncRoute', () => {
     expect(result.route?.sections).toHaveLength(10);
   });
 
-  it('meldet Fehler, wenn weder Netz noch Cache da sind', async () => {
+  it('reports an error when neither network nor cache is there', async () => {
     const result = await syncRoute({
       checkUpstream: async () => {
         throw new Error('offline');
@@ -97,24 +97,24 @@ describe('syncRoute', () => {
     expect(result.route).toBeNull();
   });
 
-  it('nennt auch einen Fehlschlag, der kein Error-Objekt ist', async () => {
-    // parseCached ruft fremden Code auf. Wirft der einen String, darf daraus
-    // nicht "undefined" in der Meldung werden.
+  it('names a failure that is not an Error object too', async () => {
+    // parseCached calls foreign code. If it throws a string, that must not
+    // become "undefined" in the message.
     const result = await syncRoute({
       checkUpstream: async () => ({ changed: false, sha: 'b7b2dd0' }),
       fetchUpstream: async () => undefined,
       readCached: async () => {
-        throw 'kaputt ohne Error';
+        throw 'broken without Error';
       }
     }, 'league-start');
 
     expect(result.status).toBe('error');
-    expect(result.error).toContain('kaputt ohne Error');
+    expect(result.error).toContain('broken without Error');
   });
 
-  it('meldet Fehler, wenn der Cache beschaedigt ist', async () => {
+  it('reports an error when the cache is corrupted', async () => {
     const broken = cached();
-    broken.json['areas'] = '{ das ist kein json';
+    broken.json['areas'] = '{ this is not json';
 
     const result = await syncRoute({
       checkUpstream: async () => ({ changed: false, sha: 'b7b2dd0' }),
@@ -129,15 +129,15 @@ describe('syncRoute', () => {
 });
 
 describe('loadRoute', () => {
-  it('fragt Upstream gar nicht erst', async () => {
-    // Der Weg fuer den Moduswechsel. Die Daten sind dieselben, nur die Lesart
-    // ist eine andere, und ein Request an GitHub waere Wartezeit ohne
-    // Gegenwert. Genau daran hing der Wechsel frueher.
-    const checkUpstream = vi.fn(async () => ({ changed: true, sha: 'neu' }));
+  it('does not ask upstream at all', async () => {
+    // The path for the mode switch. The data is the same, only the mode
+    // differs, and a request to GitHub would be waiting time with nothing
+    // gained. Exactly that is what the switch used to hang on.
+    const checkUpstream = vi.fn(async () => ({ changed: true, sha: 'new' }));
     const fetchUpstream = vi.fn(async () => undefined);
 
-    // Bewusst die vollen Abhaengigkeiten: der Test soll zeigen, dass loadRoute
-    // sie nicht anfasst, obwohl es sie haette.
+    // Deliberately the full dependencies: the test should show that loadRoute
+    // does not touch them although it has them.
     const deps: SyncDeps = {
       checkUpstream,
       fetchUpstream,
@@ -152,7 +152,7 @@ describe('loadRoute', () => {
     expect(result.route?.edges).toHaveLength(236);
   });
 
-  it('parst in der verlangten Lesart', async () => {
+  it('parses in the requested mode', async () => {
     const deps = { readCached: async () => cached() };
 
     expect((await loadRoute(deps, 'league-start')).route?.edges).toHaveLength(
@@ -163,30 +163,30 @@ describe('loadRoute', () => {
     );
   });
 
-  it('meldet Fehler, wenn der Cache leer ist', async () => {
+  it('reports an error when the cache is empty', async () => {
     const result = await loadRoute({ readCached: async () => null }, 'league-start');
 
     expect(result.status).toBe('error');
     expect(result.route).toBeNull();
   });
 
-  it('meldet Fehler, wenn das Lesen scheitert', async () => {
+  it('reports an error when reading fails', async () => {
     const result = await loadRoute(
       {
         readCached: async () => {
-          throw new Error('Platte weg');
+          throw new Error('disk gone');
         }
       },
       'league-start'
     );
 
     expect(result.status).toBe('error');
-    expect(result.error).toContain('Platte weg');
+    expect(result.error).toContain('disk gone');
   });
 
-  it('meldet Fehler, wenn der Cache beschaedigt ist', async () => {
+  it('reports an error when the cache is corrupted', async () => {
     const broken = cached();
-    broken.json['areas'] = '{ das ist kein json';
+    broken.json['areas'] = '{ this is not json';
 
     const result = await loadRoute({ readCached: async () => broken }, 'league-start');
 
@@ -195,31 +195,31 @@ describe('loadRoute', () => {
   });
 });
 
-describe('der Hinweis auf das Kuerzel', () => {
-  const letzterSchritt = (route: RouteData.Route) =>
+describe('the shortcut hint', () => {
+  const lastStep = (route: RouteData.Route) =>
     route.sections.at(-1)!.steps.at(-1) as RouteData.FragmentStep;
 
-  it('haengt an der Route, die die App anzeigt', async () => {
-    // buildDefaultRoute liefert genau das, was der Upstream-Parser liefert,
-    // und ein Golden-File-Test haelt es darauf fest. Was die App darueber
-    // hinaus zeigt, kommt hier dazu.
+  it('hangs on the route the app displays', async () => {
+    // buildDefaultRoute returns exactly what the upstream parser returns, and
+    // a golden-file test pins it to that. Whatever the app shows beyond that
+    // is added here.
     const result = await loadRoute(
       { readCached: async () => cached() },
       'league-start'
     );
 
-    expect(letzterSchritt(result.route!).subSteps.at(-1)).toEqual(
+    expect(lastStep(result.route!).subSteps.at(-1)).toEqual(
       OVERLAY_SHORTCUT_HINT
     );
   });
 
-  it('haengt in beiden Lesarten an', async () => {
+  it('hangs on in both modes', async () => {
     const result = await loadRoute(
       { readCached: async () => cached() },
       'speedleveling'
     );
 
-    expect(letzterSchritt(result.route!).subSteps.at(-1)).toEqual(
+    expect(lastStep(result.route!).subSteps.at(-1)).toEqual(
       OVERLAY_SHORTCUT_HINT
     );
   });

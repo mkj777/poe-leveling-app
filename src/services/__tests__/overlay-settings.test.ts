@@ -10,7 +10,7 @@ const { OVERLAY_SETTINGS_EVENT, publishOverlaySettings } = await import(
 describe('publishOverlaySettings', () => {
   beforeEach(() => emit.mockClear());
 
-  it('sendet genau die Felder, die das Overlay braucht', () => {
+  it('sends exactly the fields the overlay needs', () => {
     publishOverlaySettings({
       overlayScale: 1.2,
       overlayOpacity: 0.4,
@@ -26,9 +26,9 @@ describe('publishOverlaySettings', () => {
     });
   });
 
-  it('nimmt nichts mit, was nicht dazugehoert', () => {
-    // Der Store haelt auch den Client.txt-Pfad. Der hat im Overlay-Fenster
-    // nichts verloren und darf nicht mitwandern.
+  it('takes nothing along that does not belong', () => {
+    // The store also holds the Client.txt path. It has no business in the
+    // overlay window and must not travel along.
     publishOverlaySettings({
       overlayScale: 1,
       overlayOpacity: 0.35,

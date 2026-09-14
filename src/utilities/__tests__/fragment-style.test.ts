@@ -46,7 +46,7 @@ const withIcon: Array<[string, Fragments.AnyFragment]> = [
 ];
 
 const withoutIcon: Array<[string, Fragments.AnyFragment]> = [
-  ['string', 'nur Text'],
+  ['string', 'plain text'],
   ['kill', { type: 'kill', value: 'Hillock' }],
   ['arena', { type: 'arena', value: 'X' }],
   ['area', { type: 'area', areaId: '1_1_2' }],
@@ -60,25 +60,25 @@ const withoutIcon: Array<[string, Fragments.AnyFragment]> = [
 
 describe('fragmentIcon', () => {
   for (const [name, fragment] of withIcon) {
-    it(`gibt ${name} ein Symbol`, () => {
+    it(`gives ${name} an icon`, () => {
       expect(fragmentIcon(fragment)).toBeTruthy();
     });
   }
 
   for (const [name, fragment] of withoutIcon) {
-    it(`gibt ${name} keins`, () => {
+    it(`gives ${name} none`, () => {
       expect(fragmentIcon(fragment)).toBeNull();
     });
   }
 
-  it('traegt das Stadtsymbol nur bei echten Staedten', () => {
-    // Lioneye's Watch ist eine Stadt, The Coast nicht. Ohne die Unterscheidung
-    // haetten alle Zonen dasselbe Symbol.
+  it('carries the town icon only for real towns', () => {
+    // Lioneye's Watch is a town, The Coast is not. Without the distinction
+    // all zones would have the same icon.
     expect(fragmentIcon({ type: 'enter', areaId: '1_1_town' })).toBeTruthy();
     expect(fragmentIcon({ type: 'enter', areaId: '1_1_2' })).toBeNull();
   });
 
-  it('gilt fuer logout genauso wie fuer enter', () => {
+  it('applies to logout just like to enter', () => {
     expect(fragmentIcon({ type: 'logout', areaId: '1_1_town' })).toBeTruthy();
   });
 });
@@ -113,7 +113,7 @@ describe('fragmentColour', () => {
 
   for (const [fragment, expected] of cases) {
     const name = typeof fragment === 'string' ? 'string' : fragment.type;
-    it(`ordnet ${name} der Farbe ${expected} zu`, () => {
+    it(`maps ${name} to the colour ${expected}`, () => {
       expect(fragmentColour(fragment)).toBe(expected);
       expect(FRAGMENT_COLOURS[expected]).toBeDefined();
     });

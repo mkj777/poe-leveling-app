@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * Die Migration laeuft nur, wenn ein gespeicherter Stand mit aelterer Version
- * vorliegt. Also wird genau das hergestellt: alten Stand in den Speicher
- * legen, Modul frisch laden, Ergebnis ansehen.
+ * The migration only runs when a persisted state with an older version is
+ * present. So exactly that is set up: put the old state into storage, load
+ * the module fresh, look at the result.
  */
 async function loadWith(persisted: unknown, version: number) {
   localStorage.clear();
@@ -17,10 +17,10 @@ async function loadWith(persisted: unknown, version: number) {
   return useSettingsStore.getState();
 }
 
-describe('Migration der Einstellungen', () => {
+describe('settings migration', () => {
   beforeEach(() => localStorage.clear());
 
-  it('rettet den Pfad aus Version 1', async () => {
+  it('rescues the path from version 1', async () => {
     const state = await loadWith(
       {
         clientTxtPath: 'C:/poe/Client.txt',
@@ -33,7 +33,7 @@ describe('Migration der Einstellungen', () => {
     expect(state.clientTxtPath).toBe('C:/poe/Client.txt');
   });
 
-  it('verwirft die absolute Position aus Version 1', async () => {
+  it('discards the absolute position from version 1', async () => {
     const state = await loadWith(
       { clientTxtPath: '', displayPosition: { x: 400, y: 900 } },
       1
@@ -44,9 +44,9 @@ describe('Migration der Einstellungen', () => {
     expect(state).not.toHaveProperty('growDirection');
   });
 
-  it('verwirft einen weggelaufenen Offset aus Version 2', async () => {
-    // Genau der Wert, der das Overlay einmal 256 px nach rechts und 242 px
-    // nach unten geschoben hat.
+  it('discards a runaway offset from version 2', async () => {
+    // Exactly the value that once pushed the overlay 256 px to the right and
+    // 242 px down.
     const state = await loadWith(
       { clientTxtPath: '', overlayOffset: { dx: 0.125, dy: 0.21 } },
       2
@@ -55,7 +55,7 @@ describe('Migration der Einstellungen', () => {
     expect(state.overlayOffset).toEqual({ dx: 0, dy: 0 });
   });
 
-  it('setzt den Anker aus Version 3 auf den neuen Standard', async () => {
+  it('sets the anchor from version 3 to the new default', async () => {
     const state = await loadWith(
       { clientTxtPath: '', overlayAnchor: 'minimap' },
       3
@@ -64,7 +64,7 @@ describe('Migration der Einstellungen', () => {
     expect(state.overlayAnchor).toBe('bottom');
   });
 
-  it('kommt mit einem leeren gespeicherten Stand zurecht', async () => {
+  it('handles an empty persisted state', async () => {
     const state = await loadWith(undefined, 1);
 
     expect(state.clientTxtPath).toBe('');
@@ -73,7 +73,7 @@ describe('Migration der Einstellungen', () => {
     expect(state.overlayAnchor).toBe('bottom');
   });
 
-  it('laesst einen aktuellen Stand unangetastet', async () => {
+  it('leaves a current state untouched', async () => {
     const state = await loadWith(
       {
         clientTxtPath: 'C:/poe/Client.txt',

@@ -24,8 +24,8 @@ const bundle: GameDataBundle = {
   VaalGemLookup: readJson('vaal-gem-lookup')
 };
 
-// Der Zustand ist modulweit. Andere Testdateien laufen in eigenen Modulen,
-// hier wird trotzdem aufgeraeumt, damit die Reihenfolge egal bleibt.
+// The state is module-wide. Other test files run in their own modules, but
+// clean-up happens here anyway so the order stays irrelevant.
 afterEach(() => setGameData(bundle));
 
 const KEYS = [
@@ -39,31 +39,31 @@ const KEYS = [
   'VaalGemLookup'
 ] as const;
 
-describe('Data vor dem Laden', () => {
-  it('wirft bei jedem Zugriff, statt still undefined zu liefern', async () => {
-    // Frisches Modul statt gesetztem Zustand: nur so ist der Zustand echt,
-    // in dem die App startet. Genau dieser Riegel hat das weisse Fenster
-    // erklaerbar gemacht, als die persistierte Route vor setGameData rendern
-    // wollte.
+describe('Data before loading', () => {
+  it('throws on every access instead of silently returning undefined', async () => {
+    // A fresh module instead of a set state: only then is the state the real
+    // one the app starts in. Exactly this guard made the white window
+    // explainable when the persisted route wanted to render before
+    // setGameData.
     vi.resetModules();
-    const frisch = await import('../data');
+    const fresh = await import('../data');
 
     for (const key of KEYS) {
-      expect(() => frisch.Data[key]).toThrowError(/setGameData/);
+      expect(() => fresh.Data[key]).toThrowError(/setGameData/);
     }
   });
 
-  it('wirft auch, wenn undefined gesetzt wurde', async () => {
+  it('throws as well when undefined was set', async () => {
     vi.resetModules();
-    const frisch = await import('../data');
-    frisch.setGameData(undefined as unknown as GameDataBundle);
+    const fresh = await import('../data');
+    fresh.setGameData(undefined as unknown as GameDataBundle);
 
-    expect(() => frisch.Data.Areas).toThrowError(/setGameData/);
+    expect(() => fresh.Data.Areas).toThrowError(/setGameData/);
   });
 });
 
-describe('Data nach dem Laden', () => {
-  it('reicht jeden Teil des Bundles durch', () => {
+describe('Data after loading', () => {
+  it('passes every part of the bundle through', () => {
     setGameData(bundle);
 
     for (const key of KEYS) {
@@ -71,12 +71,12 @@ describe('Data nach dem Laden', () => {
     }
   });
 
-  it('nimmt einen zweiten Aufruf an und ersetzt den Stand', () => {
-    const leer = Object.fromEntries(
+  it('accepts a second call and replaces the state', () => {
+    const empty = Object.fromEntries(
       KEYS.map((key) => [key, {}])
     ) as unknown as GameDataBundle;
 
-    setGameData(leer);
+    setGameData(empty);
     expect(Data.Areas).toEqual({});
 
     setGameData(bundle);

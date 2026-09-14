@@ -22,51 +22,51 @@ function step(
 }
 
 describe('advanceEdge', () => {
-  it('laeuft vor, wenn die naechste Kante passt', () => {
+  it('advances when the next edge matches', () => {
     expect(advanceEdge(EDGES, 0, '1_1_town')).toBe(1);
   });
 
-  it('bleibt stehen, wenn die Zone nicht die naechste Kante ist', () => {
+  it('stays put when the zone is not the next edge', () => {
     expect(advanceEdge(EDGES, 0, '1_1_3')).toBe(0);
   });
 
-  it('springt bei wiederholter Zone nicht zurueck', () => {
+  it('does not jump back on a repeated zone', () => {
     expect(advanceEdge(EDGES, 2, '1_1_town')).toBe(3);
     expect(advanceEdge(EDGES, 3, '1_1_town')).toBe(3);
   });
 
-  it('laeuft am Ende nicht ueber', () => {
+  it('does not overflow at the end', () => {
     expect(advanceEdge(EDGES, 4, '1_1_3')).toBe(4);
   });
 });
 
 describe('reanchorEdge', () => {
-  it('laesst den gespeicherten Index stehen, wenn er noch passt', () => {
-    // Der Normalfall beim Neustart: die Daten sind unveraendert, der Index
-    // zeigt weiterhin auf dieselbe Zone. Frueher sprang er hier trotzdem auf
-    // das letzte Vorkommen der Zone, also mitten in den Akt hinein.
+  it('keeps the stored index when it still fits', () => {
+    // The normal case on restart: the data is unchanged, the index still
+    // points at the same zone. It used to jump to the last occurrence of the
+    // zone here anyway, right into the middle of the act.
     expect(reanchorEdge(EDGES, '1_1_town', 1)).toBe(1);
     expect(reanchorEdge(EDGES, '1_1_town', 3)).toBe(3);
   });
 
-  it('nimmt das naechstgelegene Vorkommen, nicht das letzte', () => {
-    // Nur wenn der gespeicherte Index nicht mehr passt, wird gesucht. Dann
-    // ist das naheliegende Vorkommen gemeint, nicht das am Ende des Aktes.
+  it('takes the nearest occurrence, not the last', () => {
+    // Only when the stored index no longer fits is there a search. Then the
+    // nearby occurrence is meant, not the one at the end of the act.
     expect(reanchorEdge(EDGES, '1_1_town', 0)).toBe(1);
     expect(reanchorEdge(EDGES, '1_1_town', 4)).toBe(3);
   });
 
-  it('bevorzugt bei gleichem Abstand das fruehere Vorkommen', () => {
-    // Zu weit vorne zu stehen kostet einen Blick, zu weit hinten laesst
-    // Schritte aus.
+  it('prefers the earlier occurrence on a tie', () => {
+    // Standing too far ahead costs a glance, standing too far behind skips
+    // steps.
     expect(reanchorEdge(EDGES, '1_1_town', 2)).toBe(1);
   });
 
-  it('nutzt den Rueckfall, wenn die Zone unbekannt ist', () => {
+  it('uses the fallback when the zone is unknown', () => {
     expect(reanchorEdge(EDGES, '9_9_9', 2)).toBe(2);
   });
 
-  it('haelt den Fortschritt in einer Zone, die der Akt mehrfach besucht', () => {
+  it('keeps progress in a zone the act visits several times', () => {
     const route = JSON.parse(
       fs.readFileSync(
         path.resolve(
@@ -77,15 +77,15 @@ describe('reanchorEdge', () => {
       )
     ) as RouteData.Route;
 
-    // The Forest Encampment liegt auf den Kanten 135, 137, 145, 150 und 156.
-    // Jede davon muss sich selbst wiederfinden.
+    // The Forest Encampment sits on edges 135, 137, 145, 150 and 156. Each
+    // of them must find itself again.
     for (const edge of [135, 137, 145, 150, 156]) {
       expect(route.edges[edge]).toBe('2_6_town');
       expect(reanchorEdge(route.edges, '2_6_town', edge)).toBe(edge);
     }
   });
 
-  it('faellt auf keiner Kante der echten Route nach vorne', () => {
+  it('falls forward on no edge of the real route', () => {
     const route = JSON.parse(
       fs.readFileSync(
         path.resolve(
@@ -103,7 +103,7 @@ describe('reanchorEdge', () => {
 });
 
 describe('flattenSteps', () => {
-  it('zieht die Schritte aller Sektionen zusammen', () => {
+  it('pulls the steps of all sections together', () => {
     const sections: RouteData.Section[] = [
       { name: 'Act 1', steps: [step(0, 'a'), step(null, 'b')] },
       { name: 'Act 2', steps: [step(1, 'c')] }
@@ -121,12 +121,12 @@ describe('actProgress', () => {
   const sections: RouteData.Section[] = [
     {
       name: 'Act 1',
-      steps: [step(0, 'a'), step(null, 'hinweis'), step(1, 'b'), step(2, 'c')]
+      steps: [step(0, 'a'), step(null, 'hint'), step(1, 'b'), step(2, 'c')]
     },
     { name: 'Act 2', steps: [step(3, 'd'), step(4, 'e')] }
   ];
 
-  it('nennt den Akt und was darin noch aussteht', () => {
+  it('names the act and what is still pending in it', () => {
     expect(actProgress(sections, 0)).toEqual({
       act: 'Act 1',
       stepsLeft: 2,
@@ -134,12 +134,12 @@ describe('actProgress', () => {
     });
   });
 
-  it('zaehlt Schritte ohne Zonenwechsel nicht mit', () => {
+  it('does not count steps without a zone change', () => {
     expect(actProgress(sections, 2)?.stepsTotal).toBe(3);
     expect(actProgress(sections, 2)?.stepsLeft).toBe(0);
   });
 
-  it('wechselt mit der Kante den Akt', () => {
+  it('changes the act with the edge', () => {
     expect(actProgress(sections, 3)).toEqual({
       act: 'Act 2',
       stepsLeft: 1,
@@ -147,11 +147,11 @@ describe('actProgress', () => {
     });
   });
 
-  it('gibt null, wenn die Kante nirgends vorkommt', () => {
+  it('returns null when the edge occurs nowhere', () => {
     expect(actProgress(sections, 99)).toBeNull();
   });
 
-  it('deckt jede Kante der echten Route ab', () => {
+  it('covers every edge of the real route', () => {
     const route = JSON.parse(
       fs.readFileSync(
         path.resolve(
@@ -173,38 +173,38 @@ describe('actProgress', () => {
 
 describe('selectPending', () => {
   const steps = [
-    step(0, 'betrete A'),
-    step(null, 'toete X'),
-    step(null, 'gib Quest ab'),
-    step(1, 'betrete B'),
-    step(null, 'hole Waypoint')
+    step(0, 'enter A'),
+    step(null, 'kill X'),
+    step(null, 'turn in quest'),
+    step(1, 'enter B'),
+    step(null, 'get waypoint')
   ];
 
-  it('laesst den erledigten Uebergang weg und endet am naechsten', () => {
+  it('drops the completed transition and ends at the next one', () => {
     expect(selectPending(steps, 0).map((s) => s.parts[0])).toEqual([
-      'toete X',
-      'gib Quest ab',
-      'betrete B'
+      'kill X',
+      'turn in quest',
+      'enter B'
     ]);
   });
 
-  it('zeigt nur noch den Rest der Zone, wenn kein Uebergang mehr folgt', () => {
+  it('shows only the rest of the zone when no transition follows', () => {
     expect(selectPending(steps, 1).map((s) => s.parts[0])).toEqual([
-      'hole Waypoint'
+      'get waypoint'
     ]);
   });
 
-  it('haelt den letzten Schritt der Route fest, statt leer zu werden', () => {
-    expect(selectPending([step(0, 'betrete A')], 0).map((s) => s.parts[0])).toEqual([
-      'betrete A'
+  it('holds on to the last step of the route instead of going empty', () => {
+    expect(selectPending([step(0, 'enter A')], 0).map((s) => s.parts[0])).toEqual([
+      'enter A'
     ]);
   });
 
-  it('gibt nichts zurueck, wenn die Kante nicht vorkommt', () => {
+  it('returns nothing when the edge does not occur', () => {
     expect(selectPending(steps, 99)).toEqual([]);
   });
 
-  it('zeigt auf der echten Route nie den gerade erledigten Uebergang zuerst', () => {
+  it('never shows the transition just made first on the real route', () => {
     const route = JSON.parse(
       fs.readFileSync(
         path.resolve(
@@ -227,31 +227,32 @@ describe('selectPending', () => {
 describe('blockSections', () => {
   const section = (name: string, steps: RouteData.Step[]) => ({ name, steps });
 
-  it('beendet einen Block mit dem Uebergang, statt ihn damit zu beginnen', () => {
-    // Der Uebergang ist erledigt, sobald Client.txt die Zone meldet. Er gehoert
-    // ans Ende dessen, was man davor tut, nicht an den Anfang dessen danach.
+  it('ends a block with the transition instead of starting it with one', () => {
+    // The transition is done as soon as Client.txt reports the zone. It
+    // belongs at the end of what is done before it, not at the start of what
+    // comes after.
     const steps = [
-      step(0, 'betrete A'),
-      step(null, 'toete X'),
-      step(1, 'betrete B'),
-      step(null, 'hole Waypoint')
+      step(0, 'enter A'),
+      step(null, 'kill X'),
+      step(1, 'enter B'),
+      step(null, 'get waypoint')
     ];
 
     expect(
       blockSections([section('Act 1', steps)])[0].blocks.map((block) => ({
         edgeIndex: block.edgeIndex,
-        texte: block.steps.map((entry) => entry.parts[0])
+        texts: block.steps.map((entry) => entry.parts[0])
       }))
     ).toEqual([
-      { edgeIndex: null, texte: ['betrete A'] },
-      { edgeIndex: 0, texte: ['toete X', 'betrete B'] },
-      { edgeIndex: 1, texte: ['hole Waypoint'] }
+      { edgeIndex: null, texts: ['enter A'] },
+      { edgeIndex: 0, texts: ['kill X', 'enter B'] },
+      { edgeIndex: 1, texts: ['get waypoint'] }
     ]);
   });
 
-  it('nennt als Kante die, an der man steht', () => {
-    // Nicht die, in die der letzte Schritt fuehrt: an Kante 0 stehend tut man
-    // das, was bis zum Betreten von Kante 1 zu tun ist.
+  it('names the edge one is standing at', () => {
+    // Not the one the last step leads into: standing at edge 0 one does what
+    // is to be done until entering edge 1.
     const blocks = blockSections([
       section('Act 1', [step(0, 'a'), step(null, 'b'), step(1, 'c')])
     ])[0].blocks;
@@ -260,26 +261,26 @@ describe('blockSections', () => {
     expect(blocks[1].steps.map((entry) => entry.parts[0])).toEqual(['b', 'c']);
   });
 
-  it('laesst einen Block ueber die Aktgrenze laufen, im Akt seines Anfangs', () => {
+  it('lets a block run across the act boundary, in the act it starts in', () => {
     const sections = blockSections([
-      section('Act 1', [step(0, 'betrete A'), step(null, 'raeum auf')]),
-      section('Act 2', [step(1, 'betrete B')])
+      section('Act 1', [step(0, 'enter A'), step(null, 'clean up')]),
+      section('Act 2', [step(1, 'enter B')])
     ]);
 
     expect(
       sections[0].blocks.map((block) => block.steps.map((e) => e.parts[0]))
-    ).toEqual([['betrete A'], ['raeum auf', 'betrete B']]);
+    ).toEqual([['enter A'], ['clean up', 'enter B']]);
     expect(sections[1].blocks).toEqual([]);
   });
 
-  it('kommt mit einer leeren Route zurecht', () => {
+  it('handles an empty route', () => {
     expect(blockSections([])).toEqual([]);
     expect(blockSections([section('Act 1', [])])).toEqual([
       { name: 'Act 1', blocks: [] }
     ]);
   });
 
-  it('laesst Gem-Schritte aus', () => {
+  it('leaves gem steps out', () => {
     const gem: RouteData.GemStep = {
       type: 'gem_step',
       requiredGem: { id: 'x', note: '', count: 1 },
@@ -293,24 +294,24 @@ describe('blockSections', () => {
     expect(blocks).toEqual([{ edgeIndex: null, steps: [step(0, 'a')] }]);
   });
 
-  it('teilt die echte Route lueckenlos in Bloecke', () => {
-    const route = echteRoute();
+  it('splits the real route into blocks without gaps', () => {
+    const route = realRoute();
     const all = flattenSteps(route.sections);
 
     const blocks = blockSections(route.sections).flatMap(
       (entry) => entry.blocks
     );
 
-    // Kein Schritt geht verloren, keiner taucht doppelt auf.
+    // No step gets lost, none shows up twice.
     expect(blocks.flatMap((block) => block.steps)).toEqual(all);
   });
 
-  it('hebt genau das hervor, was das Overlay zeigt', () => {
-    // Der eigentliche Punkt. Fuer jede Kante muss beides dieselbe Folge
-    // ergeben, sonst zeigt die Liste einen anderen Schritt als das Overlay.
-    // Vorher war es um je einen Schritt versetzt: an Kante 53 stand in der
-    // Liste "➞ The Slums" und im Overlay "➞ The Crematorium".
-    const route = echteRoute();
+  it('highlights exactly what the overlay shows', () => {
+    // The actual point. For every edge both must yield the same sequence,
+    // otherwise the list shows a different step than the overlay. Before, it
+    // was off by one step: at edge 53 the list said "➞ The Slums" and the
+    // overlay "➞ The Crematorium".
+    const route = realRoute();
     const all = flattenSteps(route.sections);
 
     const blocks = blockSections(route.sections).flatMap(
@@ -320,13 +321,13 @@ describe('blockSections', () => {
     for (let edge = 0; edge < route.edges.length; edge++) {
       const block = blocks.find((entry) => entry.edgeIndex === edge);
 
-      expect(block, `Kante ${edge} hat keinen Block`).toBeDefined();
-      expect(block!.steps, `Kante ${edge}`).toEqual(selectPending(all, edge));
+      expect(block, `edge ${edge} has no block`).toBeDefined();
+      expect(block!.steps, `edge ${edge}`).toEqual(selectPending(all, edge));
     }
   });
 });
 
-function echteRoute(): RouteData.Route {
+function realRoute(): RouteData.Route {
   return JSON.parse(
     fs.readFileSync(
       path.resolve(

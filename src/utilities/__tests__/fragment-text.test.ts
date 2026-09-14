@@ -28,8 +28,8 @@ setGameData({
   VaalGemLookup: readJson('vaal-gem-lookup')
 });
 
-// Ein Fall je Variante der Fragment-Union. Faellt eine Variante raus, faengt
-// das der Vollstaendigkeitstest weiter unten.
+// One case per variant of the fragment union. If a variant drops out, the
+// completeness test further down catches it.
 const cases: Array<[string, Fragments.AnyFragment, string]> = [
   ['string', 'Find and kill ', 'Find and kill '],
   ['kill', { type: 'kill', value: 'Hillock' }, 'Hillock'],
@@ -82,18 +82,18 @@ const cases: Array<[string, Fragments.AnyFragment, string]> = [
 
 describe('renderFragment', () => {
   for (const [name, fragment, expected] of cases) {
-    it(`rendert ${name}`, () => {
+    it(`renders ${name}`, () => {
       expect(renderFragment(fragment)).toBe(expected);
     });
   }
 
-  it('erzeugt nirgends NOT FOUND', () => {
+  it('produces NOT FOUND nowhere', () => {
     for (const [, fragment] of cases) {
       expect(renderFragment(fragment)).not.toContain('NOT FOUND');
     }
   });
 
-  it('deckt jede Variante der Union ab', () => {
+  it('covers every variant of the union', () => {
     const covered = new Set(
       cases
         .map(([, fragment]) => fragment)
@@ -129,7 +129,7 @@ describe('renderFragment', () => {
 });
 
 describe('renderStepText', () => {
-  it('setzt die Teile eines Schritts zusammen', () => {
+  it('assembles the parts of a step', () => {
     const text = renderStepText({
       type: 'fragment_step',
       parts: ['Find and kill ', { type: 'kill', value: 'Hillock' }],

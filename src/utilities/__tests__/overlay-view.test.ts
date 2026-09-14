@@ -55,7 +55,7 @@ function step(
 }
 
 describe('toLineView', () => {
-  it('macht aus jedem Fragment Text, Farbe und Symbol', () => {
+  it('turns every fragment into text, colour and icon', () => {
     expect(
       toLineView(['Go to ', { type: 'enter', areaId: '1_1_town' }])
     ).toEqual([
@@ -64,22 +64,22 @@ describe('toLineView', () => {
     ]);
   });
 
-  it('benennt Symbole, statt Adressen aus dem Buendel zu verschicken', () => {
-    // Eine Adresse wie /assets/quest-BQCG-isT.png gehoert dem Build. Ueber die
-    // Fenstergrenze geht der Name, das Bild sucht sich das Fenster selbst.
+  it('names icons instead of sending addresses from the bundle', () => {
+    // An address like /assets/quest-BQCG-isT.png belongs to the build. The
+    // name crosses the window boundary, the window looks up the image itself.
     const [icon] = toLineView([{ type: 'trial' }]);
 
     expect(icon.icon).toBe('trial');
     expect(ICON_SOURCES[icon.icon!]).toBeTruthy();
   });
 
-  it('ueberlebt eine leere Zeile', () => {
+  it('survives an empty line', () => {
     expect(toLineView([])).toEqual([]);
   });
 });
 
 describe('toStepView', () => {
-  it('nimmt die Unterschritte mit', () => {
+  it('takes the substeps along', () => {
     const view = toStepView(
       step(['Kill ', { type: 'kill', value: 'Merveil' }], [['Go north']])
     );
@@ -88,7 +88,7 @@ describe('toStepView', () => {
     expect(view.subSteps).toEqual([[{ text: 'Go north', colour: 'plain', icon: null }]]);
   });
 
-  it('laesst den Kantenindex weg, den braucht das Overlay nicht', () => {
+  it('leaves the edge index out, the overlay does not need it', () => {
     expect(Object.keys(toStepView(step(['x'], [], 5)))).toEqual([
       'parts',
       'subSteps'
@@ -112,7 +112,7 @@ describe('buildOverlayView', () => {
     ]
   };
 
-  it('zeigt, was nach der aktuellen Kante ansteht', () => {
+  it('shows what is pending after the current edge', () => {
     const view = buildOverlayView(route, 1);
 
     expect(view.act).toBe('Act 1');
@@ -122,26 +122,26 @@ describe('buildOverlayView', () => {
     );
   });
 
-  it('zaehlt die Kantenschritte, die im Akt noch kommen', () => {
+  it('counts the edge steps still to come in the act', () => {
     expect(buildOverlayView(route, 0).stepsLeft).toBe(2);
     expect(buildOverlayView(route, 2).stepsLeft).toBe(0);
   });
 
-  it('nennt keinen Akt, wenn die Kante in keinem liegt', () => {
+  it('names no act when the edge lies in none', () => {
     const view = buildOverlayView(route, 99);
 
     expect(view.act).toBeNull();
     expect(view.stepsLeft).toBe(0);
   });
 
-  it('geht als JSON ueber die Fenstergrenze, ohne unterwegs etwas zu verlieren', () => {
-    // Der Sinn des ganzen Modells: das Overlay bekommt es als Ereignis.
+  it('crosses the window boundary as JSON without losing anything on the way', () => {
+    // The point of the whole model: the overlay receives it as an event.
     const view = buildOverlayView(route, 1);
 
     expect(JSON.parse(JSON.stringify(view))).toEqual(view);
   });
 
-  it('haelt eine leere Anzeige bereit, solange keine Route da ist', () => {
+  it('keeps an empty view ready while no route is there', () => {
     expect(EMPTY_OVERLAY_VIEW.steps).toEqual([]);
     expect(EMPTY_OVERLAY_VIEW.act).toBeNull();
   });

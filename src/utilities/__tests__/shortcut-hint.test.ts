@@ -22,25 +22,25 @@ const gem: RouteData.GemStep = {
 };
 
 describe('shortcutLabel', () => {
-  it('schreibt das Kuerzel so, wie es auf der Tastatur steht', () => {
+  it('writes the shortcut the way it appears on the keyboard', () => {
     expect(shortcutLabel('CmdOrCtrl+Alt+0')).toBe('Ctrl+Alt+0');
   });
 
-  it('laesst ein Kuerzel ohne CmdOrCtrl in Ruhe', () => {
+  it('leaves a shortcut without CmdOrCtrl alone', () => {
     expect(shortcutLabel('Alt+F4')).toBe('Alt+F4');
   });
 });
 
 describe('OVERLAY_SHORTCUT_HINT', () => {
-  it('nennt das Kuerzel, mit dem das Overlay zugeht', () => {
+  it('names the shortcut that closes the overlay', () => {
     expect(OVERLAY_SHORTCUT_HINT.parts).toEqual([
       `${shortcutLabel(SHORTCUT_CLOSE_OVERLAY)} closes the overlay.`
     ]);
   });
 
-  it('nennt genau das Kuerzel, das die App auch registriert', () => {
-    // Ein Kuerzel, das im Guide anders heisst als es wirkt, waere schlimmer
-    // als keins. Frueher standen die beiden als getrennte Zeichenketten da.
+  it('names exactly the shortcut the app registers', () => {
+    // A shortcut named differently in the guide from how it works would be
+    // worse than none. The two used to be separate strings.
     const source = fs.readFileSync(
       path.resolve(__dirname, '../../pages/main.page.tsx'),
       'utf8'
@@ -49,7 +49,7 @@ describe('OVERLAY_SHORTCUT_HINT', () => {
     expect(source).toContain('register(SHORTCUT_CLOSE_OVERLAY');
   });
 
-  it('traegt keine Kante und macht damit keinen eigenen Block auf', () => {
+  it('carries no edge and thus opens no block of its own', () => {
     expect(OVERLAY_SHORTCUT_HINT.edgeIndex).toBeNull();
   });
 });
@@ -58,28 +58,28 @@ describe('withShortcutHint', () => {
   const route: RouteData.Route = {
     edges: ['1_1_1', '1_1_2'],
     sections: [
-      { name: 'Act 1', steps: [step(0, 'betrete A')] },
-      { name: 'Act 2', steps: [step(1, 'betrete B'), step(null, 'raeum auf')] }
+      { name: 'Act 1', steps: [step(0, 'enter A')] },
+      { name: 'Act 2', steps: [step(1, 'enter B'), step(null, 'clean up')] }
     ]
   };
 
-  it('haengt den Hinweis unter den letzten Schritt', () => {
+  it('appends the hint below the last step', () => {
     const steps = withShortcutHint(route).sections[1]
       .steps as RouteData.FragmentStep[];
 
     expect(steps.at(-1)!.subSteps).toEqual([OVERLAY_SHORTCUT_HINT]);
   });
 
-  it('legt keinen eigenen Schritt an', () => {
-    const vorher = route.sections.flatMap((section) => section.steps).length;
-    const nachher = withShortcutHint(route)
+  it('creates no step of its own', () => {
+    const before = route.sections.flatMap((section) => section.steps).length;
+    const after = withShortcutHint(route)
       .sections.flatMap((section) => section.steps).length;
 
-    expect(nachher).toBe(vorher);
+    expect(after).toBe(before);
   });
 
-  it('laesst vorhandene Unterzeilen stehen', () => {
-    const mitUnterzeile: RouteData.Route = {
+  it('keeps existing sublines', () => {
+    const withSubline: RouteData.Route = {
       edges: [],
       sections: [
         {
@@ -89,22 +89,22 @@ describe('withShortcutHint', () => {
       ]
     };
 
-    const steps = withShortcutHint(mitUnterzeile).sections[0]
+    const steps = withShortcutHint(withSubline).sections[0]
       .steps as RouteData.FragmentStep[];
 
     expect(steps[0].subSteps).toHaveLength(2);
     expect(steps[0].subSteps.at(-1)).toBe(OVERLAY_SHORTCUT_HINT);
   });
 
-  it('laesst die Kantenliste und die uebrigen Akte in Ruhe', () => {
+  it('leaves the edge list and the other acts alone', () => {
     const result = withShortcutHint(route);
 
     expect(result.edges).toBe(route.edges);
     expect(result.sections[0]).toBe(route.sections[0]);
   });
 
-  it('sucht ueber leere Akte hinweg nach dem letzten Schritt', () => {
-    const mitLeeremAkt: RouteData.Route = {
+  it('searches past empty acts for the last step', () => {
+    const withEmptyAct: RouteData.Route = {
       edges: [],
       sections: [
         { name: 'Act 1', steps: [step(0, 'a')] },
@@ -112,19 +112,19 @@ describe('withShortcutHint', () => {
       ]
     };
 
-    const steps = withShortcutHint(mitLeeremAkt).sections[0]
+    const steps = withShortcutHint(withEmptyAct).sections[0]
       .steps as RouteData.FragmentStep[];
 
     expect(steps[0].subSteps).toEqual([OVERLAY_SHORTCUT_HINT]);
   });
 
-  it('geht an einem Gem-Schritt vorbei', () => {
-    const mitGem: RouteData.Route = {
+  it('passes by a gem step', () => {
+    const withGem: RouteData.Route = {
       edges: [],
       sections: [{ name: 'Act 1', steps: [step(0, 'a'), gem] }]
     };
 
-    const steps = withShortcutHint(mitGem).sections[0].steps;
+    const steps = withShortcutHint(withGem).sections[0].steps;
 
     expect(steps[1]).toBe(gem);
     expect((steps[0] as RouteData.FragmentStep).subSteps).toEqual([
@@ -132,19 +132,19 @@ describe('withShortcutHint', () => {
     ]);
   });
 
-  it('kommt mit einer Route ohne Schritte zurecht', () => {
-    const leer: RouteData.Route = { edges: [], sections: [] };
-    const nurGem: RouteData.Route = {
+  it('handles a route without steps', () => {
+    const empty: RouteData.Route = { edges: [], sections: [] };
+    const gemOnly: RouteData.Route = {
       edges: [],
       sections: [{ name: 'Act 1', steps: [gem] }]
     };
 
-    expect(withShortcutHint(leer)).toBe(leer);
-    expect(withShortcutHint(nurGem)).toBe(nurGem);
+    expect(withShortcutHint(empty)).toBe(empty);
+    expect(withShortcutHint(gemOnly)).toBe(gemOnly);
   });
 });
 
-describe('an der echten Route', () => {
+describe('on the real route', () => {
   const route: RouteData.Route = JSON.parse(
     fs.readFileSync(
       path.resolve(
@@ -155,25 +155,25 @@ describe('an der echten Route', () => {
     )
   );
 
-  it('steht am Ende dessen, was das Overlay zuletzt zeigt', () => {
+  it('sits at the end of what the overlay shows last', () => {
     const result = withShortcutHint(route);
-    const letzte = result.edges.length - 1;
+    const last = result.edges.length - 1;
 
     const block = blockSections(result.sections)
       .flatMap((section) => section.blocks)
-      .find((entry) => entry.edgeIndex === letzte);
+      .find((entry) => entry.edgeIndex === last);
 
-    const letzterSchritt = block!.steps.at(-1)!;
+    const lastStep = block!.steps.at(-1)!;
 
-    expect(letzterSchritt.subSteps.at(-1)).toBe(OVERLAY_SHORTCUT_HINT);
+    expect(lastStep.subSteps.at(-1)).toBe(OVERLAY_SHORTCUT_HINT);
     expect(
-      selectPending(flattenSteps(result.sections), letzte).at(-1)
-    ).toBe(letzterSchritt);
+      selectPending(flattenSteps(result.sections), last).at(-1)
+    ).toBe(lastStep);
   });
 
-  it('laesst den /passives-Hinweis des Upstreams unangetastet', () => {
-    // Der steht schon in den Daten. Ihn zu wiederholen waere doppelt.
-    const alle = withShortcutHint(route)
+  it('leaves upstream\'s /passives hint untouched', () => {
+    // It is already in the data. Repeating it would be a duplicate.
+    const all = withShortcutHint(route)
       .sections.flatMap((section) => section.steps)
       .filter(
         (entry): entry is RouteData.FragmentStep =>
@@ -188,6 +188,6 @@ describe('an der echten Route', () => {
           part.value === '/passives'
       );
 
-    expect(alle).toHaveLength(1);
+    expect(all).toHaveLength(1);
   });
 });

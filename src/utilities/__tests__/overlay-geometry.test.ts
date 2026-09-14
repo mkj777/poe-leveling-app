@@ -15,56 +15,56 @@ const FHD: PoeBounds = {
 
 const NO_OFFSET = { dx: 0, dy: 0 };
 
-describe('computeOverlayRect, Anker unten mittig', () => {
-  it('zentriert horizontal', () => {
+describe('computeOverlayRect, anchor bottom centre', () => {
+  it('centres horizontally', () => {
     const rect = computeOverlayRect(FHD, 200, 1, NO_OFFSET, 'bottom');
 
-    // Bei ungerader Breite liegt der Mittelpunkt systembedingt auf .5,
-    // gefordert ist Zentrierung auf den halben Pixel genau.
+    // With an odd width the centre inevitably sits on .5; what is required
+    // is centring to within half a pixel.
     expect(Math.abs(rect.x + rect.width / 2 - 960)).toBeLessThanOrEqual(0.5);
   });
 
-  it('setzt die Unterkante knapp ueber die XP-Leiste', () => {
+  it('puts the bottom edge just above the XP bar', () => {
     const rect = computeOverlayRect(FHD, 200, 1, NO_OFFSET, 'bottom');
-    // 1080 * (1.0 - 0.03) = 1047.6, minus Hoehe 200
+    // 1080 * (1.0 - 0.03) = 1047.6, minus height 200
     expect(rect.y).toBe(848);
   });
 
-  it('beruehrt die gemessene XP-Leiste nicht', () => {
-    // Gemessen bei 2560x1440: die Leiste beginnt bei 97,9 % der Hoehe.
+  it('does not touch the measured XP bar', () => {
+    // Measured at 2560x1440: the bar starts at 97.9% of the height.
     const qhd: PoeBounds = { ...FHD, w: 2560, h: 1440 };
     const rect = computeOverlayRect(qhd, 200, 1, NO_OFFSET, 'bottom');
 
     expect(rect.y + 200).toBeLessThan(qhd.h * 0.979);
   });
 
-  it('waechst nach oben, die Unterkante bleibt stehen', () => {
-    const flach = computeOverlayRect(FHD, 120, 1, NO_OFFSET, 'bottom');
-    const hoch = computeOverlayRect(FHD, 300, 1, NO_OFFSET, 'bottom');
+  it('grows upwards, the bottom edge stays put', () => {
+    const short = computeOverlayRect(FHD, 120, 1, NO_OFFSET, 'bottom');
+    const tall = computeOverlayRect(FHD, 300, 1, NO_OFFSET, 'bottom');
 
-    expect(flach.y + 120).toBe(hoch.y + 300);
+    expect(short.y + 120).toBe(tall.y + 300);
   });
 });
 
-describe('computeOverlayRect, Anker unter der Minimap', () => {
-  it('haengt rechts oben und waechst nach unten', () => {
+describe('computeOverlayRect, anchor below the minimap', () => {
+  it('hangs at the top right and grows downwards', () => {
     const rect = computeOverlayRect(FHD, 200, 1, NO_OFFSET, 'minimap');
 
-    // 1920 * (1 - 0.005) = 1910.4 als rechte Kante
+    // 1920 * (1 - 0.005) = 1910.4 as the right edge
     expect(rect.x + rect.width).toBe(1910);
-    // 1080 * 0.28 = 302.4 als Oberkante
+    // 1080 * 0.28 = 302.4 as the top edge
     expect(rect.y).toBe(302);
   });
 
-  it('laesst die Oberkante stehen, wenn der Inhalt waechst', () => {
-    const flach = computeOverlayRect(FHD, 120, 1, NO_OFFSET, 'minimap');
-    const hoch = computeOverlayRect(FHD, 300, 1, NO_OFFSET, 'minimap');
+  it('keeps the top edge when the content grows', () => {
+    const short = computeOverlayRect(FHD, 120, 1, NO_OFFSET, 'minimap');
+    const tall = computeOverlayRect(FHD, 300, 1, NO_OFFSET, 'minimap');
 
-    expect(flach.y).toBe(hoch.y);
+    expect(short.y).toBe(tall.y);
   });
 
-  it('bleibt unter der gemessenen Minimap-Unterkante', () => {
-    // Gemessen bei 2560x1440: Minimap bis 25,7 %, Infotafel bis 19,8 %.
+  it('stays below the measured bottom edge of the minimap', () => {
+    // Measured at 2560x1440: minimap down to 25.7%, info panel down to 19.8%.
     const qhd: PoeBounds = { ...FHD, w: 2560, h: 1440 };
     const rect = computeOverlayRect(qhd, 200, 1, NO_OFFSET, 'minimap');
 
@@ -73,22 +73,22 @@ describe('computeOverlayRect, Anker unter der Minimap', () => {
   });
 });
 
-describe('computeOverlayRect, Breite', () => {
-  it('klemmt die Grundbreite, nicht das Ergebnis', () => {
+describe('computeOverlayRect, width', () => {
+  it('clamps the base width, not the result', () => {
     const wide: PoeBounds = { ...FHD, w: 4000 };
-    // 4000 * 0.26 = 1040, Grundbreite wird auf 560 geklemmt
+    // 4000 * 0.26 = 1040, base width is clamped to 560
     expect(computeOverlayRect(wide, 200, 1, NO_OFFSET, 'bottom').width).toBe(
       560
     );
 
     const small: PoeBounds = { ...FHD, w: 800, h: 600 };
-    // 800 * 0.26 = 208, Grundbreite wird auf 320 angehoben
+    // 800 * 0.26 = 208, base width is raised to 320
     expect(computeOverlayRect(small, 200, 1, NO_OFFSET, 'bottom').width).toBe(
       320
     );
   });
 
-  it('laesst die Skalierung immer auf die Breite durchschlagen', () => {
+  it('always lets the scale affect the width', () => {
     const at = (scale: number) =>
       computeOverlayRect(FHD, 200, scale, NO_OFFSET, 'bottom').width;
 
@@ -102,8 +102,8 @@ describe('computeOverlayRect, Breite', () => {
   });
 });
 
-describe('computeOverlayRect, Offset', () => {
-  it('rechnet den Offset relativ zum Spiel-Rect', () => {
+describe('computeOverlayRect, offset', () => {
+  it('computes the offset relative to the game rect', () => {
     const shifted = computeOverlayRect(
       FHD,
       200,
@@ -117,7 +117,7 @@ describe('computeOverlayRect, Offset', () => {
     expect(shifted.y - base.y).toBe(-54);
   });
 
-  it('bleibt bei anderer Aufloesung relativ gleich', () => {
+  it('stays relatively the same at a different resolution', () => {
     const qhd: PoeBounds = { ...FHD, w: 2560, h: 1440 };
     const offset = { dx: 0.1, dy: -0.05 };
 
@@ -130,7 +130,7 @@ describe('computeOverlayRect, Offset', () => {
     );
   });
 
-  it('beruecksichtigt die Fensterposition auf einem zweiten Monitor', () => {
+  it('accounts for the window position on a second monitor', () => {
     const second: PoeBounds = { ...FHD, x: 1920, y: -120 };
     const rect = computeOverlayRect(second, 200, 1, NO_OFFSET, 'bottom');
 
@@ -141,10 +141,10 @@ describe('computeOverlayRect, Offset', () => {
 });
 
 describe('offsetFromWindow', () => {
-  // Ziehen und Rechnen muessen sich gegenseitig aufheben, sonst wandert das
-  // Overlay bei jedem Zyklus ein Stueck weiter.
+  // Dragging and computing must cancel each other out, otherwise the overlay
+  // wanders a bit further on every cycle.
   for (const anchor of ['bottom', 'minimap'] as const) {
-    it(`ist die Umkehrung von computeOverlayRect, Anker ${anchor}`, () => {
+    it(`is the inverse of computeOverlayRect, anchor ${anchor}`, () => {
       const offset = { dx: 0.08, dy: -0.03 };
       const rect = computeOverlayRect(FHD, 200, 1, offset, anchor);
 

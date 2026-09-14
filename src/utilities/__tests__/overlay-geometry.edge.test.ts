@@ -23,14 +23,14 @@ const NO_OFFSET = { dx: 0, dy: 0 };
 
 const finite = (value: number) => Number.isFinite(value);
 
-describe('Randfaelle der Spielbounds', () => {
-  // Genau das liefert PoeBounds::not_found() aus dem Backend. Der Aufrufer
-  // prueft found, aber die Rechnung darf trotzdem keine NaN ausspucken, sonst
-  // landet Unsinn in setPosition.
+describe('edge cases of the game bounds', () => {
+  // Exactly what PoeBounds::not_found() from the backend returns. The caller
+  // checks found, but the computation must still not spit out NaN, otherwise
+  // nonsense lands in setPosition.
   const zero: PoeBounds = { ...FHD, w: 0, h: 0, found: false };
 
   for (const anchor of ANCHORS) {
-    it(`liefert endliche Werte bei Groesse null, Anker ${anchor}`, () => {
+    it(`returns finite values at size zero, anchor ${anchor}`, () => {
       const rect = computeOverlayRect(zero, 120, 1, NO_OFFSET, anchor);
 
       expect(finite(rect.x)).toBe(true);
@@ -38,7 +38,7 @@ describe('Randfaelle der Spielbounds', () => {
       expect(finite(rect.width)).toBe(true);
     });
 
-    it(`rechnet keinen Offset aus einem Rect ohne Groesse, Anker ${anchor}`, () => {
+    it(`computes no offset from a rect without size, anchor ${anchor}`, () => {
       const offset = offsetFromWindow(
         zero,
         { x: 0, y: 0, width: 500, height: 120 },
@@ -50,13 +50,13 @@ describe('Randfaelle der Spielbounds', () => {
     });
   }
 
-  it('haelt die Mindestbreite auch bei winzigem Spielfenster', () => {
+  it('keeps the minimum width even with a tiny game window', () => {
     const tiny: PoeBounds = { ...FHD, w: 320, h: 240 };
 
     expect(overlayWidth(tiny, 1)).toBe(320);
   });
 
-  it('kommt mit negativen Monitorkoordinaten zurecht', () => {
+  it('handles negative monitor coordinates', () => {
     const left: PoeBounds = { ...FHD, x: -1920, y: 129 };
     const rect = computeOverlayRect(left, 200, 1, NO_OFFSET, 'bottom');
 
@@ -64,24 +64,24 @@ describe('Randfaelle der Spielbounds', () => {
     expect(finite(rect.y)).toBe(true);
   });
 
-  it('folgt einem sehr breiten Seitenverhaeltnis', () => {
+  it('follows a very wide aspect ratio', () => {
     const ultrawide: PoeBounds = { ...FHD, w: 5120, h: 1440 };
     const rect = computeOverlayRect(ultrawide, 200, 1, NO_OFFSET, 'bottom');
 
-    // Mittig heisst mittig, auch wenn die Breite laengst geklemmt ist.
+    // Centred means centred, even when the width has long been clamped.
     expect(Math.abs(rect.x + rect.width / 2 - 2560)).toBeLessThanOrEqual(0.5);
   });
 });
 
-describe('Randfaelle der Skalierung', () => {
-  it('bleibt bei Skalierung null berechenbar', () => {
+describe('edge cases of the scale', () => {
+  it('stays computable at scale zero', () => {
     const rect = computeOverlayRect(FHD, 120, 0, NO_OFFSET, 'bottom');
 
     expect(rect.width).toBe(0);
     expect(finite(rect.x)).toBe(true);
   });
 
-  it('rundet immer auf ganze Pixel', () => {
+  it('always rounds to whole pixels', () => {
     for (const scale of [0.63, 0.77, 1.11, 1.37, 1.99]) {
       const rect = computeOverlayRect(FHD, 137, scale, NO_OFFSET, 'bottom');
 
@@ -92,22 +92,21 @@ describe('Randfaelle der Skalierung', () => {
   });
 });
 
-describe('Randfaelle des Offsets', () => {
-  it('laesst sich aus dem Bild schieben, ohne zu brechen', () => {
+describe('edge cases of the offset', () => {
+  it('can be pushed off screen without breaking', () => {
     const rect = computeOverlayRect(FHD, 200, 1, { dx: 5, dy: 5 }, 'bottom');
 
-    // Bewusst nicht geklemmt: wer weit zieht, soll es auch koennen, und der
-    // Zuruecksetzen-Knopf holt es wieder. Gefordert ist nur, dass gerechnet
-    // wird und nichts kippt.
+    // Deliberately not clamped: anyone dragging far should be able to, and
+    // the reset button brings it back. All that is required is that the
+    // computation runs and nothing tips over.
     expect(finite(rect.x)).toBe(true);
     expect(rect.x).toBeGreaterThan(FHD.w);
   });
 
   for (const anchor of ANCHORS) {
-    it(`bleibt ueber viele Runden stabil, Anker ${anchor}`, () => {
-      // Das ist der Fehler, der das Overlay einmal aus dem Bild getrieben hat:
-      // rechnen, zuruecklesen, wieder rechnen. Nach zwanzig Runden muss
-      // derselbe Wert stehen.
+    it(`stays stable over many rounds, anchor ${anchor}`, () => {
+      // This is the bug that once drove the overlay off screen: compute, read
+      // back, compute again. After twenty rounds the same value must stand.
       let offset = { dx: 0.07, dy: -0.04 };
 
       for (let round = 0; round < 20; round++) {

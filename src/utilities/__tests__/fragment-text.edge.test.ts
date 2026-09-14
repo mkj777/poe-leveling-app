@@ -31,59 +31,59 @@ beforeAll(() => {
   });
 });
 
-describe('fehlende Spieldaten', () => {
-  it('faellt bei unbekannter Zone auf die Id zurueck', () => {
-    expect(renderFragment({ type: 'enter', areaId: 'gibt_es_nicht' })).toBe(
-      'gibt_es_nicht'
+describe('missing game data', () => {
+  it('falls back to the id for an unknown zone', () => {
+    expect(renderFragment({ type: 'enter', areaId: 'does_not_exist' })).toBe(
+      'does_not_exist'
     );
   });
 
-  it('faellt bei unbekannter Quest auf die Id zurueck', () => {
+  it('falls back to the id for an unknown quest', () => {
     expect(
       renderFragment({ type: 'quest', questId: 'a99q9', rewardOffers: [] })
     ).toBe('a99q9');
   });
 
-  it('nennt die Quest ohne NPC, wenn kein Angebot passt', () => {
-    // Der Name steht in quests.json, das Angebot nicht. Frueher haette das
-    // undefined in den Text geschrieben.
+  it('names the quest without NPC when no offer matches', () => {
+    // The name is in quests.json, the offer is not. This used to write
+    // undefined into the text.
     const text = renderFragment({
       type: 'quest',
       questId: 'a1q1',
-      rewardOffers: ['gibt_es_nicht']
+      rewardOffers: ['does_not_exist']
     });
 
     expect(text).toBe('Enemy at the Gate');
     expect(text).not.toContain('undefined');
   });
 
-  it('nimmt das erste Angebot, das einen NPC nennt', () => {
+  it('takes the first offer that names an NPC', () => {
     expect(
       renderFragment({
         type: 'quest',
         questId: 'a1q1',
-        rewardOffers: ['gibt_es_nicht', 'a1q1']
+        rewardOffers: ['does_not_exist', 'a1q1']
       })
     ).toBe('Enemy at the Gate (Tarkleigh)');
   });
 
-  it('kennt fuer eine unbekannte Zone kein Stadtsymbol', () => {
-    expect(fragmentIcon({ type: 'enter', areaId: 'gibt_es_nicht' })).toBeNull();
+  it('knows no town icon for an unknown zone', () => {
+    expect(fragmentIcon({ type: 'enter', areaId: 'does_not_exist' })).toBeNull();
   });
 });
 
-describe('Richtungen ausserhalb der Tabelle', () => {
-  it('nennt bei unbekanntem Index die Gradzahl statt undefined', () => {
+describe('directions outside the table', () => {
+  it('names the degrees for an unknown index instead of undefined', () => {
     expect(renderFragment({ type: 'dir', dirIndex: 8 })).toBe('360 degrees');
     expect(renderFragment({ type: 'dir', dirIndex: 12 })).toBe('540 degrees');
   });
 
-  it('deckt alle acht gueltigen Richtungen ab', () => {
-    const namen = Array.from({ length: 8 }, (_v, i) =>
+  it('covers all eight valid directions', () => {
+    const names = Array.from({ length: 8 }, (_v, i) =>
       renderFragment({ type: 'dir', dirIndex: i })
     );
 
-    expect(namen).toEqual([
+    expect(names).toEqual([
       'north',
       'northeast',
       'east',
@@ -93,22 +93,22 @@ describe('Richtungen ausserhalb der Tabelle', () => {
       'west',
       'northwest'
     ]);
-    expect(new Set(namen).size).toBe(8);
+    expect(new Set(names).size).toBe(8);
   });
 
-  it('schreibt klein, weil die Richtung immer mitten im Satz steht', () => {
-    const namen = Array.from({ length: 8 }, (_v, i) =>
+  it('writes lower case because the direction always sits mid-sentence', () => {
+    const names = Array.from({ length: 8 }, (_v, i) =>
       renderFragment({ type: 'dir', dirIndex: i })
     );
 
-    for (const name of namen) expect(name).toBe(name.toLowerCase());
+    for (const name of names) expect(name).toBe(name.toLowerCase());
   });
 });
 
-describe('Kuerzel nur im Richtungsfragment', () => {
-  it('laesst einzelne Buchstaben im Freitext in Ruhe', () => {
-    // In der echten Route steht genau ein solcher Fall, und dort meint das S
-    // die Form des Weges, nicht Sueden. Freitext wird darum nicht angefasst.
+describe('abbreviations only in the direction fragment', () => {
+  it('leaves single letters in free text alone', () => {
+    // The real route has exactly one such case, and there the S means the
+    // shape of the path, not south. Free text is therefore not touched.
     expect(renderFragment('S shape or L shape leads to exit')).toBe(
       'S shape or L shape leads to exit'
     );
@@ -122,42 +122,42 @@ describe('Kuerzel nur im Richtungsfragment', () => {
   });
 });
 
-describe('leere und ungewoehnliche Inhalte', () => {
-  it('crafting ohne Rezepte bleibt lesbar', () => {
+describe('empty and unusual contents', () => {
+  it('crafting without recipes stays readable', () => {
     expect(renderFragment({ type: 'crafting', crafting_recipes: [] })).toBe(
       'Crafting: '
     );
   });
 
-  it('crafting mit mehreren Rezepten zaehlt sie auf', () => {
+  it('crafting with several recipes lists them', () => {
     expect(
       renderFragment({ type: 'crafting', crafting_recipes: ['A', 'B'] })
     ).toBe('Crafting: A, B');
   });
 
-  it('reward_vendor ohne Preis nennt nur den Gegenstand', () => {
+  it('reward_vendor without a price names only the item', () => {
     expect(renderFragment({ type: 'reward_vendor', item: 'Iron Ring' })).toBe(
       'Iron Ring'
     );
   });
 
-  it('leerer String bleibt leerer String', () => {
+  it('an empty string stays an empty string', () => {
     expect(renderFragment('')).toBe('');
   });
 
-  it('renderStepText auf einem Schritt ohne Teile', () => {
-    const leer: RouteData.FragmentStep = {
+  it('renderStepText on a step without parts', () => {
+    const empty: RouteData.FragmentStep = {
       type: 'fragment_step',
       parts: [],
       subSteps: [],
       edgeIndex: null
     };
 
-    expect(renderStepText(leer)).toBe('');
+    expect(renderStepText(empty)).toBe('');
   });
 });
 
-describe('gegen die echte Route', () => {
+describe('against the real route', () => {
   const route = JSON.parse(
     fs.readFileSync(
       path.resolve(
@@ -180,7 +180,7 @@ describe('gegen die echte Route', () => {
     return out;
   }
 
-  it('rendert jedes Fragment der Route ohne Luecke', () => {
+  it('renders every fragment of the route without a gap', () => {
     for (const fragment of allFragments()) {
       const text = renderFragment(fragment);
 
@@ -191,13 +191,13 @@ describe('gegen die echte Route', () => {
     }
   });
 
-  it('gibt jedem Fragment eine gueltige Farbe', () => {
+  it('gives every fragment a valid colour', () => {
     for (const fragment of allFragments()) {
       expect(typeof fragmentColour(fragment)).toBe('string');
     }
   });
 
-  it('kein Schritt der Route rendert zu einem leeren Text', () => {
+  it('no step of the route renders to an empty text', () => {
     for (const section of route.sections) {
       for (const step of section.steps) {
         if (step.type !== 'fragment_step') continue;

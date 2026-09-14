@@ -24,19 +24,19 @@ describe('app.store', () => {
     });
   });
 
-  it('schaltet den Zustand um', () => {
+  it('switches the state', () => {
     useAppStore.getState().setAppState(AppState.IN_GAME);
     expect(useAppStore.getState().appState).toBe(AppState.IN_GAME);
   });
 
-  it('schaltet den Scanzustand um', () => {
+  it('switches the scanning state', () => {
     useAppStore.getState().setAppScanningState(AppScanningState.SCANNING);
     expect(useAppStore.getState().appScanningState).toBe(
       AppScanningState.SCANNING
     );
   });
 
-  it('merkt sich ein verfuegbares Update', () => {
+  it('remembers an available update', () => {
     useAppStore.getState().setNewUpdateAvailable(true);
     expect(useAppStore.getState().newUpdateAvailable).toBe(true);
   });
@@ -54,14 +54,14 @@ describe('route.store', () => {
     });
   });
 
-  it('nimmt Route und sha auf', () => {
+  it('takes route and sha', () => {
     useRouteStore.getState().setRoute(route, 'abc1234');
 
     expect(useRouteStore.getState().route).toBe(route);
     expect(useRouteStore.getState().sha).toBe('abc1234');
   });
 
-  it('merkt sich zur Kante die Zone', () => {
+  it('remembers the zone for the edge', () => {
     useRouteStore.getState().setRoute(route, 'abc1234');
     useRouteStore.getState().setCurrentEdge(1);
 
@@ -69,29 +69,29 @@ describe('route.store', () => {
     expect(useRouteStore.getState().currentAreaId).toBe('1_1_town');
   });
 
-  it('setzt die Zone auf null, wenn die Kante nicht existiert', () => {
+  it('sets the zone to null when the edge does not exist', () => {
     useRouteStore.getState().setRoute(route, 'abc1234');
     useRouteStore.getState().setCurrentEdge(99);
 
     expect(useRouteStore.getState().currentAreaId).toBeNull();
   });
 
-  it('setzt die Zone auf null, solange keine Route geladen ist', () => {
+  it('sets the zone to null while no route is loaded', () => {
     useRouteStore.getState().setCurrentEdge(3);
 
     expect(useRouteStore.getState().currentEdge).toBe(3);
     expect(useRouteStore.getState().currentAreaId).toBeNull();
   });
 
-  it('haelt Fehlerzustand und Meldung zusammen', () => {
-    useRouteStore.getState().setSyncState('error', 'kein Netz');
+  it('keeps error state and message together', () => {
+    useRouteStore.getState().setSyncState('error', 'no network');
 
     expect(useRouteStore.getState().syncState).toBe('error');
-    expect(useRouteStore.getState().syncError).toBe('kein Netz');
+    expect(useRouteStore.getState().syncError).toBe('no network');
   });
 
-  it('raeumt die Meldung weg, wenn kein Grund mitkommt', () => {
-    useRouteStore.getState().setSyncState('error', 'kein Netz');
+  it('clears the message when no reason comes along', () => {
+    useRouteStore.getState().setSyncState('error', 'no network');
     useRouteStore.getState().setSyncState('idle');
 
     expect(useRouteStore.getState().syncError).toBeNull();
@@ -104,12 +104,12 @@ describe('settings.store', () => {
     useSettingsStore.setState({ clientTxtPath: '' });
   });
 
-  it('haelt den Client.txt-Pfad', () => {
+  it('holds the Client.txt path', () => {
     useSettingsStore.getState().setClientTxtPath('C:/poe/Client.txt');
     expect(useSettingsStore.getState().clientTxtPath).toBe('C:/poe/Client.txt');
   });
 
-  it('nimmt Groesse, Deckkraft, Verschiebung und Anker auf', () => {
+  it('takes scale, opacity, offset and anchor', () => {
     const store = useSettingsStore.getState();
     store.setOverlayScale(1.4);
     store.setOverlayOpacity(0.8);
@@ -123,7 +123,7 @@ describe('settings.store', () => {
     expect(after.overlayAnchor).toBe('minimap');
   });
 
-  it('setzt Platzierung zurueck, laesst den Pfad aber stehen', () => {
+  it('resets the placement but leaves the path', () => {
     const store = useSettingsStore.getState();
     store.setClientTxtPath('C:/poe/Client.txt');
     store.setOverlayScale(1.9);
@@ -143,30 +143,30 @@ describe('guide.store', () => {
     useGuideStore.setState({ mode: 'league-start', lastOpenedAt: null });
   });
 
-  it('faengt im bisherigen Ablauf an', () => {
+  it('starts in the previous flow', () => {
     expect(useGuideStore.getState().mode).toBe('league-start');
   });
 
-  it('wechselt den Modus', () => {
+  it('switches the mode', () => {
     useGuideStore.getState().setMode('speedleveling');
     expect(useGuideStore.getState().mode).toBe('speedleveling');
   });
 
-  it('haelt den Zeitpunkt des Starts fest', () => {
-    // Daran misst NewRunDialog die Pause seit dem letzten Start.
+  it('records the time of the start', () => {
+    // NewRunDialog measures the pause since the last start against this.
     useGuideStore.getState().markOpened(1_700_000_000_000);
     expect(useGuideStore.getState().lastOpenedAt).toBe(1_700_000_000_000);
   });
 });
 
-describe('route.store, wer den Fortschritt speichert', () => {
+describe('route.store, who persists progress', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.resetModules();
     localStorage.removeItem('route');
   });
 
-  it('das Hauptfenster legt ihn ab', async () => {
+  it('the main window stores it', async () => {
     localStorage.removeItem('route');
     vi.resetModules();
 
@@ -176,10 +176,10 @@ describe('route.store, wer den Fortschritt speichert', () => {
     expect(JSON.parse(localStorage.getItem('route')!).state.currentEdge).toBe(7);
   });
 
-  it('das Overlay legt nichts ab', async () => {
-    // Es rechnet die Zone aus seiner eigenen Route aus. Hielte es je wieder
-    // eine andere Lesart, wuerde es damit den Stand des Hauptfensters
-    // ueberschreiben und dessen Fortschritt beim naechsten Start verschieben.
+  it('the overlay stores nothing', async () => {
+    // It computes the zone from its own route. If it ever held a different
+    // mode again, it would overwrite the main window's state with it and
+    // shift its progress on the next start.
     localStorage.removeItem('route');
     vi.stubGlobal('location', { hash: '#/overlay' });
     vi.resetModules();
@@ -191,7 +191,7 @@ describe('route.store, wer den Fortschritt speichert', () => {
     expect(localStorage.getItem('route')).toBeNull();
   });
 
-  it('das Overlay liest auch nichts, was schon dasteht', async () => {
+  it('the overlay does not read what is already there either', async () => {
     localStorage.setItem(
       'route',
       JSON.stringify({ state: { currentEdge: 99, currentAreaId: 'x' }, version: 2 })
@@ -205,14 +205,14 @@ describe('route.store, wer den Fortschritt speichert', () => {
   });
 });
 
-describe('settings.store, wer die Einstellungen speichert', () => {
+describe('settings.store, who persists the settings', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.resetModules();
     localStorage.removeItem('settings');
   });
 
-  it('das Hauptfenster legt sie ab', async () => {
+  it('the main window stores them', async () => {
     localStorage.removeItem('settings');
     vi.resetModules();
 
@@ -224,10 +224,10 @@ describe('settings.store, wer die Einstellungen speichert', () => {
     ).toBe(0.8);
   });
 
-  it('das Overlay legt nichts ab, obwohl man dort zieht und skaliert', async () => {
-    // Nachgemessen bevor es das gab: Overlay verschieben, danach im
-    // Hauptfenster einen Regler anfassen, und die Verschiebung war weg. Das
-    // Hauptfenster kannte sie nie und schrieb seinen eigenen Stand darueber.
+  it('the overlay stores nothing although dragging and scaling happen there', async () => {
+    // Measured before this existed: move the overlay, then touch a slider in
+    // the main window, and the offset was gone. The main window never knew
+    // it and wrote its own state over it.
     localStorage.removeItem('settings');
     vi.stubGlobal('location', { hash: '#/overlay' });
     vi.resetModules();

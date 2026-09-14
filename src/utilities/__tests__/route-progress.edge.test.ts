@@ -20,16 +20,16 @@ const gemStep = {
   count: 1
 } as unknown as RouteData.Step;
 
-describe('leere und entartete Routen', () => {
-  it('flattenSteps auf keiner Sektion', () => {
+describe('empty and degenerate routes', () => {
+  it('flattenSteps on no section', () => {
     expect(flattenSteps([])).toEqual([]);
   });
 
-  it('flattenSteps auf Sektionen ohne Schritte', () => {
+  it('flattenSteps on sections without steps', () => {
     expect(flattenSteps([{ name: 'Act 1', steps: [] }])).toEqual([]);
   });
 
-  it('flattenSteps laesst Gem-Schritte draussen', () => {
+  it('flattenSteps leaves gem steps out', () => {
     const sections: RouteData.Section[] = [
       { name: 'Act 1', steps: [gemStep, step(0, 'a'), gemStep] }
     ];
@@ -37,13 +37,13 @@ describe('leere und entartete Routen', () => {
     expect(flattenSteps(sections)).toHaveLength(1);
   });
 
-  it('blockSections auf leerer Liste', () => {
+  it('blockSections on an empty list', () => {
     expect(blockSections([{ name: 'Act 1', steps: [] }])[0].blocks).toEqual([]);
   });
 
-  it('blockSections, wenn keine Kante gesetzt ist', () => {
-    // Alles in einem Block, ohne Sprungziel: es gibt keine Kante, an der man
-    // dabei staende.
+  it('blockSections when no edge is set', () => {
+    // Everything in one block, without a jump target: there is no edge one
+    // would be standing at.
     const blocks = blockSections([
       { name: 'Act 1', steps: [step(null, 'a'), step(null, 'b')] }
     ])[0].blocks;
@@ -52,11 +52,11 @@ describe('leere und entartete Routen', () => {
     expect(blocks[0].edgeIndex).toBeNull();
   });
 
-  it('actProgress auf keiner Sektion', () => {
+  it('actProgress on no section', () => {
     expect(actProgress([], 0)).toBeNull();
   });
 
-  it('actProgress auf einer Sektion ganz ohne Kanten', () => {
+  it('actProgress on a section without any edges', () => {
     const sections: RouteData.Section[] = [
       { name: 'Act 1', steps: [step(null, 'a')] }
     ];
@@ -65,39 +65,39 @@ describe('leere und entartete Routen', () => {
   });
 });
 
-describe('Grenzen des Kantenindex', () => {
+describe('limits of the edge index', () => {
   const edges = ['1_1_1', '1_1_town', '1_1_2'];
 
-  it('advanceEdge am letzten Index laeuft nicht ueber', () => {
+  it('advanceEdge at the last index does not overflow', () => {
     expect(advanceEdge(edges, edges.length - 1, '1_1_2')).toBe(2);
   });
 
-  it('advanceEdge auf leerer Kantenliste', () => {
+  it('advanceEdge on an empty edge list', () => {
     expect(advanceEdge([], 0, '1_1_1')).toBe(0);
   });
 
-  it('advanceEdge ignoriert einen leeren Zonennamen', () => {
+  it('advanceEdge ignores an empty zone name', () => {
     expect(advanceEdge(edges, 0, '')).toBe(0);
   });
 
-  it('reanchorEdge auf leerer Kantenliste bleibt im gueltigen Bereich', () => {
-    // Kommt in einer geparsten Route nicht vor, sie traegt immer mindestens
-    // die Startkante. Der Rueckfall darf trotzdem kein Index sein, den es
-    // nicht gibt.
+  it('reanchorEdge on an empty edge list stays in the valid range', () => {
+    // Does not occur in a parsed route, which always carries at least the
+    // start edge. The fallback must still not be an index that does not
+    // exist.
     expect(reanchorEdge([], '1_1_1', 7)).toBe(0);
   });
 
-  it('reanchorEdge klemmt auf eine kuerzer gewordene Kantenliste', () => {
-    // Der Moduswechsel: vier Zonen gibt es nur im Ligastart, und dessen
-    // Kantenliste ist die laengere.
-    expect(reanchorEdge(['a', 'b', 'c'], 'weg', 99)).toBe(2);
+  it('reanchorEdge clamps to an edge list that got shorter', () => {
+    // The mode switch: four zones exist only at league start, and its edge
+    // list is the longer one.
+    expect(reanchorEdge(['a', 'b', 'c'], 'gone', 99)).toBe(2);
   });
 
-  it('reanchorEdge trifft den ersten Index, wenn die Zone dort steht', () => {
+  it('reanchorEdge hits the first index when the zone is there', () => {
     expect(reanchorEdge(edges, '1_1_1', 99)).toBe(0);
   });
 
-  it('actProgress auf einem Index jenseits der Route', () => {
+  it('actProgress on an index beyond the route', () => {
     const sections: RouteData.Section[] = [
       { name: 'Act 1', steps: [step(0, 'a')] }
     ];
@@ -106,31 +106,31 @@ describe('Grenzen des Kantenindex', () => {
   });
 });
 
-describe('Blockgrenzen', () => {
-  const nur = (steps: RouteData.FragmentStep[]) =>
+describe('block boundaries', () => {
+  const only = (steps: RouteData.FragmentStep[]) =>
     blockSections([{ name: 'Act 1', steps }])[0].blocks;
 
-  it('endet mit dem Uebergang und nimmt nichts dahinter mit', () => {
+  it('ends with the transition and takes nothing after it', () => {
     const steps = [step(0, 'a'), step(null, 'b'), step(1, 'c'), step(null, 'd')];
 
-    expect(nur(steps)[1].steps.map((entry) => entry.parts[0])).toEqual([
+    expect(only(steps)[1].steps.map((entry) => entry.parts[0])).toEqual([
       'b',
       'c'
     ]);
   });
 
-  it('gibt einen Block je Kante, wenn direkt die naechste folgt', () => {
-    expect(nur([step(0, 'a'), step(1, 'b')])).toEqual([
+  it('gives one block per edge when the next follows directly', () => {
+    expect(only([step(0, 'a'), step(1, 'b')])).toEqual([
       { edgeIndex: null, steps: [step(0, 'a')] },
       { edgeIndex: 0, steps: [step(1, 'b')] }
     ]);
   });
 
-  it('legt jede Kante in einen eigenen Block, auch bei doppeltem Index', () => {
-    // Sollte in echten Routen nicht vorkommen. Beide bleiben sichtbar, statt
-    // dass eine Suche still den ersten Treffer greift.
-    const steps = [step(0, 'erste'), step(1, 'x'), step(0, 'zweite')];
+  it('puts every edge into its own block, even with a duplicate index', () => {
+    // Should not occur in real routes. Both stay visible instead of a search
+    // silently grabbing the first hit.
+    const steps = [step(0, 'first'), step(1, 'x'), step(0, 'second')];
 
-    expect(nur(steps).map((block) => block.edgeIndex)).toEqual([null, 0, 1]);
+    expect(only(steps).map((block) => block.edgeIndex)).toEqual([null, 0, 1]);
   });
 });

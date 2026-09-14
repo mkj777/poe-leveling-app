@@ -3,16 +3,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
- * Im Release 0.91.0 fehlten zwei Icons. Vite haengt Dateien unter
- * `assetsInlineLimit` als `data:`-URI ins Bundle, quest.png und town.png lagen
- * mit knapp unter 4096 Byte darunter, und die CSP der Anwendung erlaubt fuer
- * Bilder nur `self`. Im Dev-Server fiel das nie auf, weil der jede Datei
- * einzeln ausliefert.
+ * Two icons were missing in release 0.91.0. Vite inlines files below
+ * `assetsInlineLimit` as `data:` URIs into the bundle, quest.png and town.png
+ * were just below 4096 bytes, and the app's CSP allows only `self` for
+ * images. The dev server never showed it, because it serves every file
+ * individually.
  *
- * Beides muss zusammenpassen. Welche Seite man aendert, ist offen, nur
- * auseinanderlaufen duerfen sie nicht.
+ * Both must fit together. Which side gets changed is open; they just must
+ * not drift apart.
  */
-describe('Bilder im Build', () => {
+describe('images in the build', () => {
   const root = path.resolve(__dirname, '../../..');
 
   const viteConfig = fs.readFileSync(
@@ -27,7 +27,7 @@ describe('Bilder im Build', () => {
   const imgSrc =
     csp.split(';').find((part) => part.trim().startsWith('img-src')) ?? '';
 
-  it('inlined nichts, solange die CSP keine data:-URIs zulaesst', () => {
+  it('inlines nothing as long as the CSP allows no data: URIs', () => {
     const inliningOff = /assetsInlineLimit:\s*0\b/.test(viteConfig);
     if (!inliningOff) expect(imgSrc).toContain('data:');
     else expect(inliningOff).toBe(true);

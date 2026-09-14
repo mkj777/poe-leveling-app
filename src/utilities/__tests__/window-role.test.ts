@@ -4,21 +4,21 @@ import { OVERLAY_ROUTE, OVERLAY_WINDOW_URL } from '../constants';
 import { isOverlayPath, isOverlayWindow } from '../window-role';
 
 describe('isOverlayPath', () => {
-  it('erkennt die Route des Overlays mit und ohne Rautezeichen', () => {
+  it('recognises the overlay route with and without the hash sign', () => {
     expect(isOverlayPath('#/overlay')).toBe(true);
     expect(isOverlayPath('/overlay')).toBe(true);
   });
 
-  it('haelt das Hauptfenster und seine Unterseiten heraus', () => {
+  it('keeps the main window and its subpages out', () => {
     expect(isOverlayPath('')).toBe(false);
     expect(isOverlayPath('#/')).toBe(false);
     expect(isOverlayPath('#/settings')).toBe(false);
   });
 
-  it('passt zu der Adresse, unter der das Fenster wirklich angelegt wird', () => {
-    // Der eigentliche Zweck des Tests. Die Rolle eines Fensters wird aus dem
-    // Hash abgeleitet, die Adresse steht in app.state.ts. Laufen die beiden
-    // auseinander, speichert das Overlay wieder mit.
+  it('matches the address the window is really created with', () => {
+    // The actual purpose of the test. A window's role is derived from the
+    // hash, the address is in app.state.ts. If the two drift apart, the
+    // overlay starts persisting again.
     const hash = new URL(OVERLAY_WINDOW_URL, 'http://localhost/').hash;
 
     expect(hash).toBe(`#${OVERLAY_ROUTE}`);
@@ -31,11 +31,11 @@ describe('isOverlayWindow', () => {
     vi.unstubAllGlobals();
   });
 
-  it('ist ohne location nichts, etwa im Testlauf', () => {
+  it('is nothing without location, as in the test run', () => {
     expect(isOverlayWindow()).toBe(false);
   });
 
-  it('liest die Rolle aus der Adresse des Fensters', () => {
+  it('reads the role from the address of the window', () => {
     vi.stubGlobal('location', { hash: '#/overlay' });
     expect(isOverlayWindow()).toBe(true);
 
