@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 
 interface States {
   mode: GuideMode;
-  /** Zeitpunkt des vorletzten Starts, um die Pause davor zu messen. */
+  /** Time of the previous start, to measure the pause before this one. */
   lastOpenedAt: number | null;
 }
 
@@ -14,13 +14,13 @@ interface Actions {
 }
 
 /**
- * Eigener Store statt eines Felds in settings.store: dessen Migration setzt
- * Groesse, Deckkraft und Verschiebung des Overlays zurueck, sobald die Version
- * steigt. Der Modus ist das nicht wert.
+ * A store of its own instead of a field in settings.store: that store's
+ * migration resets size, opacity and offset of the overlay as soon as the
+ * version goes up. The mode is not worth that.
  *
- * Das Overlay ist ein eigenes Fenster, teilt sich aber den localStorage. Es
- * liest den Modus darum beim Aufbau von selbst richtig, ein Wechsel danach
- * kommt als GUIDE_MODE_EVENT.
+ * The overlay is its own window but shares the localStorage. It therefore
+ * reads the mode correctly on its own at startup; a switch after that comes
+ * as GUIDE_MODE_EVENT.
  */
 export const useGuideStore = create<States & Actions>()(
   persist(

@@ -33,8 +33,8 @@ export default function Navbar() {
 
   const { toast } = useToast();
 
-  // Im Erfolgsfall kommt der Aufruf nie zurueck: die App beendet sich und
-  // startet neu. Meldet sich also nur, wenn nichts passiert ist.
+  // On success the call never returns: the app quits and restarts. So it
+  // only reports back when nothing happened.
   const installNow = () => {
     void applyUpdateNow().catch((error: unknown) => {
       toast({
@@ -45,17 +45,17 @@ export default function Navbar() {
     });
   };
 
-  // Velopack kennt die tatsaechlich installierte Paketversion, und genau die
-  // vergleicht es spaeter gegen das Release-Feed. Ohne Installation faellt der
-  // Befehl auf die Version aus tauri.conf.json zurueck.
+  // Velopack knows the package version actually installed, and that is
+  // exactly what it later compares against the release feed. Without an
+  // installation the command falls back to the version from tauri.conf.json.
   useEffect(() => {
     void currentVersion()
       .then(setAppVersion)
       .catch(() => setAppVersion(null));
   }, []);
 
-  // Start und Stop steuern das Overlay-Fenster. Das Hauptfenster bleibt in
-  // beiden Faellen stehen, damit Guide und Einstellungen erreichbar bleiben.
+  // Start and Stop control the overlay window. The main window stays in both
+  // cases so that guide and settings remain reachable.
   const overlayRunning = appState === AppState.IN_GAME;
 
   return (
@@ -90,9 +90,9 @@ export default function Navbar() {
           <span className='text-muted-foreground text-xs' data-tauri-drag-region>
             {appVersion}
           </span>
-          {/* Eingespielt wird es beim naechsten Start ohnehin. Der Knopf ist
-              fuer die, die nicht warten wollen und sonst von Hand schliessen
-              und wieder oeffnen muessten. */}
+          {/* It gets applied on the next start anyway. The button is for
+              those who do not want to wait and would otherwise have to close
+              and reopen by hand. */}
           {newUpdateAvailable && (
             <Button
               variant='ghost'

@@ -14,14 +14,14 @@ import { GUIDE_MODE_OPTIONS, shouldOfferNewRun } from '@/utilities/guide-mode';
 import { useGuideStore } from '@/store/guide.store';
 import { useRouteStore } from '@/store/route.store';
 
-// Modulweit statt im Zustand der Komponente: unter StrictMode laeuft der Effekt
-// zweimal, gefragt wird aber einmal je Start.
+// Module-wide instead of component state: under StrictMode the effect runs
+// twice, but the question is asked once per start.
 let asked = false;
 
 /**
- * Fragt nach einer laengeren Pause, ob ein neuer Durchgang ansteht (ADR-0011).
- * Gehoert ins Hauptfenster, nicht ins Overlay: dort gibt es niemanden, der
- * antworten koennte.
+ * Asks after a longer pause whether a new run is due (ADR-0011). Belongs in
+ * the main window, not in the overlay: there is nobody there who could
+ * answer.
  */
 export default function NewRunDialog() {
   const [open, setOpen] = useState(false);
@@ -33,14 +33,13 @@ export default function NewRunDialog() {
     const now = Date.now();
     const { lastOpenedAt, markOpened } = useGuideStore.getState();
 
-    // Erst messen, dann stempeln. Andersherum waere die Pause immer null.
+    // Measure first, then stamp. The other way round the pause would always be zero.
     if (shouldOfferNewRun(lastOpenedAt, now)) setOpen(true);
     markOpened(now);
   }, []);
 
-  // Der Moduswechsel loest in useRouteSync ein neues Parsen aus. Der
-  // Fortschritt steht dann schon auf der ersten Kante, und die heisst in beiden
-  // Lesarten gleich.
+  // The mode switch triggers a new parse in useRouteSync. Progress is then
+  // already on the first edge, which has the same name in both modes.
   const start = (mode: GuideMode) => {
     useGuideStore.getState().setMode(mode);
     useRouteStore.getState().setCurrentEdge(0);

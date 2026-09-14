@@ -10,13 +10,13 @@ import {
 } from './route-processing/index';
 
 /**
- * Feste Routenvariante, siehe ADR-0007. `league-start` entspricht den Defaults
- * der Website (web/src/state/build-data.ts): leagueStart true, library true,
- * bandit Alira, kein PoB-Import und damit keine Gem-Schritte.
+ * Fixed route variant, see ADR-0007. `league-start` matches the defaults of
+ * the website (web/src/state/build-data.ts): leagueStart true, library true,
+ * bandit Alira, no PoB import and therefore no gem steps.
  *
- * Der Modus wirkt zweimal: er waehlt die Preprocessor-Schalter, mit denen die
- * Route ueberhaupt erst entsteht, und filtert danach, was der Preprocessor
- * nicht abdeckt (ADR-0011).
+ * The mode acts twice: it picks the preprocessor switches the route is built
+ * with in the first place, and afterwards filters what the preprocessor does
+ * not cover (ADR-0011).
  */
 export function buildDefaultRoute(
   routeSources: string[],

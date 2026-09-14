@@ -7,9 +7,9 @@ import { ThemeProvider } from './components/providers/theme-provider';
 import { Toaster } from './components/ui/toaster';
 import { invoke } from '@tauri-apps/api/core';
 
-// Alles, was der Fehlergrenze entgeht, landet trotzdem im Terminal. Ohne das
-// verschwinden Fehler aus Effekten und Promises spurlos in einer Konsole, an
-// die von aussen niemand herankommt.
+// Everything that escapes the error boundary still lands in the terminal.
+// Without this, errors from effects and promises vanish without a trace into
+// a console nobody can reach from outside.
 function forward(level: string, message: string) {
   void invoke('log_frontend', { level, message }).catch(() => undefined);
 }

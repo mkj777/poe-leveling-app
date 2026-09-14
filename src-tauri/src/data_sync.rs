@@ -1,5 +1,5 @@
-//! Holt die Walkthrough-Rohdaten aus dem Upstream-Repository und legt sie
-//! sha-gepinnt im App-Datenverzeichnis ab. Siehe ADR-0001 und ADR-0003.
+//! Fetches the raw walkthrough data from the upstream repository and stores
+//! it sha-pinned in the app data directory. See ADR-0001 and ADR-0003.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -50,7 +50,7 @@ fn root(handle: &tauri::AppHandle) -> Result<PathBuf, String> {
     let dir = handle
         .path()
         .app_data_dir()
-        .map_err(|e| format!("app_data_dir nicht verfuegbar: {}", e))?
+        .map_err(|e| format!("app_data_dir not available: {}", e))?
         .join("exile-leveling");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir)
@@ -80,8 +80,9 @@ fn now_seconds() -> String {
         .to_string()
 }
 
-/// Fragt den letzten Commit, der `common/data` beruehrt. Mit `If-None-Match`
-/// antwortet GitHub bei Gleichstand 304, ohne Body und ohne Rate-Limit-Kosten.
+/// Asks for the last commit that touches `common/data`. With `If-None-Match`
+/// GitHub answers 304 when nothing changed, without a body and without
+/// rate-limit cost.
 #[tauri::command]
 pub async fn check_upstream(handle: tauri::AppHandle) -> Result<UpstreamStatus, String> {
     let manifest = read_manifest(&handle);
@@ -107,7 +108,7 @@ pub async fn check_upstream(handle: tauri::AppHandle) -> Result<UpstreamStatus, 
     }
 
     if !response.status().is_success() {
-        return Err(format!("GitHub antwortete {}", response.status()));
+        return Err(format!("GitHub answered {}", response.status()));
     }
 
     let etag = response
@@ -122,10 +123,10 @@ pub async fn check_upstream(handle: tauri::AppHandle) -> Result<UpstreamStatus, 
         .get(0)
         .and_then(|commit| commit.get("sha"))
         .and_then(|sha| sha.as_str())
-        .ok_or_else(|| "keine sha in der Antwort".to_string())?
+        .ok_or_else(|| "no sha in the response".to_string())?
         .to_string();
 
-    // Auch bei gleicher sha neu laden, wenn das Verzeichnis fehlt.
+    // Reload even with the same sha if the directory is missing.
     let changed = sha != manifest.sha || !root(&handle)?.join(&sha).exists();
 
     write_manifest(
@@ -140,9 +141,9 @@ pub async fn check_upstream(handle: tauri::AppHandle) -> Result<UpstreamStatus, 
     Ok(UpstreamStatus { changed, sha })
 }
 
-/// Laedt die 10 Route-Dateien und 8 JSON-Dateien der angegebenen sha in ein
-/// Staging-Verzeichnis und benennt es erst danach um. Ein abgebrochener
-/// Download kann den letzten guten Stand damit nicht beschaedigen.
+/// Downloads the 10 route files and 8 JSON files of the given sha into a
+/// staging directory and only then renames it. An aborted download therefore
+/// cannot damage the last good state.
 #[tauri::command]
 pub async fn fetch_upstream(handle: tauri::AppHandle, sha: String) -> Result<(), String> {
     let base = root(&handle)?;
@@ -198,14 +199,14 @@ async fn download(client: &reqwest::Client, url: &str) -> Result<String, String>
         .map_err(|e| e.to_string())?;
 
     if !response.status().is_success() {
-        return Err(format!("{} antwortete {}", url, response.status()));
+        return Err(format!("{} answered {}", url, response.status()));
     }
 
     response.text().await.map_err(|e| e.to_string())
 }
 
-/// Liest den zuletzt vollstaendig geladenen Stand. `None`, wenn noch nichts da
-/// ist, damit das Frontend auf den Build-Snapshot zurueckfallen kann.
+/// Reads the last completely downloaded state. `None` if nothing is there
+/// yet, so the frontend can fall back to the build snapshot.
 #[tauri::command]
 pub async fn read_cached(handle: tauri::AppHandle) -> Result<Option<CachedData>, String> {
     let manifest = read_manifest(&handle);

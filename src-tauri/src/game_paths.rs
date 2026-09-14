@@ -1,5 +1,5 @@
-//! Leitet den Client.txt-Pfad aus dem laufenden Spielprozess ab. Das HWND
-//! liegt durch das Overlay-Tracking ohnehin vor, also kostet das nur den Weg
+//! Derives the Client.txt path from the running game process. The HWND is
+//! available through the overlay tracking anyway, so this only costs the way
 //! HWND -> PID -> exe -> logs/Client.txt.
 
 #[cfg(target_os = "windows")]

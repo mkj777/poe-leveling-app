@@ -1,18 +1,18 @@
 import type { RouteData } from '@/lib/exile-leveling';
 
 /**
- * Zwei Lesarten derselben Route.
+ * Two modes of the same route.
  *
- * `league-start` ist der bisherige Ablauf: erster Charakter einer Liga, alles
- * wird unterwegs eingesammelt.
+ * `league-start` is the previous flow: first character of a league,
+ * everything is collected along the way.
  *
- * `speedleveling` ist der zweite Charakter in derselben Liga. Craftingrezepte
- * und abgeschlossene Trials gelten dort schon, die Schritte dafuer sind nur
- * noch Umweg.
+ * `speedleveling` is the second character in the same league. Crafting
+ * recipes and completed trials already count there, the steps for them are
+ * just detours.
  */
 export type GuideMode = 'league-start' | 'speedleveling';
 
-/** Titel und Erklaerung je Modus, geteilt von Dialog und Einstellungen. */
+/** Title and explanation per mode, shared by the dialog and the settings. */
 export const GUIDE_MODE_OPTIONS: {
   mode: GuideMode;
   title: string;
@@ -31,33 +31,32 @@ export const GUIDE_MODE_OPTIONS: {
 ];
 
 /**
- * Preprocessor-Schalter der Route je Modus, siehe ADR-0007 fuer die feste
- * Variante und ADR-0011 fuer die Modi.
+ * Preprocessor switches of the route per mode, see ADR-0007 for the fixed
+ * variant and ADR-0011 for the modes.
  *
- * `LEAGUE_START` ist ein Schalter des Upstreams. Er blendet die Umwege aus,
- * die es nur beim Ligastart gibt: Tidal Island mit Hailrake, The Den, die
- * Catacombs, das Silver Locket, die Ossuary und die Suche nach der Chemist's
- * Strongbox. Er nimmt dabei alle 12 Trials mit, aber nur 7 der 47
- * Craftingschritte. Den Rest erledigt filterRoute.
+ * `LEAGUE_START` is an upstream switch. It hides the detours that only exist
+ * at league start: Tidal Island with Hailrake, The Den, the Catacombs, the
+ * Silver Locket, the Ossuary and the search for the Chemist's Strongbox. It
+ * takes all 12 trials with it, but only 7 of the 47 crafting steps.
+ * filterRoute does the rest.
  */
 export const PREPROCESSOR_DEFINITIONS: Record<GuideMode, string[]> = {
   'league-start': ['LEAGUE_START', 'LIBRARY', 'BANDIT_ALIRA'],
   speedleveling: ['LIBRARY', 'BANDIT_ALIRA']
 };
 
-/** Fragmente, die im Speedleveling nichts mehr zu sagen haben. */
+/** Fragments that have nothing left to say in speedleveling. */
 const SKIPPED_TYPES: ReadonlySet<string> = new Set(['crafting', 'trial']);
 
 /**
- * Fragmente, die nur einen Ort oder eine Richtung nennen, statt selbst eine
- * Handlung zu sein. Sie halten einen Schritt nicht am Leben, wenn die Handlung
- * darin wegfaellt.
+ * Fragments that only name a place or a direction instead of being an action
+ * themselves. They do not keep a step alive when the action in it goes away.
  *
- * Genau daran haengen die beiden einzigen gemischten Schritte der Route:
- * "➞ Eternal Laboratory, get Crafting: Fire Damage" besteht ausser dem Rezept
- * nur aus dem Ort, den man dafuer betritt, und "Before waypoint, complete
- * Trial of Ascendancy" nennt den Wegpunkt als Wegmarke, nicht als Aufgabe.
- * Beide fallen darum ganz weg.
+ * This is exactly what the only two mixed steps of the route hang on:
+ * "➞ Eternal Laboratory, get Crafting: Fire Damage" consists, apart from the
+ * recipe, only of the place entered for it, and "Before waypoint, complete
+ * Trial of Ascendancy" names the waypoint as a landmark, not as a task. Both
+ * therefore go entirely.
  */
 const LANDMARK_TYPES: ReadonlySet<string> = new Set([
   'area',
@@ -68,17 +67,15 @@ const LANDMARK_TYPES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Ob ein Schritt im Speedleveling entfaellt.
+ * Whether a step is dropped in speedleveling.
  *
- * Bewusst zurueckhaltend: entfernt wird nur, was ohne Crafting und Trial gar
- * nichts mehr zu tun uebrig laesst. Ein spaeter dazukommendes
- * "Kill X, get Crafting" bliebe also stehen, mitsamt dem Rezept. Lieber eine
- * Zeile zu viel als ein uebersehener Boss.
+ * Deliberately conservative: only what leaves nothing to do without crafting
+ * and trial is removed. A "Kill X, get Crafting" added later would therefore
+ * stay, recipe included. Better one line too many than a boss overlooked.
  *
- * Ein Schritt mit Kantenindex bleibt immer. An ihm haengt der Fortschritt
- * (ADR-0004), und ein Zonenwechsel ist ohnehin keine Sammelaufgabe. In der
- * Route von heute trifft das keinen einzigen der 59 Schritte, es ist die
- * Zusicherung fuer morgen.
+ * A step with an edge index always stays. Progress hangs on it (ADR-0004),
+ * and a zone change is no collection task anyway. In today's route this
+ * affects none of the 59 steps; it is the guarantee for tomorrow.
  */
 export function isSkippable(step: RouteData.FragmentStep): boolean {
   if (step.edgeIndex !== null) return false;
@@ -109,10 +106,10 @@ function pruneSubSteps(step: RouteData.Step): RouteData.Step {
 }
 
 /**
- * Dieselbe Route, nur ohne die Schritte, die der Modus nicht braucht.
+ * The same route, just without the steps the mode does not need.
  *
- * `edges` bleibt unangetastet. Der Fortschritt zaehlt Kanten, keine Schritte,
- * und kein entfernter Schritt traegt eine.
+ * `edges` stays untouched. Progress counts edges, not steps, and no removed
+ * step carries one.
  */
 export function filterRoute(
   route: RouteData.Route,
@@ -132,17 +129,16 @@ export function filterRoute(
 }
 
 /**
- * Nach dieser Pause fragt die App beim Start nach einem neuen Durchgang. Elf
- * Tage: eine Liga laeuft rund 13 Wochen, und wer so lange nicht hereingesehen
- * hat, faengt fast immer neu an. Ein paar Tage Pause mitten im Durchgang
- * loesen dagegen nichts aus.
+ * After this pause the app asks about a new run at startup. Eleven days: a
+ * league runs about 13 weeks, and anyone who has not looked in for that long
+ * almost always starts over. A few days of pause mid-run trigger nothing.
  */
 export const NEW_RUN_AFTER_MS = 11 * 24 * 60 * 60 * 1000;
 
 /**
- * Beim allerersten Start gibt es nichts zu fragen: es gibt weder Fortschritt
- * noch einen Modus, von dem man abweichen koennte. Eine Uhr, die zurueckspringt,
- * fuehrt ebenfalls zu keiner Frage.
+ * On the very first start there is nothing to ask: there is neither progress
+ * nor a mode to deviate from. A clock that jumps back does not lead to a
+ * question either.
  */
 export function shouldOfferNewRun(
   lastOpenedAt: number | null,

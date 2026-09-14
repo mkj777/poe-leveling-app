@@ -14,10 +14,10 @@ function App() {
 
   const { toast } = useToast();
 
-  // Geprueft und geladen wird im Rust-Backend, eingespielt beim Beenden. Zu
-  // bestaetigen gibt es nichts, der Knopf beschleunigt nur. Bleibt das
-  // Ereignis aus, weil kein Netz da ist oder die App nicht installiert ist,
-  // passiert schlicht nichts.
+  // Checking and downloading happen in the Rust backend, applying on exit.
+  // There is nothing to confirm, the button only speeds things up. If the
+  // event never comes, because there is no network or the app is not
+  // installed, nothing happens at all.
   useEffect(() => {
     const ready = onUpdateReady((version) => {
       setNewUpdateAvailable(true);

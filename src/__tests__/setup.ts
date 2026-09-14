@@ -1,8 +1,8 @@
 /**
- * Die Stores speichern ueber zustand/persist im localStorage. Node hat keinen,
- * also warnt die Middleware bei jedem Schreiben. Eine Fassung im Speicher
- * beseitigt nicht nur das Rauschen, sie laesst den Speicherpfad in den Tests
- * ueberhaupt erst laufen.
+ * The stores persist via zustand/persist in localStorage. Node has none, so
+ * the middleware warns on every write. An in-memory version not only removes
+ * the noise, it lets the persistence path run in the tests in the first
+ * place.
  */
 class MemoryStorage implements Storage {
   private entries = new Map<string, string>();

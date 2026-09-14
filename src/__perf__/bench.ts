@@ -1,15 +1,13 @@
 /**
- * Kleine Messhilfe fuer die Laufzeittests.
+ * Small measuring helper for the performance tests.
  *
- * Gemessen wird der Median, nicht der Mittelwert: ein einzelner Ausreisser
- * durch Garbage Collection oder eine andere Last auf der Maschine soll das
- * Ergebnis nicht kippen. Vorher laufen Aufwaermrunden, damit nicht die
- * JIT-Kompilierung gemessen wird.
+ * The median is measured, not the mean: a single outlier from garbage
+ * collection or other load on the machine should not tip the result. Warm-up
+ * rounds run first so that JIT compilation is not what gets measured.
  *
- * Die Budgets in den Tests sind bewusst grosszuegig gegen die gemessenen
- * Werte gesetzt. Sie sollen keine Millisekunden festschreiben, sondern
- * Groessenordnungen: eine Schleife, die versehentlich quadratisch wird, faellt
- * auf, ein langsamerer Rechner nicht.
+ * The budgets in the tests are deliberately generous against the measured
+ * values. They are not meant to pin milliseconds but orders of magnitude: a
+ * loop that accidentally turns quadratic shows up, a slower machine does not.
  */
 export interface BenchResult {
   median: number;
@@ -47,7 +45,7 @@ export function report(name: string, result: BenchResult, budget: number) {
     `median ${result.median.toFixed(3)} ms`.padEnd(22),
     `min ${result.min.toFixed(3)}`.padEnd(14),
     `max ${result.max.toFixed(3)}`.padEnd(14),
-    `Budget ${budget} ms`
+    `budget ${budget} ms`
   ].join(' ');
 
   console.log(line);

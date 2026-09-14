@@ -13,10 +13,10 @@ use tauri::{Emitter, Manager};
 
 #[tokio::main]
 async fn main() {
-    // Muss vor allem anderen laufen. Velopack ruft die eigene Anwendung
-    // waehrend Installation, Update und Deinstallation mit Sonderargumenten
-    // auf und beendet den Prozess in diesen Faellen selbst. Kaeme davor ein
-    // Fenster hoch, blitzte es bei jeder Installation kurz auf.
+    // Must run before anything else. Velopack launches this application with
+    // special arguments during install, update and uninstall and ends the
+    // process itself in those cases. If a window came up before that, it
+    // would flash briefly on every installation.
     velopack::VelopackApp::build().run();
 
     tauri::Builder::default()
@@ -24,8 +24,8 @@ async fn main() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            // Tray-Aufbau in Tauri 2: Menue und Icon werden gebaut und der
-            // Klick-Handler haengt am Icon, nicht mehr am Builder.
+            // Tray setup in Tauri 2: menu and icon are built and the click
+            // handler hangs on the icon, no longer on the builder.
             let open_app = MenuItem::with_id(app, "open_app", "Open App", true, None::<&str>)?;
             let quit_app = MenuItem::with_id(app, "quit_app", "Quit App", true, None::<&str>)?;
             let separator = PredefinedMenuItem::separator(app)?;
@@ -48,12 +48,12 @@ async fn main() {
                 })
                 .build(app)?;
 
-            // Prueft und laedt im Hintergrund. Eingespielt wird beim
-            // Beenden, siehe den RunEvent::Exit weiter unten.
+            // Checks and downloads in the background. Applied on exit, see
+            // the RunEvent::Exit further down.
             updater::check_and_download(app.handle().clone());
 
-            // Nur in Debug-Bauten, nur auf der Loopback-Adresse. Erlaubt es,
-            // das Overlay ohne Klick im Fenster zu schalten.
+            // Debug builds only, loopback address only. Allows toggling the
+            // overlay without a click in the window.
             dev_control::serve(app.handle().clone());
 
             Ok(())
@@ -73,9 +73,9 @@ async fn main() {
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
-        // Nicht `.run(context)`, weil erst `build` den Zugriff auf die
-        // Laufzeitereignisse gibt. Genau eines davon wird gebraucht: der
-        // letzte Moment vor dem Ende des Prozesses.
+        // Not `.run(context)`, because only `build` gives access to the
+        // runtime events. Exactly one of them is needed: the last moment
+        // before the process ends.
         .run(|_app, event| {
             if let tauri::RunEvent::Exit = event {
                 updater::apply_on_exit();
@@ -83,9 +83,9 @@ async fn main() {
         });
 }
 
-/// Nimmt Fehler aus dem Webview entgegen und schreibt sie ins Terminal.
-/// Ohne das sind Renderfehler nur in den Devtools sichtbar, an die von aussen
-/// niemand herankommt.
+/// Receives errors from the webview and writes them to the terminal.
+/// Without this, render errors are only visible in the devtools, which nobody
+/// can reach from outside.
 #[tauri::command]
 fn log_frontend(level: &str, message: &str) {
     eprintln!("[frontend {}] {}", level, message);

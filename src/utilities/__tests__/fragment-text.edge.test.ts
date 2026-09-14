@@ -74,8 +74,8 @@ describe('fehlende Spieldaten', () => {
 
 describe('Richtungen ausserhalb der Tabelle', () => {
   it('nennt bei unbekanntem Index die Gradzahl statt undefined', () => {
-    expect(renderFragment({ type: 'dir', dirIndex: 8 })).toBe('360 Grad');
-    expect(renderFragment({ type: 'dir', dirIndex: 12 })).toBe('540 Grad');
+    expect(renderFragment({ type: 'dir', dirIndex: 8 })).toBe('360 degrees');
+    expect(renderFragment({ type: 'dir', dirIndex: 12 })).toBe('540 degrees');
   });
 
   it('deckt alle acht gueltigen Richtungen ab', () => {

@@ -9,14 +9,14 @@ import { useRouteStore } from '@/store/route.store';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-// Upstream aktualisiert die Route vor allem in der ersten Woche einer neuen
-// Liga mehrfach, danach sporadisch. Ein Check pro Tag deckt beides ab und
-// kostet dank If-None-Match nichts (ADR-0001).
+// Upstream updates the route several times mainly in the first week of a new
+// league, sporadically after that. One check per day covers both and costs
+// nothing thanks to If-None-Match (ADR-0001).
 export function useRouteSync() {
   const mode = useGuideStore((state) => state.mode);
 
-  // Haelt fest, fuer welchen Modus schon geparst wurde. Ein Moduswechsel
-  // braucht einen neuen Durchlauf, der Doppelmount unter StrictMode nicht.
+  // Records which mode has already been parsed for. A mode switch needs a
+  // new run, the double mount under StrictMode does not.
   const parsedFor = useRef<GuideMode | null>(null);
 
   useEffect(() => {
@@ -28,9 +28,9 @@ export function useRouteSync() {
       const store = useRouteStore.getState();
       store.setSyncState('syncing');
 
-      // Die Route wird nicht gespeichert, wohl aber die zuletzt betretene Zone.
-      // Sie traegt den Fortschritt ueber Neustarts, Datenwechsel und den
-      // Moduswechsel hinweg, in dem die Kantenliste eine andere Laenge bekommt.
+      // The route is not persisted, but the last entered zone is. It carries
+      // progress across restarts, data changes and the mode switch, in which
+      // the edge list gets a different length.
       const previousArea = store.currentAreaId;
 
       const result = withUpstream
@@ -45,9 +45,9 @@ export function useRouteSync() {
       store.setRoute(result.route, result.sha);
 
       if (previousArea !== null) {
-        // Frisch gelesen, nicht aus dem Schnappschuss von oben: zwischen dem
-        // Start des Abgleichs und hier liegt ein Netzzugriff, in dem der
-        // Client.txt-Takt den Fortschritt weitergestellt haben kann.
+        // Read fresh, not from the snapshot above: between the start of the
+        // sync and here lies a network access, during which the Client.txt
+        // tick may have advanced progress.
         const currentEdge = useRouteStore.getState().currentEdge;
 
         store.setCurrentEdge(
@@ -58,14 +58,14 @@ export function useRouteSync() {
       store.setSyncState('idle');
     };
 
-    // Der erste Lauf fragt Upstream, ein Moduswechsel nicht: die Daten sind
-    // dieselben, nur die Lesart ist eine andere. Frueher lief auch der Wechsel
-    // durch den Abgleich und dauerte damit so lange wie ein Request an GitHub,
-    // fuer den reqwest keine Zeitgrenze setzt.
+    // The first run asks upstream, a mode switch does not: the data is the
+    // same, only the mode differs. The switch used to go through the sync as
+    // well and so took as long as a request to GitHub, for which reqwest sets
+    // no time limit.
     //
-    // Der zweite Mount unter StrictMode soll den Netzzugriff nicht wiederholen,
-    // den Takt aber sehr wohl neu setzen: das Cleanup des ersten hat ihn
-    // gerade abgeraeumt.
+    // The second mount under StrictMode must not repeat the network access,
+    // but it must re-arm the timer: the cleanup of the first has just cleared
+    // it.
     if (changed) void run(first);
 
     const timer = setInterval(() => void run(true), DAY_IN_MS);

@@ -11,7 +11,7 @@ interface States {
   clientTxtPath: string;
   overlayScale: number;
   overlayOffset: OverlayOffset;
-  /** Deckkraft der Overlay-Flaeche, 0 ist voellig durchsichtig. */
+  /** Opacity of the overlay surface, 0 is fully transparent. */
   overlayOpacity: number;
   overlayAnchor: OverlayAnchor;
 }
@@ -43,11 +43,10 @@ const createState: StateCreator<SettingsStore> = (set) => ({
 });
 
 /**
- * Gespeichert wird nur im Hauptfenster, dem die Einstellungen gehoeren. Das
- * Overlay bekommt sie geschickt und haelt sie im Speicher, damit es zeichnen
- * kann. Zog man es frueher an eine neue Stelle, schrieb es das hier hinein,
- * das Hauptfenster wusste nichts davon, und der naechste Regler dort setzte
- * die Verschiebung stumm zurueck (ADR-0012).
+ * Persisted only in the main window, which owns the settings. The overlay
+ * gets them sent and holds them in memory so it can draw. Dragging it to a
+ * new place used to write in here, the main window knew nothing about it, and
+ * the next slider there silently reset the offset (ADR-0012).
  */
 export const useSettingsStore: UseBoundStore<StoreApi<SettingsStore>> =
   isOverlayWindow()
@@ -57,25 +56,24 @@ export const useSettingsStore: UseBoundStore<StoreApi<SettingsStore>> =
           name: 'settings',
           version: 4,
           migrate: (persisted) => {
-            // Version 1 hielt displayPosition in absoluten Bildschirmpixeln
-            // und growDirection. Beides ist nach Fenster-, Aufloesungs- oder
-            // Monitorwechsel falsch und wird darum verworfen statt
-            // uebernommen. Anker plus relativer Offset ersetzen es (ADR-0006).
+            // Version 1 held displayPosition in absolute screen pixels and
+            // growDirection. Both are wrong after a window, resolution or
+            // monitor change and are therefore discarded instead of carried
+            // over. Anchor plus relative offset replace them (ADR-0006).
             //
-            // Version 2 konnte einen weggelaufenen Offset enthalten, weil der
-            // Drag-Handler auf die eigenen setPosition-Aufrufe reagierte. Auch
-            // der wird verworfen statt mitgeschleppt.
+            // Version 2 could contain a runaway offset, because the drag
+            // handler reacted to its own setPosition calls. That one is
+            // discarded too instead of dragged along.
             //
-            // Version 3 hatte den Anker unter der Minimap als Standard. Dort
-            // steht das Overlay oft im Weg, Standard ist jetzt unten knapp
-            // ueber der XP-Leiste. Der Pfad bleibt erhalten.
+            // Version 3 had the anchor below the minimap as the default. The
+            // overlay is often in the way there; the default is now at the
+            // bottom just above the XP bar. The path is kept.
             //
-            // Der Schalter showLayout ist mit dem Layout-Fenster entfallen.
-            // Die Version bleibt trotzdem 4: ein Hochzaehlen wuerde die
-            // Migration erneut ausloesen und dabei Groesse, Deckkraft und
-            // Verschiebung des Overlays auf die Standardwerte zuruecksetzen.
-            // Ein uebrig gebliebener Eintrag im Speicher stoert niemanden, es
-            // liest ihn keiner mehr.
+            // The showLayout switch went away with the layout window. The
+            // version nevertheless stays at 4: bumping it would trigger the
+            // migration again and reset size, opacity and offset of the
+            // overlay to their defaults. A leftover entry in storage bothers
+            // nobody, nothing reads it any more.
             const old = persisted as Partial<States> | undefined;
             return {
               clientTxtPath: old?.clientTxtPath ?? '',

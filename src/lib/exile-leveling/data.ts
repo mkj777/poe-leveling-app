@@ -18,17 +18,17 @@ export function setGameData(next: GameDataBundle) {
 }
 
 function required(): GameDataBundle {
-  // Auch undefined abfangen: der Aufrufer kommt aus JSON und aus einem
-  // Ereignis, beides kann undefined liefern, ohne dass TypeScript es sieht.
+  // Catch undefined too: the caller comes from JSON and from an event, both
+  // of which can yield undefined without TypeScript seeing it.
   if (bundle === null || bundle === undefined) {
-    throw new Error('Spieldaten nicht geladen, setGameData zuerst aufrufen');
+    throw new Error('Game data not loaded, call setGameData first');
   }
   return bundle;
 }
 
-// Ersetzt die statischen JSON-Importe des Upstreams durch den Laufzeit-Cache.
-// Zugriff vor setGameData wirft, damit Reihenfolgefehler laut scheitern statt
-// still falsch zu rechnen.
+// Replaces upstream's static JSON imports with the runtime cache. Access
+// before setGameData throws, so ordering mistakes fail loudly instead of
+// silently computing wrong results.
 export const Data = {
   get Areas() {
     return required().Areas;

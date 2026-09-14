@@ -33,16 +33,16 @@ export default function MainRoutes() {
   const { transition } = useMachine(appStates, 'normal');
   const appState = useAppStore((state) => state.appState);
 
-  // Beides gehoert ausdruecklich hierher und nicht in App: App rendert in
-  // jedem Fenster, auch im Overlay und im Layout-Fenster. Der Abgleich liefe
-  // dort dreimal, und der Rundfunk wuerde sich selbst zuhoeren.
+  // Both belong explicitly here and not in App: App renders in every window,
+  // including the overlay and the layout window. The sync would run three
+  // times there, and the broadcast would listen to itself.
   useRouteSync();
 
-  // Das Overlay zeigt nur an. Was es zeigt, rechnet dieses Fenster aus, denn
-  // hier liegen Route und Spieldaten (ADR-0012).
+  // The overlay is display only. What it shows is computed by this window,
+  // because route and game data live here (ADR-0012).
   //
-  // Hier und nicht in MainPage: von der Einstellungsseite aus wechselt man den
-  // Modus, und dort ist MainPage nicht montiert.
+  // Here and not in MainPage: the mode is switched from the settings page,
+  // and MainPage is not mounted there.
   const route = useRouteStore((state) => state.route);
   const currentEdge = useRouteStore((state) => state.currentEdge);
 
@@ -51,17 +51,17 @@ export default function MainRoutes() {
   }, [route, currentEdge]);
 
   useEffect(() => {
-    // Das Overlay startet spaeter als dieses Fenster und hat die bisherigen
-    // Meldungen nie gehoert. Es meldet sich, sobald es horcht, und bekommt
-    // Inhalt und Einstellungen als Antwort. Beides haelt es nur im Speicher.
+    // The overlay starts later than this window and never heard the earlier
+    // messages. It reports in as soon as it listens and gets content and
+    // settings as the answer. It holds both in memory only.
     const ready = listen(OVERLAY_READY_EVENT, () => {
       void emit(OVERLAY_VIEW_EVENT, overlayView());
       publishOverlaySettings(useSettingsStore.getState());
     });
 
-    // Die Gegenrichtung: gezogen und skaliert wird im Overlay, gespeichert
-    // hier. Zwei Schreiber auf einem Eintrag haben sich schon einmal
-    // gegenseitig ueberschrieben (ADR-0011, zweiter Nachtrag).
+    // The reverse direction: dragging and scaling happen in the overlay,
+    // saving here. Two writers on one entry have already overwritten each
+    // other once (ADR-0011, second addendum).
     const placement = listen<OverlayPlacement>(
       OVERLAY_PLACEMENT_EVENT,
       (event) => {
@@ -82,8 +82,8 @@ export default function MainRoutes() {
     return useSettingsStore.subscribe(publishOverlaySettings);
   }, []);
 
-  // Fernsteuerung aus dev_control.rs, damit sich das Overlay ohne Klick im
-  // Fenster schalten laesst. Im Release gibt es den Server nicht.
+  // Remote control from dev_control.rs, so the overlay can be toggled without
+  // a click in the window. The server does not exist in the release.
   useEffect(() => {
     const unlisten = listen<string>('dev-control', (event) => {
       const running = useAppStore.getState().appState === AppState.IN_GAME;
@@ -124,8 +124,8 @@ export default function MainRoutes() {
 
   return (
     <>
-      {/* Ausserhalb der Routen: die Frage nach einem neuen Durchgang gilt dem
-          Start der App, nicht einer Seite. */}
+      {/* Outside the routes: the question about a new run concerns the start
+          of the app, not a page. */}
       <NewRunDialog />
 
       <Routes>

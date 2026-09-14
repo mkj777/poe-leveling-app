@@ -7,7 +7,7 @@ import { useSettingsStore } from '@/store/settings.store';
 
 interface Props {
   view: OverlayView;
-  /** Zum Ausmessen der Inhaltshoehe, danach richtet sich das Fenster. */
+  /** For measuring the content height, which the window follows. */
   contentRef: RefObject<HTMLDivElement>;
   editMode: boolean;
   onCloseEdit: () => void;
@@ -29,8 +29,8 @@ export default function InGameScreen({
         backdropFilter: opacity > 0.05 ? 'blur(2px)' : 'none'
       }}
     >
-      {/* Ausserhalb des Flusses: die Kopfzeile soll den Schritt nicht aus der
-          Mitte schieben, der Schritt ist die Mitte. */}
+      {/* Out of the flow: the header must not push the step off centre, the
+          step is the centre. */}
       {view.act !== null && (
         <div className='absolute inset-x-3 top-2 flex items-baseline justify-between text-[0.7rem] tracking-wide text-white/45'>
           <span>{view.act}</span>

@@ -12,9 +12,9 @@ interface State {
 }
 
 /**
- * Ohne diese Grenze leert React bei einem Fehler waehrend des Renderns den
- * ganzen Baum, und uebrig bleibt ein weisses Fenster ohne jeden Hinweis.
- * Der Fehler geht zusaetzlich an das Backend, damit er im Terminal steht.
+ * Without this boundary React empties the whole tree on an error during
+ * rendering, and what remains is a white window without any hint. The error
+ * also goes to the backend so it shows up in the terminal.
  */
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null, stack: null };

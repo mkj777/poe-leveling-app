@@ -1,8 +1,8 @@
 import type { RouteData } from '@/lib/exile-leveling';
 
-// Fortschritt laeuft ueber den Kantenindex, nicht ueber Zonennamen (ADR-0004).
-// Zonen werden mehrfach betreten, ein Namensvergleich ist darum nicht eindeutig.
-// Die Area-Id kommt aus dem Rust-Command get_area_name, das Client.txt liest.
+// Progress runs on the edge index, not on zone names (ADR-0004). Zones are
+// entered more than once, so a name comparison is ambiguous. The area id
+// comes from the Rust command get_area_name, which reads Client.txt.
 
 export function advanceEdge(
   edges: string[],
@@ -15,31 +15,30 @@ export function advanceEdge(
 }
 
 /**
- * Knuepft den Fortschritt nach einem Daten-Refresh wieder an, ohne auf 0
- * zurueckzufallen.
+ * Re-anchors progress after a data refresh without falling back to 0.
  *
- * Frueher stand hier `edges.lastIndexOf(areaId)`, also das letzte Vorkommen
- * der Zone. Das ist fast immer die falsche Kante: 46 der 149 Zonen der Route
- * werden mehrfach betreten, The Forest Encampment etwa auf den Kanten 135,
- * 137, 145, 150 und 156. Wer bei 135 aufhoerte, stand nach dem Neustart auf
- * 156, also 21 Kanten weiter. Das Overlay blieb dabei richtig, weil es nicht
- * durch useRouteSync laeuft und den gespeicherten Index behaelt.
+ * This used to be `edges.lastIndexOf(areaId)`, the last occurrence of the
+ * zone. That is almost always the wrong edge: 46 of the 149 zones of the
+ * route are entered more than once, The Forest Encampment for instance on
+ * edges 135, 137, 145, 150 and 156. Anyone who stopped at 135 stood at 156
+ * after the restart, 21 edges further. The overlay stayed correct because it
+ * does not go through useRouteSync and keeps the stored index.
  *
- * Der gespeicherte Index ist die genauere Angabe, die Zone nur der Notnagel
- * fuer den Fall, dass sich die Route unter ihm veraendert hat.
+ * The stored index is the more precise value, the zone only the fallback for
+ * the case that the route underneath has changed.
  */
 export function reanchorEdge(
   edges: string[],
   areaId: string,
   fallback: number
 ): number {
-  // Zeigt der gespeicherte Index noch auf dieselbe Zone, gibt es nichts
-  // anzuknuepfen. Das ist der Normalfall bei jedem Start.
+  // If the stored index still points at the same zone, there is nothing to
+  // re-anchor. That is the normal case on every start.
   if (edges[fallback] === areaId) return fallback;
 
-  // Sonst das naechstgelegene Vorkommen. Bei gleichem Abstand gewinnt das
-  // fruehere: zu weit vorne zu stehen kostet einen Blick, zu weit hinten
-  // laesst Schritte aus.
+  // Otherwise the nearest occurrence. On a tie the earlier one wins:
+  // standing too far ahead costs a glance, standing too far behind skips
+  // steps.
   let best = -1;
   for (let index = 0; index < edges.length; index++) {
     if (edges[index] !== areaId) continue;
@@ -50,16 +49,16 @@ export function reanchorEdge(
 
   if (best !== -1) return best;
 
-  // Kommt die Zone gar nicht mehr vor, bleibt der gespeicherte Index, geklemmt
-  // auf die neue Laenge. Das ist der Fall beim Moduswechsel: vier Zonen gibt
-  // es nur im Ligastart, und dessen Kantenliste ist die laengere. Die Ossuary
-  // liegt dort auf Kante 233, Speedleveling hat 236. Ein Index dahinter waere
-  // kein Schritt mehr, sondern ein leeres Overlay ohne Fehlermeldung.
+  // If the zone no longer occurs at all, the stored index stays, clamped to
+  // the new length. That is the case on a mode switch: four zones exist only
+  // at league start, and its edge list is the longer one. The Ossuary sits on
+  // edge 233 there, speedleveling has 236. An index past that would not be a
+  // step any more but an empty overlay with no error message.
   return Math.max(0, Math.min(fallback, edges.length - 1));
 }
 
-// Die Sektionen sind Akte, fuer Anzeige und Fortschritt zaehlt aber die
-// durchgehende Schrittfolge.
+// The sections are acts, but for display and progress the continuous step
+// sequence is what counts.
 export function flattenSteps(
   sections: RouteData.Section[]
 ): RouteData.FragmentStep[] {
@@ -71,12 +70,12 @@ export function flattenSteps(
 }
 
 /**
- * Ein Block der Liste im Hauptfenster: die Schritte, die man tut, waehrend man
- * an einer Kante steht.
+ * One block of the list in the main window: the steps done while standing at
+ * one edge.
  *
- * `edgeIndex` ist die Kante, an der man dabei **steht**, nicht die, in die der
- * letzte Schritt fuehrt. Ein Block endet mit dem Uebergang in die naechste
- * Zone, denn was dahinter kommt, tut man erst dort.
+ * `edgeIndex` is the edge one is **standing** at, not the one the last step
+ * leads into. A block ends with the transition into the next zone, because
+ * what comes after is done only there.
  */
 export interface StepBlock {
   edgeIndex: number | null;
@@ -89,18 +88,18 @@ export interface SectionBlocks {
 }
 
 /**
- * Teilt die Route in Bloecke, genau wie `selectPending` sie fuer das Overlay
- * auswaehlt. Beides muss dasselbe ergeben, sonst zeigt die Liste einen anderen
- * Schritt als das Overlay.
+ * Splits the route into blocks exactly as `selectPending` selects them for
+ * the overlay. Both must yield the same, otherwise the list shows a different
+ * step than the overlay.
  *
- * Frueher begann ein Block mit dem Uebergang in seine Zone. Der ist aber schon
- * erledigt, sobald Client.txt die Zone meldet: die Liste hob damit den zuletzt
- * gemachten Schritt hervor, waehrend das Overlay den naechsten zeigte. An
- * Kante 53 stand in der Liste "➞ The Slums" und im Overlay "➞ The Crematorium".
+ * A block used to begin with the transition into its zone. But that is
+ * already done as soon as Client.txt reports the zone: the list thus
+ * highlighted the step just made while the overlay showed the next one. At
+ * edge 53 the list said "➞ The Slums" and the overlay "➞ The Crematorium".
  *
- * Bloecke laufen ueber Aktgrenzen hinweg, denn der letzte Schritt eines Akts
- * und der Uebergang in den naechsten gehoeren zusammen. Ein Block landet bei
- * dem Akt, in dem er anfaengt.
+ * Blocks run across act boundaries, because the last step of an act and the
+ * transition into the next belong together. A block lands in the act it
+ * starts in.
  */
 export function blockSections(
   sections: RouteData.Section[]
@@ -129,8 +128,8 @@ export function blockSections(
     }
   });
 
-  // Was nach dem letzten Uebergang noch kommt, steht an der zuletzt erreichten
-  // Kante.
+  // Whatever comes after the last transition belongs to the last reached
+  // edge.
   if (current.length > 0) {
     result[startedIn].blocks.push({ edgeIndex, steps: current });
   }
@@ -139,18 +138,18 @@ export function blockSections(
 }
 
 export interface ActProgress {
-  /** Name der Sektion, also der Akt. */
+  /** Name of the section, that is, the act. */
   act: string;
-  /** Kantenschritte in diesem Akt, die noch kommen. */
+  /** Edge steps in this act still to come. */
   stepsLeft: number;
-  /** Kantenschritte im Akt insgesamt. */
+  /** Edge steps in the act in total. */
   stepsTotal: number;
 }
 
 /**
- * In welchem Akt die aktuelle Kante liegt und wie viel davon noch aussteht.
- * Gezaehlt werden Kantenschritte, also Zonenwechsel, weil das die Einheit ist,
- * in der der Fortschritt laeuft.
+ * Which act the current edge lies in and how much of it is still pending.
+ * Edge steps are counted, that is, zone changes, because that is the unit
+ * progress runs in.
  */
 export function actProgress(
   sections: RouteData.Section[],
@@ -178,13 +177,13 @@ export function actProgress(
 }
 
 /**
- * Was jetzt ansteht. Der Kopfschritt einer Kante ist der Uebergang in die Zone
- * hinein, und der ist erledigt, sobald Client.txt die Zone meldet und der
- * Fortschritt weiterspringt. Er faellt darum weg. Uebrig bleibt der Rest der
- * Zone, gefolgt vom naechsten Uebergang als eigentlich naechster Aktion.
+ * What is pending now. The head step of an edge is the transition into the
+ * zone, and that is done as soon as Client.txt reports the zone and progress
+ * jumps ahead. So it is dropped. What remains is the rest of the zone,
+ * followed by the next transition as the actual next action.
  *
- * Ohne das zeigte das Overlay in 101 von 248 Segmenten nur den gerade
- * ausgefuehrten Uebergang und sonst nichts.
+ * Without this the overlay showed, in 101 of 248 segments, only the
+ * transition just made and nothing else.
  */
 export function selectPending(
   steps: RouteData.FragmentStep[],
@@ -196,12 +195,11 @@ export function selectPending(
   const pending: RouteData.FragmentStep[] = [];
   for (let index = start + 1; index < steps.length; index++) {
     pending.push(steps[index]);
-    // Der naechste Uebergang ist die letzte Zeile: was dahinter kommt, gehoert
-    // in eine Zone, die noch nicht betreten ist.
+    // The next transition is the last line: what comes after belongs to a
+    // zone not yet entered.
     if (steps[index].edgeIndex !== null) break;
   }
 
-  // Ende der Route. Statt einer leeren Karte bleibt der erreichte Schritt
-  // stehen.
+  // End of the route. Instead of an empty card the reached step stays.
   return pending.length === 0 ? [steps[start]] : pending;
 }

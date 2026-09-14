@@ -1,12 +1,11 @@
-//! Fernsteuerung fuer Entwicklungsbauten.
+//! Remote control for development builds.
 //!
-//! Das Overlay laesst sich sonst nur mit einem Klick im Fenster oeffnen, was
-//! jeden automatisierten Durchlauf an einem Menschen haengen laesst. Hier
-//! horcht ein winziger Server auf der Loopback-Adresse und schickt Befehle als
-//! Ereignis an das Hauptfenster.
+//! Otherwise the overlay can only be opened with a click in the window, which
+//! makes every automated run depend on a human. Here a tiny server listens on
+//! the loopback address and sends commands to the main window as an event.
 //!
-//! Ausdruecklich nur in Debug-Bauten: `#[cfg(debug_assertions)]` schliesst das
-//! Ganze aus dem Release aus, und gebunden wird allein an 127.0.0.1.
+//! Explicitly debug builds only: `#[cfg(debug_assertions)]` excludes all of
+//! this from the release, and it binds to 127.0.0.1 alone.
 
 #[cfg(debug_assertions)]
 use std::io::{BufRead, BufReader, Write};
@@ -16,7 +15,7 @@ use std::net::{TcpListener, TcpStream};
 #[cfg(debug_assertions)]
 pub const PORT: u16 = 17651;
 
-/// Wird als `dev-control`-Ereignis an alle Fenster geschickt.
+/// Sent to all windows as a `dev-control` event.
 #[cfg(debug_assertions)]
 const COMMANDS: [&str; 4] = ["start", "stop", "toggle", "edit"];
 
@@ -25,13 +24,13 @@ pub fn serve(handle: tauri::AppHandle) {
     let listener = match TcpListener::bind(("127.0.0.1", PORT)) {
         Ok(listener) => listener,
         Err(error) => {
-            eprintln!("[dev-control] Port {} nicht verfuegbar: {}", PORT, error);
+            eprintln!("[dev-control] port {} not available: {}", PORT, error);
             return;
         }
     };
 
     println!(
-        "[dev-control] bereit: curl http://127.0.0.1:{}/{}",
+        "[dev-control] ready: curl http://127.0.0.1:{}/{}",
         PORT,
         COMMANDS.join(" | /")
     );
@@ -40,7 +39,7 @@ pub fn serve(handle: tauri::AppHandle) {
         for stream in listener.incoming() {
             match stream {
                 Ok(stream) => handle_connection(stream, &handle),
-                Err(error) => eprintln!("[dev-control] Verbindung: {}", error),
+                Err(error) => eprintln!("[dev-control] connection: {}", error),
             }
         }
     });
@@ -69,7 +68,7 @@ fn handle_connection(mut stream: TcpStream, handle: &tauri::AppHandle) {
     } else {
         (
             "404 Not Found",
-            format!("bekannt sind: {}\n", COMMANDS.join(", ")),
+            format!("known commands: {}\n", COMMANDS.join(", ")),
         )
     };
 

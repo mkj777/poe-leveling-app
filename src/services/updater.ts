@@ -2,15 +2,15 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 
 /**
- * Autoupdate laeuft vollstaendig im Rust-Backend, siehe `src-tauri/src/updater.rs`.
- * Geprueft und geladen wird beim Start, eingespielt beim Beenden. Das Frontend
- * hat daran keinen Anteil, es erfaehrt nur, dass es passiert ist.
+ * Autoupdate runs entirely in the Rust backend, see `src-tauri/src/updater.rs`.
+ * Checked and downloaded at startup, applied on exit. The frontend plays no
+ * part in it, it only learns that it happened.
  */
 export const UPDATE_READY_EVENT = 'update-ready';
 
 /**
- * Meldet die Version, die beim naechsten Start aktiv wird. Kommt genau einmal
- * je Sitzung und nur, wenn wirklich etwas geladen wurde.
+ * Reports the version that becomes active on the next start. Comes exactly
+ * once per session and only if something was really downloaded.
  */
 export function onUpdateReady(
   handler: (version: string) => void
@@ -23,11 +23,11 @@ export async function currentVersion(): Promise<string> {
 }
 
 /**
- * Spielt ein bereitliegendes Update sofort ein und startet die App neu.
+ * Applies a waiting update right away and restarts the app.
  *
- * Loest die Zusage nicht ein, sondern beschleunigt sie: eingespielt wuerde es
- * ohnehin, beim naechsten Start. Die Promise kommt im Erfolgsfall nie zurueck,
- * weil der Prozess vorher endet. Nur ein Fehlschlag meldet sich.
+ * Does not fulfil the promise so much as speed it up: it would be applied
+ * anyway, on the next start. On success the promise never resolves, because
+ * the process ends first. Only a failure reports back.
  */
 export async function applyUpdateNow(): Promise<string> {
   return invoke<string>('update_apply_now');

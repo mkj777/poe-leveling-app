@@ -8,8 +8,8 @@ import { emit } from '@tauri-apps/api/event';
 export const OVERLAY_SETTINGS_EVENT = 'overlay-settings';
 
 /**
- * Das Overlay ist ein eigenes Fenster und damit ein eigener Store. Was man in
- * den Einstellungen des Hauptfensters zieht, muss ihm also gesagt werden.
+ * The overlay is its own window and therefore its own store. Whatever is
+ * adjusted in the main window's settings has to be told to it.
  */
 export interface OverlaySettings {
   overlayScale: number;

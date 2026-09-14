@@ -15,9 +15,8 @@ interface Props {
   onClose: () => void;
 }
 
-// Das Overlay ist im Betrieb klickdurchlaessig. Verschieben und Skalieren
-// brauchen darum einen eigenen Zustand, der die Mausereignisse zurueckholt
-// (ADR-0006).
+// The overlay is click-through in operation. Moving and scaling therefore
+// need a state of their own that takes the mouse events back (ADR-0006).
 export default function OverlayEditControls({ onClose }: Props) {
   const overlayScale = useSettingsStore((state) => state.overlayScale);
   const setOverlayScale = useSettingsStore((state) => state.setOverlayScale);
@@ -25,8 +24,8 @@ export default function OverlayEditControls({ onClose }: Props) {
     (state) => state.resetOverlayPlacement
   );
 
-  // Hier setzen, damit es sofort zu sehen ist, und dem Hauptfenster melden,
-  // dem die Einstellungen gehoeren. Gespeichert wird nur dort (ADR-0012).
+  // Set here so it is visible immediately, and report to the main window,
+  // which owns the settings. Saving happens only there (ADR-0012).
   const report = (overlayScale: number, overlayOffset: { dx: number; dy: number }) => {
     void emit(OVERLAY_PLACEMENT_EVENT, {
       overlayScale,

@@ -18,11 +18,11 @@ import { usePoeWindow } from '@/hooks/usePoeWindow';
 import { useSettingsStore } from '@/store/settings.store';
 
 /**
- * Eigenes Fenster, damit das Hauptfenster Hauptfenster bleiben kann.
+ * Its own window, so the main window can stay the main window.
  *
- * Es zeigt an und sonst nichts (ADR-0012): keine Route, keine Spieldaten, kein
- * Fortschritt, kein Speicher. Was zu sehen ist, sagt ihm das Hauptfenster,
- * fertig ausgerechnet. Was der Nutzer hier zieht, meldet es dorthin zurueck.
+ * It displays and does nothing else (ADR-0012): no route, no game data, no
+ * progress, no storage. The main window tells it what to show, fully
+ * computed. What the user drags here it reports back there.
  */
 export default function OverlayPage() {
   const [view, setView] = useState<OverlayView>(EMPTY_OVERLAY_VIEW);
@@ -33,8 +33,8 @@ export default function OverlayPage() {
 
   usePoeWindow(true, contentHeight, editMode);
 
-  // Das Fenster ist transparent, der Rumpf darf also weder Hintergrund noch
-  // Rahmen mitbringen. Die Flaeche macht erst die Karte im Inhalt.
+  // The window is transparent, so the body must bring neither background nor
+  // border. Only the card in the content makes the surface.
   useEffect(() => {
     document.body.classList.add('overlay-window');
     return () => document.body.classList.remove('overlay-window');
@@ -55,9 +55,9 @@ export default function OverlayPage() {
       }
       stop = off;
 
-      // Erst horchen, dann melden. Andersherum kann die Antwort vor dem
-      // Zuhoerer eintreffen, und das Overlay bliebe leer, bis sich der Stand
-      // das naechste Mal von selbst aendert.
+      // Listen first, then report. The other way round the answer can arrive
+      // before the listener, and the overlay would stay empty until the state
+      // next changes on its own.
       await emit(OVERLAY_READY_EVENT);
     })();
 
@@ -72,8 +72,8 @@ export default function OverlayPage() {
       setEditMode((value) => !value);
     });
 
-    // Groesse, Deckkraft und Verschiebung gehoeren dem Hauptfenster. Hier
-    // liegen sie nur im Speicher, damit gezeichnet werden kann.
+    // Size, opacity and offset belong to the main window. Here they live in
+    // memory only, so that drawing is possible.
     const settings = listen<OverlaySettings>(
       OVERLAY_SETTINGS_EVENT,
       (event) => {

@@ -16,15 +16,14 @@ export default function LevellingGuideMain({ route }: Props) {
   const currentEdge = useRouteStore((state) => state.currentEdge);
   const setCurrentEdge = useRouteStore((state) => state.setCurrentEdge);
 
-  // Ein Block je Kante statt einer Zeile je Schritt. Nur so faellt der Trenner
-  // dorthin, wo wirklich ein Schritt endet, und "Jump here" hat ein sichtbares
-  // Ziel.
+  // One block per edge instead of one line per step. Only then does the
+  // separator land where a step really ends, and "Jump here" has a visible
+  // target.
   const currentBlock = useRef<HTMLDivElement>(null);
 
-  // Einmal je Route in die Form gebracht, in der auch das Overlay seine Zeilen
-  // bekommt (ADR-0012). Eine Darstellung, ein Bauplan, zwei Fenster. Und
-  // dieselbe Einteilung, damit hier derselbe Schritt hervorgehoben ist, den
-  // das Overlay zeigt.
+  // Shaped once per route into the form the overlay gets its lines in as
+  // well (ADR-0012). One rendering, one blueprint, two windows. And the same
+  // grouping, so the step highlighted here is the one the overlay shows.
   const sections = useMemo(
     () =>
       blockSections(route.sections).map((section) => ({
@@ -37,23 +36,23 @@ export default function LevellingGuideMain({ route }: Props) {
     [route]
   );
 
-  // Beim Start und bei jedem Zonenwechsel zurueck zum aktuellen Block. Wer
-  // dazwischen selbst scrollt, wird nicht gestoert: das laeuft nur, wenn sich
-  // die Kante oder die Route aendert.
+  // Back to the current block on startup and on every zone change. Anyone
+  // scrolling in between is not disturbed: this only runs when the edge or
+  // the route changes.
   useEffect(() => {
     currentBlock.current?.scrollIntoView({ block: 'center' });
   }, [currentEdge, sections]);
 
   return (
-    // Der Abstand sitzt hier und nicht am Scroll-Container: dessen
-    // Polsterung gehoert zum scrollbaren Bereich, der Text zoege oben durch
-    // und stuende als Streifen ueber der klebenden Ueberschrift.
+    // The spacing sits here and not on the scroll container: its padding
+    // belongs to the scrollable area, text would run through at the top and
+    // show as a strip above the sticky heading.
     <div className='pb-2'>
       {sections.map((section) => (
         <section key={section.name}>
-          {/* z-20 haelt die Ueberschrift ueber den Bloecken. Die sind relativ
-              positioniert und lagen sonst darueber, die Ueberschrift war
-              waehrend des Scrollens nicht zu lesen. */}
+          {/* z-20 keeps the heading above the blocks. They are positioned
+              relatively and otherwise sat on top; the heading was unreadable
+              while scrolling. */}
           <h3 className='bg-background sticky top-0 z-20 border-b px-3 py-2 text-lg font-semibold'>
             {section.name}
           </h3>

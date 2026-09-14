@@ -1,15 +1,15 @@
 /**
- * Beendet das Overlay. Registriert wird es in `main.page.tsx`, genannt in den
- * Einstellungen und im letzten Schritt des Guides.
+ * Closes the overlay. Registered in `main.page.tsx`, named in the settings
+ * and in the last step of the guide.
  *
- * Eine Konstante, damit die drei nicht auseinanderlaufen: ein Kürzel, das in
- * der App anders heisst als es wirkt, ist schlimmer als keins.
+ * One constant so the three do not drift apart: a shortcut the app names
+ * differently from how it works is worse than none.
  */
 export const SHORTCUT_CLOSE_OVERLAY = 'CmdOrCtrl+Alt+0';
 
 /**
- * Wie ein Kürzel dem Nutzer gezeigt wird. Tauri schreibt `CmdOrCtrl`, auf der
- * Tastatur steht Ctrl.
+ * How a shortcut is shown to the user. Tauri writes `CmdOrCtrl`, the keyboard
+ * says Ctrl.
  */
 export function shortcutLabel(accelerator: string): string {
   return accelerator.replace('CmdOrCtrl', 'Ctrl');

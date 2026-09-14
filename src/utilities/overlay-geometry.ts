@@ -7,7 +7,7 @@ import {
   OVERLAY_SIDE_MARGIN
 } from './constants';
 
-// Payload des poe-bounds-Events aus src-tauri/src/overlay.rs.
+// Payload of the poe-bounds event from src-tauri/src/overlay.rs.
 export interface PoeBounds {
   x: number;
   y: number;
@@ -18,8 +18,8 @@ export interface PoeBounds {
   found: boolean;
 }
 
-// Feinverschiebung als Bruchteil des Spiel-Rects, nicht in Pixeln. Nur so
-// ueberlebt sie Aufloesungs- und Monitorwechsel (ADR-0006).
+// Fine adjustment as a fraction of the game rect, not in pixels. Only then
+// does it survive resolution and monitor changes (ADR-0006).
 export interface OverlayOffset {
   dx: number;
   dy: number;
@@ -34,20 +34,20 @@ export interface OverlayRect {
 export type OverlayAnchor = 'minimap' | 'bottom';
 
 /**
- * Ein Anker besteht aus zwei Teilen: wo im Spielfenster er sitzt, und mit
- * welcher eigenen Ecke das Overlay daran haengt. Letzteres bestimmt, in welche
- * Richtung das Fenster waechst, wenn der Text laenger wird.
+ * An anchor has two parts: where in the game window it sits, and with which
+ * of its own corners the overlay hangs on it. The latter determines which way
+ * the window grows when the text gets longer.
  */
 const ANCHORS: Record<
   OverlayAnchor,
   { point: { x: number; y: number }; pin: { x: number; y: number } }
 > = {
-  // Unter der Minimap: rechts buendig, waechst nach unten.
+  // Below the minimap: right-aligned, grows downwards.
   minimap: {
     point: { x: 1 - OVERLAY_SIDE_MARGIN, y: OVERLAY_MINIMAP_TOP },
     pin: { x: 1, y: 0 }
   },
-  // Mitte unten: waechst nach oben, die Unterkante bleibt ueber der HUD-Zeile.
+  // Bottom centre: grows upwards, the bottom edge stays above the HUD row.
   bottom: {
     point: { x: 0.5, y: 1 - OVERLAY_BOTTOM_MARGIN },
     pin: { x: 0.5, y: 1 }
@@ -59,10 +59,10 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 export function overlayWidth(bounds: PoeBounds, scale: number): number {
-  // Die Klemme haelt die Grundbreite in einem brauchbaren Bereich, unabhaengig
-  // von der Spielaufloesung. Sie darf aber nicht auf das skalierte Ergebnis
-  // wirken: sonst waechst ab einem gewissen Faktor nur noch die Schrift,
-  // waehrend das Fenster stehen bleibt und der Text darin umbricht.
+  // The clamp keeps the base width in a usable range regardless of the game
+  // resolution. It must not act on the scaled result though: otherwise, past
+  // a certain factor, only the font grows while the window stays put and the
+  // text inside wraps.
   const base = clamp(
     bounds.w * OVERLAY_BASE_WIDTH,
     OVERLAY_MIN_WIDTH,
@@ -93,18 +93,18 @@ export function computeOverlayRect(
 }
 
 /**
- * Die Umkehrung: aus einer vom Nutzer gezogenen Fensterlage den relativen
- * Offset zurueckrechnen. Muss exakt invers zu computeOverlayRect sein, sonst
- * wandert das Overlay bei jedem Zyklus ein Stueck weiter.
+ * The inverse: compute the relative offset back from a window position the
+ * user dragged to. Must be exactly inverse to computeOverlayRect, otherwise
+ * the overlay wanders a bit further on every cycle.
  */
 export function offsetFromWindow(
   bounds: PoeBounds,
   window: { x: number; y: number; width: number; height: number },
   anchor: OverlayAnchor
 ): OverlayOffset {
-  // Ohne Spielfenster gibt es keinen Bezug, aus dem sich ein relativer Offset
-  // ableiten liesse. Die Division wuerde Infinity liefern, und der Wert wird
-  // gespeichert: das Overlay waere danach dauerhaft verschoben.
+  // Without a game window there is no reference to derive a relative offset
+  // from. The division would yield Infinity, and the value gets persisted:
+  // the overlay would be displaced permanently afterwards.
   if (bounds.w === 0 || bounds.h === 0) {
     return { dx: 0, dy: 0 };
   }

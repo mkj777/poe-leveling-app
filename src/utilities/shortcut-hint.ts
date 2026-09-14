@@ -2,14 +2,14 @@ import type { RouteData } from '@/lib/exile-leveling';
 import { SHORTCUT_CLOSE_OVERLAY, shortcutLabel } from './shortcuts';
 
 /**
- * Die einzige Zeile des Guides, die nicht aus der Route kommt.
+ * The only line of the guide that does not come from the route.
  *
- * Am Ende steht man vor einem Fenster, das man zumachen will. Das Kuerzel
- * dafuer steht sonst nur in den Einstellungen, und dort sieht mitten im Spiel
- * niemand nach.
+ * At the end you are looking at a window you want to close. The shortcut for
+ * that otherwise appears only in the settings, and nobody looks there in the
+ * middle of a game.
  *
- * Ohne Kantenindex: es ist kein Schritt der Route, sondern eine Unterzeile am
- * letzten.
+ * Without an edge index: it is not a step of the route but a subline on the
+ * last one.
  */
 export const OVERLAY_SHORTCUT_HINT: RouteData.FragmentStep = {
   type: 'fragment_step',
@@ -19,11 +19,11 @@ export const OVERLAY_SHORTCUT_HINT: RouteData.FragmentStep = {
 };
 
 /**
- * Haengt den Hinweis als Unterzeile an den letzten Schritt der Route.
+ * Appends the hint as a subline to the last step of the route.
  *
- * Bewusst hier und nicht in `buildDefaultRoute`: der soll genau das erzeugen,
- * was der Upstream-Parser erzeugt, und ein Golden-File-Test haelt ihn darauf
- * fest. Was die App darueber hinaus zeigt, kommt an dieser Stelle dazu.
+ * Deliberately here and not in `buildDefaultRoute`: that one should produce
+ * exactly what the upstream parser produces, and a golden-file test pins it
+ * to that. Whatever the app shows beyond that is added at this point.
  */
 export function withShortcutHint(route: RouteData.Route): RouteData.Route {
   for (let index = route.sections.length - 1; index >= 0; index--) {
@@ -52,6 +52,6 @@ export function withShortcutHint(route: RouteData.Route): RouteData.Route {
     }
   }
 
-  // Keine Route, kein Ende, nichts anzuhaengen.
+  // No route, no end, nothing to append.
   return route;
 }

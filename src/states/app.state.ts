@@ -7,16 +7,15 @@ import { invoke } from '@tauri-apps/api/core';
 
 const OVERLAY_LABEL = 'overlay';
 
-// getByLabel ist in Tauri 2 asynchron, in v1 war es ein direkter Zugriff.
+// getByLabel is asynchronous in Tauri 2; in v1 it was a direct access.
 async function close(label: string) {
   const window = await WebviewWindow.getByLabel(label);
   await window?.close();
 }
 
 /**
- * Das Overlay ist ein eigenes Fenster. Das Hauptfenster bleibt dabei
- * unangetastet, damit Guide-Liste und Einstellungen erreichbar bleiben,
- * waehrend das Overlay laeuft.
+ * The overlay is its own window. The main window stays untouched so that the
+ * guide list and the settings remain reachable while the overlay runs.
  */
 const appStates: IState[] = [
   {
@@ -40,8 +39,8 @@ const appStates: IState[] = [
           appScanningState: AppScanningState.SCANNING
         });
 
-        // Groesse und Position setzt das Overlay selbst anhand des
-        // Spielfensters, siehe usePoeWindow und ADR-0006.
+        // Size and position are set by the overlay itself from the game
+        // window, see usePoeWindow and ADR-0006.
         const overlay = new WebviewWindow(OVERLAY_LABEL, {
           url: OVERLAY_WINDOW_URL,
           title: 'PoE Leveling Guide Overlay',
@@ -55,8 +54,8 @@ const appStates: IState[] = [
           height: 120
         });
 
-        // Ins Terminal statt in eine Konsole, die von aussen niemand sieht.
-        // Genau hier blieb der fehlende Webview-Berechtigung unbemerkt.
+        // To the terminal instead of a console nobody sees from outside.
+        // This is exactly where a missing webview permission went unnoticed.
         overlay.once('tauri://error', (event) => {
           void invoke('log_frontend', {
             level: 'overlay-window',
@@ -66,10 +65,10 @@ const appStates: IState[] = [
 
         invoke('open_poe_window');
       },
-      // Geschlossen wird beim Betreten von `normal`, und dorthin fuehrt jeder
-      // Weg von hier. Zwei Stellen waren ein Rest aus der Zeit mit zwei
-      // Fenstern (ADR-0009): sie liefen gegeneinander, eine gewann, die andere
-      // fand nichts mehr und meldete "window not found".
+      // Closing happens on entering `normal`, and every path from here leads
+      // there. Two places were a leftover from the time with two windows
+      // (ADR-0009): they raced each other, one won, the other found nothing
+      // and reported "window not found".
       leave: () => {}
     }
   }

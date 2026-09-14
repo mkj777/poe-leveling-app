@@ -15,7 +15,7 @@ export interface CachedData {
   json: Record<string, string>;
 }
 
-// Als Abhaengigkeiten hereingereicht, damit der Ablauf ohne Tauri testbar ist.
+// Passed in as dependencies so the flow is testable without Tauri.
 export interface SyncDeps {
   checkUpstream: () => Promise<UpstreamStatus>;
   fetchUpstream: (sha: string) => Promise<void>;
@@ -46,8 +46,7 @@ export function parseCached(
     VaalGemLookup: JSON.parse(cached.json['vaal-gem-lookup'])
   };
 
-  // Der Hinweis auf das Kuerzel kommt nicht aus der Route, siehe
-  // shortcut-hint.ts.
+  // The shortcut hint does not come from the route, see shortcut-hint.ts.
   return withShortcutHint(buildDefaultRoute(cached.routes, bundle, mode));
 }
 
@@ -56,17 +55,17 @@ function describeError(error: unknown): string {
 }
 
 /**
- * Liest den lokalen Cache und parst ihn in der gewuenschten Lesart. Fragt
- * Upstream nicht.
+ * Reads the local cache and parses it in the requested mode. Does not ask
+ * upstream.
  *
- * Das ist der Weg fuer einen Moduswechsel: die Daten sind dieselben, nur die
- * Lesart ist eine andere. Ein Netzzugriff dafuer waere Wartezeit ohne
- * Gegenwert, und genau daran hing der Wechsel frueher, samt Zeitgrenze, die
- * reqwest nicht kennt.
+ * This is the path for a mode switch: the data is the same, only the mode
+ * differs. A network access for that would be waiting time with nothing
+ * gained, and exactly that is what the switch used to hang on, including a
+ * time limit reqwest does not have.
  *
- * Liefert immer ein Ergebnis und wirft nie. Das ist der ganze Zweck: der
- * Aufrufer setzt daraus den Zustand, und eine durchgereichte Ausnahme wuerde
- * ihn auf "wird geladen" stehen lassen.
+ * Always returns a result and never throws. That is the whole point: the
+ * caller derives the state from it, and a propagated exception would leave it
+ * stuck on "loading".
  */
 export async function loadRoute(
   deps: Pick<SyncDeps, 'readCached'>,
@@ -89,7 +88,7 @@ export async function loadRoute(
       status: 'error',
       route: null,
       sha: null,
-      error: 'Keine Daten im Cache und kein Netz'
+      error: 'No cached data and no network'
     };
   }
 
@@ -110,7 +109,7 @@ export async function loadRoute(
   }
 }
 
-/** Gleicht mit Upstream ab und laedt danach. Der taegliche Weg (ADR-0001). */
+/** Syncs with upstream, then loads. The daily path (ADR-0001). */
 export async function syncRoute(
   deps: SyncDeps,
   mode: GuideMode
@@ -124,13 +123,13 @@ export async function syncRoute(
       status = 'updated';
     }
   } catch {
-    // Netzfehler oder Rate-Limit sind kein Grund, ohne Guide dazustehen.
-    // Der Cache traegt weiter, der naechste Takt versucht es erneut.
+    // A network error or rate limit is no reason to stand there without a
+    // guide. The cache carries on, the next tick tries again.
     status = 'offline';
   }
 
   const result = await loadRoute(deps, mode);
 
-  // Ein Fehler beim Lesen wiegt schwerer als die Meldung vom Abgleich.
+  // A read error weighs more than the status from the sync.
   return result.status === 'error' ? result : { ...result, status };
 }

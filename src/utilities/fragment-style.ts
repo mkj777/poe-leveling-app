@@ -9,9 +9,9 @@ import trial from '@/assets/exile-leveling/trial.png';
 import waypoint from '@/assets/exile-leveling/waypoint.png';
 
 /**
- * Farben und Icons wie im Original, siehe
- * web/src/components/FragmentStep/Fragment/styles.module.css im
- * Upstream-Projekt. Wer den Guide dort gelesen hat, soll hier dasselbe sehen.
+ * Colours and icons as in the original, see
+ * web/src/components/FragmentStep/Fragment/styles.module.css in the upstream
+ * project. Anyone who read the guide there should see the same here.
  */
 export const FRAGMENT_COLOURS = {
   enemy: 'text-[darkorange]',
@@ -28,10 +28,10 @@ export const FRAGMENT_COLOURS = {
 export type FragmentColour = keyof typeof FRAGMENT_COLOURS;
 
 /**
- * Symbole werden als Name benannt, nicht als Adresse im Buendel. Das Overlay
- * bekommt seine Zeilen als Daten geschickt (ADR-0012), und eine Adresse wie
- * `/assets/quest-BQCG-isT.png` haette dort nichts zu suchen: sie gehoert dem
- * Build, nicht dem Inhalt.
+ * Icons are referred to by name, not by address inside the bundle. The
+ * overlay gets its lines sent as data (ADR-0012), and an address like
+ * `/assets/quest-BQCG-isT.png` has no business there: it belongs to the
+ * build, not to the content.
  */
 export type IconName =
   | 'waypoint'
@@ -106,7 +106,7 @@ export function fragmentIcon(
       return 'crafting';
     case 'enter':
     case 'logout':
-      // Nur Staedte tragen das Stadtsymbol, normale Zonen nicht.
+      // Only towns carry the town icon, regular zones do not.
       return Data.Areas[fragment.areaId]?.is_town_area === true ? 'town' : null;
     default:
       return null;

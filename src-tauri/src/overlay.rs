@@ -1,5 +1,5 @@
-//! Koppelt das Overlay an das Spielfenster: sucht das PoE-Fenster, liest
-//! dessen Bounds und meldet Aenderungen als `poe-bounds`-Event. Siehe ADR-0005.
+//! Attaches the overlay to the game window: finds the PoE window, reads its
+//! bounds and reports changes as a `poe-bounds` event. See ADR-0005.
 
 use serde::Serialize;
 
@@ -57,7 +57,7 @@ mod win {
             if title == TITLE {
                 let search = &mut *(lparam as *mut Search);
                 search.hwnd = Some(hwnd);
-                return 0; // gefunden, Aufzaehlung beenden
+                return 0; // found, stop enumerating
             }
         }
         1
@@ -84,9 +84,9 @@ mod win {
                 return PoeBounds::not_found();
             }
 
-            // Ein Fenster ohne Titelleiste und ohne Rahmen ist der Verdachtsfall
-            // Exklusiv-Fullscreen. Darueber laesst sich unter Windows nicht
-            // zeichnen, das Frontend meldet es dem Nutzer.
+            // A window without title bar and without frame is the suspected
+            // case of exclusive fullscreen. Windows cannot draw over that, the
+            // frontend reports it to the user.
             let style = GetWindowLongW(hwnd, GWL_STYLE) as u32;
             let borderless = (style & (WS_CAPTION | WS_THICKFRAME)) == 0;
 
@@ -122,9 +122,9 @@ mod tracking {
         WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS,
     };
 
-    // Der Hook liefert seine Ereignisse an genau den Thread, der ihn gesetzt
-    // hat, und der Callback laeuft dort. Thread-lokaler Zustand reicht deshalb
-    // und erspart Synchronisation.
+    // The hook delivers its events to exactly the thread that installed it,
+    // and the callback runs there. Thread-local state is therefore enough and
+    // saves synchronisation.
     thread_local! {
         static HANDLE: RefCell<Option<tauri::AppHandle>> = RefCell::new(None);
         static LAST: RefCell<Option<PoeBounds>> = RefCell::new(None);
@@ -152,8 +152,8 @@ mod tracking {
         });
     }
 
-    /// Sucht das Fenster neu. Teuer, weil es alle Fenster aufzaehlt, laeuft
-    /// darum nur bei Fokuswechseln und nicht bei jeder Bewegung.
+    /// Looks the window up again. Expensive, because it enumerates all
+    /// windows, so it only runs on focus changes and not on every move.
     fn resolve_target() {
         TARGET.with(|slot| *slot.borrow_mut() = win::find_window());
     }
@@ -168,16 +168,16 @@ mod tracking {
         _time: DWORD,
     ) {
         if event == EVENT_SYSTEM_FOREGROUND {
-            // Fokuswechsel deckt Start und Ende des Spiels mit ab: beim Start
-            // holt sich PoE den Vordergrund, beim Beenden geht er woanders hin.
+            // Focus changes also cover game start and exit: on start PoE takes
+            // the foreground, on exit it goes elsewhere.
             resolve_target();
             emit_if_changed();
             return;
         }
 
-        // EVENT_OBJECT_LOCATIONCHANGE feuert systemweit, auch fuer den
-        // Mauszeiger. Ohne diese beiden Filter laeuft der Emit-Pfad bei jeder
-        // Mausbewegung.
+        // EVENT_OBJECT_LOCATIONCHANGE fires system-wide, including for the
+        // mouse cursor. Without these two filters the emit path would run on
+        // every mouse movement.
         if id_object != OBJID_WINDOW {
             return;
         }
@@ -194,9 +194,9 @@ mod tracking {
 
             let flags = WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS;
 
-            // Zwei eng gefasste Hooks statt eines Bereichs. Der Bereich von
-            // EVENT_SYSTEM_FOREGROUND bis EVENT_OBJECT_LOCATIONCHANGE laege
-            // sonst ueber Dutzenden Ereignissen, die uns nichts angehen.
+            // Two narrow hooks instead of one range. The range from
+            // EVENT_SYSTEM_FOREGROUND to EVENT_OBJECT_LOCATIONCHANGE would
+            // otherwise cover dozens of events that are none of our business.
             SetWinEventHook(
                 EVENT_SYSTEM_FOREGROUND,
                 EVENT_SYSTEM_FOREGROUND,
@@ -217,8 +217,8 @@ mod tracking {
                 flags,
             );
 
-            // Einmal initial, damit das Frontend nicht auf die erste Bewegung
-            // warten muss.
+            // Once initially, so the frontend does not have to wait for the
+            // first movement.
             resolve_target();
             emit_if_changed();
 
@@ -238,20 +238,20 @@ static TRACKING: AtomicBool = AtomicBool::new(false);
 #[cfg(target_os = "windows")]
 #[tauri::command]
 pub fn start_poe_tracking(handle: tauri::AppHandle) {
-    // Idempotent: React ruft Effekte unter StrictMode doppelt auf, und zwei
-    // Hook-Saetze plus zwei Nachrichtenschleifen braucht niemand.
+    // Idempotent: React calls effects twice under StrictMode, and nobody
+    // needs two sets of hooks plus two message loops.
     if TRACKING.swap(true, Ordering::SeqCst) {
         return;
     }
 
-    // Eigener Thread, weil der Hook eine Nachrichtenschleife braucht und die
-    // Ereignisse nur dort ankommen, wo er gesetzt wurde.
+    // Own thread, because the hook needs a message loop and the events only
+    // arrive where it was installed.
     std::thread::spawn(move || tracking::run(handle));
 }
 
-/// Bounds auf Abruf. Das Frontend fragt einmal nach, sobald sein Listener
-/// steht, denn das erste Ereignis aus dem Hook-Thread kann davor gefeuert
-/// haben. Deckt zugleich den Fall ab, dass PoE spaeter startet als die App.
+/// Bounds on demand. The frontend asks once as soon as its listener is up,
+/// because the first event from the hook thread may have fired before that.
+/// Also covers the case where PoE starts later than the app.
 #[cfg(target_os = "windows")]
 #[tauri::command]
 pub fn poe_bounds() -> PoeBounds {

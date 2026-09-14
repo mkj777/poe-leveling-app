@@ -10,8 +10,8 @@ interface States {
   route: RouteData.Route | null;
   sha: string | null;
   currentEdge: number;
-  /** Zone der aktuellen Kante, um den Fortschritt nach einem Neustart oder
-   *  einem Datenwechsel wieder anzuknuepfen. */
+  /** Zone of the current edge, to re-anchor progress after a restart or a
+   *  data change. */
   currentAreaId: string | null;
   syncState: SyncState;
   syncError: string | null;
@@ -36,35 +36,34 @@ const createState: StateCreator<RouteStore> = (set, get) => ({
   setCurrentEdge: (currentEdge) =>
     set({
       currentEdge,
-      // Aus der eigenen Route nachgeschlagen. Genau darum darf sie nur ein
-      // Fenster speichern, siehe unten.
+      // Looked up in the window's own route. Exactly why only one window
+      // may persist it, see below.
       currentAreaId: get().route?.edges[currentEdge] ?? null
     }),
   setSyncState: (syncState, syncError = null) => set({ syncState, syncError })
 });
 
 /**
- * Den Fortschritt speichert allein das Hauptfenster.
+ * Only the main window persists progress.
  *
- * Das Overlay ist Anzeige. Es bekommt Lesart und Kante gesagt (ADR-0011) und
- * haette hier nur eine zweite, konkurrierende Meinung abzulegen. Genau das ist
- * passiert: das Overlay hielt eine andere Lesart der Route, rechnete zur
- * gemeldeten Kante 172 eine andere Zone aus als das Hauptfenster, The Causeway
- * statt The Sarn Ramparts, und schrieb sie in denselben Eintrag. Beim naechsten
- * Start knuepfte das Hauptfenster daran an und stand zehn Kanten zurueck.
+ * The overlay is a display. It is told mode and edge (ADR-0011) and would only
+ * have a second, competing opinion to store here. Exactly that happened: the
+ * overlay held a different mode of the route, computed a different zone for
+ * the reported edge 172 than the main window, The Causeway instead of The
+ * Sarn Ramparts, and wrote it into the same entry. On the next start the main
+ * window re-anchored on it and stood ten edges back.
  *
- * Dass beide dieselbe Lesart halten, ist seit 0.98.0 zugesichert. Das hier ist
- * die zweite Haelfte: ohne Speicher kann das Overlay auch bei einem kuenftigen
- * Fehler keinen fremden Stand hinterlassen.
+ * That both hold the same mode has been guaranteed since 0.98.0. This is the
+ * second half: without storage the overlay cannot leave a foreign state
+ * behind even on a future bug.
  *
- * Nur der Fortschritt wird gespeichert. Die Route selbst ist abgeleitet und
- * wird bei jedem Start in wenigen Millisekunden aus dem lokalen Cache neu
- * geparst.
+ * Only progress is persisted. The route itself is derived and is re-parsed
+ * from the local cache in a few milliseconds on every start.
  *
- * Sie zu speichern war ein Fehler: zustand stellt sie vor dem ersten Sync
- * wieder her, React rendert sie sofort, und der Renderer greift dann auf
- * Spieldaten zu, die setGameData noch nicht gesetzt hat. Ausserdem wuerde eine
- * gespeicherte Route aus einem alten Stand neben frischen Spieldaten stehen.
+ * Persisting it was a mistake: zustand restores it before the first sync,
+ * React renders it immediately, and the renderer then accesses game data that
+ * setGameData has not set yet. A persisted route from an old version would
+ * also sit next to fresh game data.
  */
 export const useRouteStore: UseBoundStore<StoreApi<RouteStore>> =
   isOverlayWindow()

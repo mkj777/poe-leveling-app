@@ -15,8 +15,8 @@ import { emit, listen } from '@tauri-apps/api/event';
 import { useSettingsStore } from '@/store/settings.store';
 const appWindow = getCurrentWebviewWindow()
 
-// Koppelt das Overlay an das Spielfenster. Das Backend meldet Bounds nur bei
-// Aenderung, die Geometrie rechnet computeOverlayRect (ADR-0005, ADR-0006).
+// Attaches the overlay to the game window. The backend reports bounds only on
+// change, the geometry is computed by computeOverlayRect (ADR-0005, ADR-0006).
 export function usePoeWindow(
   active: boolean,
   contentHeight: number,
@@ -28,15 +28,15 @@ export function usePoeWindow(
   const overlayAnchor = useSettingsStore((state) => state.overlayAnchor);
   const setOverlayOffset = useSettingsStore((state) => state.setOverlayOffset);
 
-  // Was wir selbst gesetzt haben. Ohne das haelt der Drag-Handler unsere
-  // eigenen setPosition-Aufrufe fuer Nutzereingaben und schaukelt den Offset
-  // hoch, bis das Overlay aus dem Bild laeuft.
+  // What we set ourselves. Without this the drag handler takes our own
+  // setPosition calls for user input and ratchets the offset up until the
+  // overlay runs off screen.
   const lastSet = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    // Kein Riegel auf den Listener. Unter StrictMode laeuft der Effekt doppelt,
-    // ein Riegel wuerde beim zweiten Lauf aussteigen, nachdem das Cleanup des
-    // ersten den Listener schon abgemeldet hat. Dann kommt nie ein Ereignis an.
+    // No guard on the listener. Under StrictMode the effect runs twice; a
+    // guard would bail out on the second run after the cleanup of the first
+    // has already removed the listener. Then no event ever arrives.
     let disposed = false;
     let off: (() => void) | undefined;
 
@@ -51,11 +51,11 @@ export function usePoeWindow(
       }
       off = unlisten;
 
-      // Das Tracking ist auf der Rust-Seite idempotent.
+      // Tracking is idempotent on the Rust side.
       await invoke('start_poe_tracking');
 
-      // Einmal aktiv nachfragen: das erste Ereignis kann gefeuert haben, bevor
-      // der Listener stand.
+      // Ask once actively: the first event may have fired before the
+      // listener was up.
       setBounds(await invoke<PoeBounds>('poe_bounds'));
     })();
 
@@ -77,9 +77,9 @@ export function usePoeWindow(
     let cancelled = false;
 
     void (async () => {
-      // Die Bounds aus GetWindowRect sind physische Pixel, die gemessene
-      // Inhaltshoehe sind CSS-Pixel. Ohne den Faktor sitzt das Overlay auf
-      // jedem skalierten Bildschirm falsch.
+      // The bounds from GetWindowRect are physical pixels, the measured
+      // content height is CSS pixels. Without the factor the overlay sits
+      // wrong on every scaled screen.
       const scale = await appWindow.scaleFactor();
       const height = Math.round(
         Math.max(contentHeight, OVERLAY_MIN_HEIGHT) * scale
@@ -111,8 +111,8 @@ export function usePoeWindow(
   useEffect(() => {
     if (!editMode) return;
 
-    // Beim Ziehen die neue Lage als Bruchteil des Spiel-Rects zuruecklegen,
-    // nicht als Pixel. Sonst stimmt sie nach Aufloesungswechsel nicht mehr.
+    // When dragging, store the new placement as a fraction of the game rect,
+    // not as pixels. Otherwise it is off after a resolution change.
     const unlisten = appWindow.onMoved(async ({ payload }) => {
       if (bounds === null || !bounds.found) return;
 
@@ -138,8 +138,8 @@ export function usePoeWindow(
         overlayAnchor
       );
 
-      // Hier setzen, damit das Fenster sofort folgt, und dem Hauptfenster
-      // melden, das die Einstellungen speichert (ADR-0012).
+      // Set here so the window follows immediately, and report to the main
+      // window, which stores the settings (ADR-0012).
       setOverlayOffset(offset);
       void emit(OVERLAY_PLACEMENT_EVENT, {
         overlayScale,

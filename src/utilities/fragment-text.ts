@@ -1,18 +1,19 @@
 import type { Fragments, RouteData } from '@/lib/exile-leveling';
 import { Data } from '@/lib/exile-leveling';
 
-// dirIndex ist Grad geteilt durch 45, laeuft also 0 bis 7 im Uhrzeigersinn ab
-// Norden. Siehe common/src/route-processing/fragment/index.ts.
+// dirIndex is degrees divided by 45, so it runs 0 to 7 clockwise from north.
+// See common/src/route-processing/fragment/index.ts.
 //
-// Ausgeschrieben statt abgekuerzt: "Go SW follow the exits keeping W" liest
-// sich als Buchstabensalat, wenn man die Kuerzel nicht im Kopf hat.
-// Kleingeschrieben, weil die Richtung in der Route immer mitten im Satz steht,
-// nie am Anfang: "Go west", "Usually northeast", "Follow the road southwest".
+// Spelled out instead of abbreviated: "Go SW follow the exits keeping W" reads
+// as alphabet soup if you do not have the abbreviations in your head.
+// Lower case, because the direction in the route always sits mid-sentence,
+// never at the start: "Go west", "Usually northeast", "Follow the road
+// southwest".
 //
-// Bewusst nur hier und nicht im Freitext. In der Route steht genau eine Stelle
-// mit einem einzelnen Richtungsbuchstaben, "S shape or L shape leads to exit",
-// und dort meint das S die Form des Weges. Eine Suche ueber den Fliesstext
-// haette daraus "south shape" gemacht.
+// Deliberately only here and not in free text. The route has exactly one spot
+// with a single direction letter, "S shape or L shape leads to exit", and
+// there the S means the shape of the path. A search over the running text
+// would have turned it into "south shape".
 const DIRECTIONS = [
   'north',
   'northeast',
@@ -86,7 +87,7 @@ export function renderFragment(fragment: Fragments.AnyFragment): string {
     case 'crafting':
       return `Crafting: ${fragment.crafting_recipes.join(', ')}`;
     case 'dir':
-      return DIRECTIONS[fragment.dirIndex] ?? `${fragment.dirIndex * 45} Grad`;
+      return DIRECTIONS[fragment.dirIndex] ?? `${fragment.dirIndex * 45} degrees`;
     case 'copy':
       return fragment.text;
   }

@@ -16,10 +16,10 @@ import { useInterval } from '@/hooks/useInterval';
 import { useRouteStore } from '@/store/route.store';
 import { useSettingsStore } from '@/store/settings.store';
 
-// Modulweit, nicht pro Komponente. Globale Hotkeys gehoeren dem Prozess, nicht
-// einem Mount: unter StrictMode laeuft der Effekt doppelt und lief sich mit
-// seinem eigenen Cleanup ins "hotkey already registered". Schlimmer noch, das
-// Cleanup meldete sie beim Wechsel in die Einstellungen ab und sie blieben tot.
+// Module-wide, not per component. Global hotkeys belong to the process, not
+// to a mount: under StrictMode the effect runs twice and ran into "hotkey
+// already registered" with its own cleanup. Worse, the cleanup unregistered
+// them when switching to the settings and they stayed dead.
 let shortcutsBound = false;
 
 export default function MainPage() {
@@ -40,8 +40,8 @@ export default function MainPage() {
       .then((detected) => {
         if (detected !== null) setClientTxtPath(detected);
       })
-      // Scheitert die Erkennung, bleibt die manuelle Auswahl. Kein Grund,
-      // eine unbehandelte Rejection zu werfen.
+      // If detection fails, manual selection remains. No reason to throw an
+      // unhandled rejection.
       .catch(() => undefined);
   }, [clientTxtPath, setClientTxtPath]);
 
@@ -73,12 +73,12 @@ export default function MainPage() {
     shortcutsBound = true;
 
     void (async () => {
-      // Erst alles abraeumen, was ein vorheriger Lauf oder ein Hot-Reload
-      // stehen gelassen hat, dann der Reihe nach neu binden.
+      // First clear everything a previous run or a hot reload left behind,
+      // then bind again one by one.
       await unregisterAll();
 
-      // Der Zustand wird bewusst ueber getState gelesen. Die Handler werden
-      // einmal registriert und arbeiteten sonst auf einem eingefrorenen Wert.
+      // State is deliberately read via getState. The handlers are registered
+      // once and would otherwise work on a frozen value.
       await register(SHORTCUT_CLOSE_OVERLAY, () => {
         setAppState(AppState.NORMAL);
       });

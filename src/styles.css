@@ -120,13 +120,13 @@
     @apply bg-background text-foreground border-[2px];
   }
 
-  /* Das Overlay-Fenster ist transparent. Hintergrund und Rahmen des Rumpfes
-     wuerden als graue Kachel ueber dem Spiel stehen. */
+  /* The overlay window is transparent. Background and border of the body
+     would sit over the game as a grey tile. */
   body.overlay-window {
     @apply border-0 bg-transparent;
   }
 
-  /* Die Standard-Scrollbar ist hell und steht quer zum Rest der Oberflaeche. */
+  /* The default scrollbar is light and clashes with the rest of the UI. */
   * {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;

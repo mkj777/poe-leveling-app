@@ -5,11 +5,11 @@ import { fragmentColour, fragmentIcon } from './fragment-style';
 import { renderFragment } from './fragment-text';
 
 /**
- * Was das Overlay anzeigt, fertig ausgerechnet.
+ * What the overlay displays, fully computed.
  *
- * Das Overlay ist Anzeige und sonst nichts (ADR-0012). Es haelt keine Route,
- * keine Spieldaten und keinen Fortschritt, es bekommt Zeilen und malt sie.
- * Alles hier ist einfaches JSON: es geht als Ereignis ueber die Fenstergrenze.
+ * The overlay is a display and nothing else (ADR-0012). It holds no route, no
+ * game data and no progress; it receives lines and paints them. Everything
+ * here is plain JSON: it crosses the window boundary as an event.
  */
 export interface FragmentView {
   text: string;
@@ -17,7 +17,7 @@ export interface FragmentView {
   icon: IconName | null;
 }
 
-/** Eine Zeile, also ein Schritt oder ein Unterschritt. */
+/** One line, that is, a step or a substep. */
 export type LineView = FragmentView[];
 
 export interface StepView {
@@ -26,9 +26,9 @@ export interface StepView {
 }
 
 export interface OverlayView {
-  /** Der Akt, oder null solange keine Route geladen ist. */
+  /** The act, or null while no route is loaded. */
   act: string | null;
-  /** Kantenschritte, die im Akt noch ausstehen. */
+  /** Edge steps still pending in the act. */
   stepsLeft: number;
   steps: StepView[];
 }
@@ -55,8 +55,8 @@ export function toStepView(step: RouteData.FragmentStep): StepView {
 }
 
 /**
- * Was jetzt ansteht, in der Form, in der es das Overlay braucht. Laeuft im
- * Hauptfenster: nur dort liegen Route und Spieldaten.
+ * What is pending now, in the form the overlay needs. Runs in the main
+ * window: only there do route and game data live.
  */
 export function buildOverlayView(
   route: RouteData.Route,
@@ -72,18 +72,18 @@ export function buildOverlayView(
   };
 }
 
-/** Das Overlay meldet sich, sobald es horcht, und bekommt den Stand geschickt. */
+/** The overlay reports in as soon as it listens and gets the state sent. */
 export const OVERLAY_READY_EVENT = 'overlay-ready';
 
-/** Hauptfenster an Overlay: das hier anzeigen. */
+/** Main window to overlay: display this. */
 export const OVERLAY_VIEW_EVENT = 'overlay-view';
 
 /**
- * Overlay an Hauptfenster: der Nutzer hat es gezogen oder skaliert.
+ * Overlay to main window: the user dragged or scaled it.
  *
- * Die Gegenrichtung. Gespeichert wird im Hauptfenster, dem die Einstellungen
- * gehoeren. Schrieben beide, ueberschriebe der eine still den anderen, und
- * genau das ist beim Fortschritt schon passiert (ADR-0011, zweiter Nachtrag).
+ * The reverse direction. Saving happens in the main window, which owns the
+ * settings. If both wrote, one would silently overwrite the other, and
+ * exactly that already happened with progress (ADR-0011, second addendum).
  */
 export const OVERLAY_PLACEMENT_EVENT = 'overlay-placement';
 

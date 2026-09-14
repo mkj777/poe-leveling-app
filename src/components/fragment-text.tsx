@@ -2,21 +2,21 @@ import type { LineView } from '@/utilities/overlay-view';
 import { FRAGMENT_COLOURS, ICON_SOURCES } from '@/utilities/fragment-style';
 
 /**
- * Eine Zeile des Guides, in den Farben und Symbolen des Originals.
+ * One line of the guide, in the colours and icons of the original.
  *
- * Nimmt bewusst fertige Daten und keinen Schritt: dieselbe Komponente malt im
- * Hauptfenster und im Overlay, und das Overlay hat keine Route, aus der es
- * etwas ableiten koennte (ADR-0012).
+ * Deliberately takes finished data and not a step: the same component paints
+ * in the main window and in the overlay, and the overlay has no route to
+ * derive anything from (ADR-0012).
  */
 export default function FragmentLine({ parts }: { parts: LineView }) {
   return (
     <>
       {parts.map((part, index) => (
         <span key={index} className={FRAGMENT_COLOURS[part.colour]}>
-          {/* Nur die Hoehe festlegen, die Breite folgt dem Bild. Die Icons sind
-              nicht quadratisch: das Quest-Ausrufezeichen misst 30x64, Trial und
-              Waypoint sind breiter als hoch. Beide Masse zu setzen zog das eine
-              in die Breite und stauchte die anderen. */}
+          {/* Set only the height, the width follows the image. The icons are
+              not square: the quest exclamation mark measures 30x64, trial and
+              waypoint are wider than tall. Setting both dimensions stretched
+              the one and squashed the others. */}
           {part.icon !== null && (
             <img
               src={ICON_SOURCES[part.icon]}
