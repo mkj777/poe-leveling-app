@@ -3,7 +3,7 @@
 The files in `route-processing/` and `types.d.ts` come from
 https://github.com/HeartofPhos/exile-leveling (MIT licence).
 
-Vendored commit: `b7b2dd0ed62ae25cf55c74085fa64a1f4d7cf4ba`
+Vendored commit: `d6951db0ca9463e42074e1e05e9ffde3d42d1604`
 
 Changes compared to the original:
 
